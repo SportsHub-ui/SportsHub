@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<base target="_top">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+				<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+					<style>
+    :root { --team-primary: #0046ad; --team-secondary: #fec524; }
+  
+  body { 
+    font-family: 'Oswald', sans-serif; margin: 0; padding: 0; 
+    background: linear-gradient(135deg, var(--team-primary) 0%, #000 100%);
+    color: white; min-height: 100vh;
+  }
+
+  
+  .section-label { color: var(--team-secondary); font-size: 2rem; font-style: italic; text-transform: uppercase; }
+  .player-number { color: var(--team-secondary); width: 30px; font-weight: 700; }
+
+    .roster-container { max-width: 900px; margin: auto; padding: 40px 20px; }
+
+    /* Header Section */
+    .header { text-align: center; margin-bottom: 40px; }
+    .team-logo { width: 120px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.3)); }
+    .roster-title { 
+      font-size: 8rem; font-weight: 700; font-style: italic; 
+      line-height: 0.8; margin: 0; text-transform: uppercase; 
+      letter-spacing: -4px;
+    }
+
+    /* Layout Columns */
+    .roster-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; }
+    @media (max-width: 700px) { .roster-grid { grid-template-columns: 1fr; } }
+
+    /* Group Sections */
+    .section-label { 
+      color: var(--brewers-gold); font-size: 2rem; font-style: italic;
+      text-transform: uppercase; border-bottom: none; margin-bottom: 10px;
+    }
+
+    .player-row { 
+      display: flex; gap: 15px; margin-bottom: 5px; font-size: 1.1rem; 
+      font-weight: 400; align-items: baseline;
+    }
+    .player-number { color: var(--brewers-gold); width: 30px; font-weight: 700; }
+    .player-name { letter-spacing: 1px; }
+
+    .loader { text-align: center; padding-top: 100px; font-size: 2rem; opacity: 0.7; }
+  </style>
+				</head>
+				<body>
+					<div id="loading" class="loader">LOADING ROSTER...</div>
+					<div class="roster-container" id="content" style="display:none;">
+						<div class="header">
+							<img id="logo" class="team-logo" src="">
+								<h1 class="roster-title">ROSTER</h1>
+							</div>
+							<div class="roster-grid">
+								<!-- Left Column -->
+								<div class="col">
+									<div id="inf-section"/>
+									<div id="out-section" style="margin-top:30px;"/>
+									<div id="il-section" style="margin-top:30px;"/>
+								</div>
+								<!-- Right Column -->
+								<div class="col">
+									<div id="cat-section"/>
+									<div id="pit-section" style="margin-top:30px;"/>
+								</div>
+							</div>
+						</div>
+						<script>
+    window.onload = function() {
+      google.script.run.withSuccessHandler(renderRoster).getRosterData();
+    };
+
+    var teamColors = {
+    "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
+    "Boston Red Sox": "#BD3039", "Chicago Cubs": "#0E3386", "Chicago White Sox": "#27251F",
+    "Cincinnati Reds": "#C6011F", "Cleveland Guardians": "#002B5C", "Colorado Rockies": "#333366",
+    "Detroit Tigers": "#0C2340", "Houston Astros": "#002D62", "Kansas City Royals": "#004687",
+    "Los Angeles Angels": "#BA0021", "Los Angeles Dodgers": "#005A9C", "Miami Marlins": "#00A3E0",
+    "Milwaukee Brewers": "#12284B", "Minnesota Twins": "#002B5C", "New York Mets": "#002D72",
+    "New York Yankees": "#003087", "Oakland Athletics": "#003831", "Philadelphia Phillies": "#E81828",
+    "Pittsburgh Pirates": "#FFB81C", "San Diego Padres": "#2F241D", "San Francisco Giants": "#FD5A1E",
+    "Seattle Mariners": "#005C5C", "St. Louis Cardinals": "#C41E3A", "Tampa Bay Rays": "#092C5C",
+    "Texas Rangers": "#003278", "Toronto Blue Jays": "#134A8E", "Washington Nationals": "#AB0003"
+  };
+
+   function renderRoster(data) {
+    // 1. DYNAMIC THEMING
+    var primary = teamColors[data.teamName] || "#0046ad";
+    // We use Gold as the secondary color for all teams (looks like the image)
+    // or you can add a secondary color map.
+    document.documentElement.style.setProperty('--team-primary', primary);
+    
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+    
+    // 2. SET LOGO
+    document.getElementById('logo').src = "https://www.mlbstatic.com/team-logos/" + data.teamId + ".svg";
+
+    // 3. RENDER SECTIONS
+    renderSection("inf-section", "Infielders", data.inf);
+    renderSection("out-section", "Outfielders", data.out);
+    renderSection("cat-section", "Catchers", data.cat);
+    renderSection("pit-section", "Pitchers", data.pit);
+    renderSection("il-section", "Injured List", data.il);
+  }
+
+    function renderSection(id, label, players) {
+      const div = document.getElementById(id);
+      if (!players || players.length === 0) return;
+
+      let html = '<div class="section-label">' + label + '</div>';
+      players.forEach(p => {
+        html += '<div class="player-row">';
+        html += '  <div class="player-number">' + p.number + '</div>';
+        html += '  <div class="player-name">' + p.name + '</div>';
+        html += '</div>';
+      });
+      div.innerHTML = html;
+    }
+  </script>
+					</body>
+				</html>

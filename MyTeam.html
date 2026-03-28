@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0046ad;
+      --gold: #fec524;
+      --bg: #f4f7f9;
+      --win: #2e7d32;
+      --loss: #d32f2f;
+    }
+
+    body {
+      font-family: 'Oswald', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .nav-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      transition: background-color 0.5s;
+      padding: 15px;
+      border-radius: 8px;
+      color: white;
+      background-color: #0046ad;
+    }
+
+    .main-layout {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 25px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    @media (max-width: 800px) {
+      .main-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .section-title {
+      color: var(--navy);
+      text-transform: uppercase;
+      border-bottom: 3px solid var(--gold);
+      padding-bottom: 5px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .matchup-card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      margin-bottom: 25px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .matchup-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      background: var(--navy);
+    }
+
+    .matchup-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      text-align: center;
+      gap: 20px;
+    }
+
+    .team-box img {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 10px;
+    }
+
+    .team-name {
+      font-size: 1.5rem;
+      font-weight: 700;
+      display: block;
+    }
+
+    .vs-circle {
+      background: #eee;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #999;
+      margin: auto;
+    }
+
+    .big-score {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 3.5rem;
+      font-weight: 900;
+      color: var(--navy);
+    }
+
+    .ai-box {
+      background: #fff8e1;
+      border-left: 5px solid var(--gold);
+      padding: 15px;
+      border-radius: 4px;
+      font-style: italic;
+      line-height: 1.5;
+      color: #555;
+      margin-top: 20px;
+      font-family: 'serif';
+      font-size: 1.1rem;
+    }
+
+    .ai-label {
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      color: var(--navy);
+      display: block;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      margin-bottom: 5px;
+      font-style: normal;
+    }
+
+    .side-card {
+      background: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 25px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.9rem;
+    }
+
+    th {
+      text-align: left;
+      color: #999;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      padding-bottom: 10px;
+    }
+
+    td {
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .my-team-row {
+      background: #fffde7;
+      font-weight: bold;
+      color: var(--navy);
+    }
+
+    .upcoming-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      /* Increased padding */
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.9rem;
+      /* Slightly larger */
+      color: #333;
+      /* Ensure color is dark */
+    }
+
+    .up-date {
+      color: var(--navy);
+      font-weight: bold;
+      width: 60px;
+    }
+
+    .up-date {
+      color: #888;
+      font-weight: bold;
+    }
+
+    .loader {
+      text-align: center;
+      padding: 100px;
+      grid-column: 1/-1;
+    }
+
+    /* Add/Update these in your <style> tag */
+    .settings-bar {
+      background: var(--navy);
+      padding: 8px;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 5px 15px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: white;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      border-bottom: 3px solid var(--navy);
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+    }
+
+    .date-wrapper {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    #dateDisplay {
+      font-size: 1rem;
+      color: var(--navy);
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    #dateInput {
+      position: absolute;
+      opacity: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="settings-bar" id="dynamicHeader">
+    <button class="nav-btn" onclick="changeDate(-1)">◄</button>
+    <h2 id="pageTitle" style="margin:0; text-transform: uppercase; font-size: 1.4rem;">My Team</h2>
+    <button class="nav-btn" onclick="changeDate(1)">►</button>
+  </div>
+
+  <div class="container" style="max-width: 1100px; margin: auto; padding: 0 20px;">
+    <!-- Date Selector Row -->
+    <div class="header-row">
+      <div class="date-wrapper">
+        <span id="dateDisplay">Loading Date...</span>
+        <input type="date" id="dateInput" onchange="goToDate()">
+        <span style="font-size: 0.8rem;">📅</span>
+      </div>
+    </div>
+
+
+    <div id="loading" class="loader">
+      <h2 style="color: var(--navy)">Analyzing Matchup...</h2>
+      <p>Summoning the AI Scout...</p>
+    </div>
+
+    <div id="content" class="main-layout" style="display: none;">
+      <div class="column-left">
+        <h2 class="section-title">Today's Matchup <span id="gameStatus"
+            style="font-size: 0.9rem; color: var(--loss);"></span></h2>
+        <div class="matchup-card" id="matchupContent"></div>
+
+        <h2 class="section-title">AI Scouting Report</h2>
+        <div class="ai-box">
+          <span class="ai-label">Gemini Scout Analysis</span>
+          <div id="aiText">Generating report...</div>
+        </div>
+      </div>
+
+      <div class="column-right">
+        <h2 class="section-title">Standings</h2>
+        <div class="side-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>W</th>
+                <th>L</th>
+                <th>GB</th>
+                <th>STRK</th>
+              </tr>
+            </thead>
+            <tbody id="standingsBody"></tbody>
+          </table>
+        </div>
+
+        <h2 class="section-title">Upcoming Games</h2>
+        <div class="side-card" id="upcomingList"></div>
+      </div>
+    </div>
+
+    <script>
+      var teamColors = {
+        "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
+        "Boston Red Sox": "#BD3039", "Chicago Cubs": "#0E3386", "Chicago White Sox": "#27251F",
+        "Cincinnati Reds": "#C6011F", "Cleveland Guardians": "#002B5C", "Colorado Rockies": "#333366",
+        "Detroit Tigers": "#0C2340", "Houston Astros": "#002D62", "Kansas City Royals": "#004687",
+        "Los Angeles Angels": "#BA0021", "Los Angeles Dodgers": "#005A9C", "Miami Marlins": "#00A3E0",
+        "Milwaukee Brewers": "#12284B", "Minnesota Twins": "#002B5C", "New York Mets": "#002D72",
+        "New York Yankees": "#003087", "Oakland Athletics": "#003831", "Philadelphia Phillies": "#E81828",
+        "Pittsburgh Pirates": "#FFB81C", "San Diego Padres": "#2F241D", "San Francisco Giants": "#FD5A1E",
+        "Seattle Mariners": "#005C5C", "St. Louis Cardinals": "#C41E3A", "Tampa Bay Rays": "#092C5C",
+        "Texas Rangers": "#003278", "Toronto Blue Jays": "#134A8E", "Washington Nationals": "#AB0003"
+      };
+
+      let currentViewDate = new Date();
+
+      window.onload = function () {
+        // Set initial date input to today
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('dateInput').value = today;
+        fetchMyTeamData();
+      };
+
+      function fetchMyTeamData(targetDateStr = null) {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('content').style.display = 'none';
+
+        google.script.run
+          .withSuccessHandler(renderPage)
+          .withFailureHandler(function (err) {
+            document.getElementById('loading').innerHTML = "<h2>Error</h2><p>" + err.message + "</p>";
+          })
+          .getAppData("myteam", targetDateStr);
+      }
+
+      function renderPage(data) {
+        if (!data) return;
+
+        // Update Date Display Logic
+        document.getElementById('dateInput').value = data.currentDateIso;
+        const parts = data.currentDateIso.split('-');
+        currentViewDate = new Date(parts[0], parts[1] - 1, parts[2]);
+        const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        document.getElementById('dateDisplay').innerText = currentViewDate.toLocaleDateString('en-US', dateOptions);
+
+        // UI Theme Update
+        var teamColor = teamColors[data.myTeam] || "#0046ad";
+        var header = document.getElementById('dynamicHeader');
+        if (header) header.style.backgroundColor = teamColor;
+
+        var title = document.getElementById('pageTitle');
+        if (title) title.innerText = data.myTeam;
+
+        document.documentElement.style.setProperty('--navy', teamColor);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'grid';
+
+        renderMatchup(data.teamGame);
+        renderAI(data.aiReport, data.aiLabel);
+        renderStandings(data.standings);
+        renderUpcoming(data.upcoming);
+      }
+
+      // New Date Control Functions
+      function changeDate(offset) {
+        currentViewDate.setDate(currentViewDate.getDate() + offset);
+        const dateStr = currentViewDate.toISOString().split('T')[0];
+        fetchMyTeamData(dateStr);
+      }
+
+      function goToDate() {
+        const dateStr = document.getElementById('dateInput').value;
+        if (dateStr) { fetchMyTeamData(dateStr); }
+      }
+
+      function renderAI(text, label) {
+        var el = document.getElementById('aiText');
+        var labelEl = document.querySelector('.ai-label');
+        if (labelEl && label) labelEl.innerText = label;
+        if (el) el.innerText = text || "Analysis currently unavailable.";
+      }
+
+      function renderMatchup(game) {
+        var container = document.getElementById('matchupContent');
+        var statusSpan = document.getElementById('gameStatus');
+        var sectionTitle = document.querySelector('.column-left .section-title');
+
+        if (!game) {
+          container.innerHTML = "<div style='padding:20px; text-align:center;'><h3>No games found for this period.</h3></div>";
+          return;
+        }
+
+        // Update Header Text
+        if (game.gameDateLabel) {
+          sectionTitle.firstChild.textContent = "Upcoming Matchup ";
+          statusSpan.innerText = "OFF DAY";
+        } else {
+          sectionTitle.firstChild.textContent = (game.status === "Live") ? "Live Matchup " : "Today's Matchup ";
+          statusSpan.innerText = game.liveText;
+        }
+
+        var awayLogoUrl = "https://www.mlbstatic.com/team-logos/" + game.awayId + ".svg";
+        var homeLogoUrl = "https://www.mlbstatic.com/team-logos/" + game.homeId + ".svg";
+
+        var html = '';
+
+        // Show the date label if it's an off-day and we found the next game
+        if (game.gameDateLabel) {
+          html += '<div style="text-align:center; margin-bottom:15px; color:var(--navy); font-weight:bold;">' + game.gameDateLabel + '</div>';
+        }
+
+        html += '<div class="matchup-grid">';
+        html += '<div class="team-box"><img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span><div class="big-score">' + (game.status !== "Preview" ? game.awayScore : "") + '</div></div>';
+        html += '<div class="vs-circle">VS</div>';
+        html += '<div class="team-box"><img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span><div class="big-score">' + (game.status !== "Preview" ? game.homeScore : "") + '</div></div>';
+        html += '</div>';
+
+
+        container.innerHTML = html;
+      }
+
+      function renderStandings(standings) {
+        var body = document.getElementById('standingsBody');
+        if (!body) return;
+
+        // Clear any loading text
+        body.innerHTML = "";
+
+        if (!standings || standings.length === 0) {
+          body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">Standings currently unavailable.</td></tr>';
+          return;
+        }
+
+        var html = "";
+        for (var i = 0; i < standings.length; i++) {
+          var s = standings[i];
+          // Highlight the row if it's the favorite team
+          var rowClass = s.isMe ? 'my-team-row' : '';
+
+          html += '<tr class="' + rowClass + '">';
+          html += '  <td>' + s.name + '</td>';
+          html += '  <td>' + s.w + '</td>';
+          html += '  <td>' + s.l + '</td>';
+          html += '  <td>' + s.gb + '</td>';
+          html += '  <td>' + s.streak + '</td>';
+          html += '</tr>';
+        }
+        body.innerHTML = html;
+      }
+
+      function renderUpcoming(upcoming) {
+        var container = document.getElementById('upcomingList');
+        if (!container) return;
+
+        if (!upcoming || upcoming.length === 0) {
+          container.innerHTML = '<div style="padding:10px; color:#999;">No games scheduled.</div>';
+          return;
+        }
+
+        var html = "";
+        for (var i = 0; i < upcoming.length; i++) {
+          var u = upcoming[i];
+          html += '<div class="upcoming-row">';
+          html += '  <span class="up-date">' + u.date + '</span>';
+          html += '  <strong style="flex-grow:1; margin-left:10px;">' + u.opponent + '</strong>';
+          html += '  <span style="color:#666;">' + u.time + '</span>';
+          html += '</div>';
+        }
+        container.innerHTML = html;
+      }
+    </script>
+</body>
+
+</html>

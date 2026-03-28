@@ -1,0 +1,357 @@
+--- START OF FILE GameCards.html ---
+
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --navy: #0046ad; --gold: #fec524; --bg: #f4f7f9; --win: #2e7d32; --loss: #d32f2f; }
+    body { font-family: 'Oswald', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+    
+    .settings-bar { 
+      background: var(--navy); 
+      padding: 8px; 
+      color: white; 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      gap: 4px; 
+      position: sticky; 
+      top: 0; 
+      z-index: 1000; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .picker-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    #teamPicker {
+      padding: 5px 10px; border-radius: 4px; border: 2px solid var(--gold); 
+      font-family: 'Oswald', sans-serif; background: white; color: #333; font-weight: bold;
+      min-width: 170px;
+    }
+
+    #saveStatus { 
+      color: var(--gold); 
+      font-weight: bold; 
+      visibility: hidden; 
+      font-size: 0.6rem; 
+      position: absolute; 
+      bottom: -12px; 
+      text-transform: uppercase;
+    }
+
+    .nav-btn {
+      background: rgba(255,255,255,0.15);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: all 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.3); border-color: white; }
+
+    .container { padding: 15px; max-width: 1200px; margin: auto; }
+    
+    /* Header row styling: Date pushed to the right */
+    .header-row { 
+      display: flex; 
+      justify-content: flex-end; 
+      align-items: center; 
+      border-bottom: 3px solid var(--navy); 
+      margin-bottom: 20px; 
+      padding-bottom: 8px; 
+    }
+    
+    /* Date Picker Styling */
+    .date-wrapper {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 4px 12px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      transition: border-color 0.2s;
+    }
+    .date-wrapper:hover { border-color: var(--navy); }
+
+    #dateDisplay {
+      font-size: 1rem;
+      color: var(--navy);
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    /* Hidden actual input that is triggered by the wrapper */
+    #dateInput {
+      position: absolute;
+      opacity: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+    .card { background: white; border-radius: 8px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 6px solid #ccc; position: relative; }
+    .fav-card { border-left-color: var(--gold); background: #fffdf2; outline: 1px solid var(--gold); }
+
+    .status-line { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; min-height: 30px; }
+    .inning-badge { background: #eee; color: #444; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .live-badge { background: var(--loss); color: white; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+    .diamond { position: relative; width: 24px; height: 24px; transform: rotate(45deg); margin-right: 8px; }
+    .base { position: absolute; width: 7px; height: 7px; border: 1px solid #ccc; background: #fff; }
+    .base.occupied { background: var(--gold); border-color: #b8860b; }
+    .base.b1 { top: 0; right: 0; } .base.b2 { top: 0; left: 0; } .base.b3 { bottom: 0; left: 0; }
+    .outs-container { display: flex; gap: 3px; align-items: center; }
+    .out-dot { width: 7px; height: 7px; border-radius: 50%; border: 1px solid #bbb; background: #eee; }
+    .out-dot.filled { background: var(--loss); border-color: var(--loss); }
+
+    .team-line { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; }
+    .team-info { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 32px; height: 32px; object-fit: contain; }
+    .team-name { font-size: 1.15rem; font-weight: 700; }
+    .score { font-size: 1.6rem; font-weight: 900; color: var(--navy); font-family: 'Roboto Mono', monospace; }
+
+    .pitching-info { font-size: 0.75rem; color: #555; margin-top: 5px; line-height: 1.4; }
+    .pitch-label { font-weight: 900; color: #999; text-transform: uppercase; font-size: 0.6rem; margin-right: 4px; }
+    .stat-tag { background: #f0f0f0; color: #666; padding: 1px 4px; border-radius: 3px; font-size: 0.65rem; margin-left: 5px; font-family: 'Roboto Mono', monospace; }
+
+    .card-footer { margin-top: 8px; padding-top: 5px; font-size: 0.65rem; color: #bbb; display: flex; justify-content: space-between; font-weight: bold; text-transform: uppercase; border-top: 1px solid #f0f0f0; }
+    .loader { text-align: center; padding: 100px; font-size: 1.5rem; color: var(--navy); grid-column: 1/-1; }
+
+    @media (max-width: 500px) {
+      .settings-bar { gap: 4px; }
+      #teamPicker { min-width: 130px; font-size: 0.85rem; }
+      #dateDisplay { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="settings-bar" id="settingsBar">
+    <button class="nav-btn" onclick="changeDate(-1)">◄</button>
+    
+    <div class="picker-container">
+      <select id="teamPicker" onchange="updateFavTeam()">
+        <option value="" disabled selected>-- Select Your Team --</option>
+        <optgroup label="AL EAST">
+          <option value="Baltimore Orioles">Baltimore Orioles</option>
+          <option value="Boston Red Sox">Boston Red Sox</option>
+          <option value="New York Yankees">New York Yankees</option>
+          <option value="Tampa Bay Rays">Tampa Bay Rays</option>
+          <option value="Toronto Blue Jays">Toronto Blue Jays</option>
+        </optgroup>
+        <optgroup label="AL CENTRAL">
+          <option value="Chicago White Sox">Chicago White Sox</option>
+          <option value="Cleveland Guardians">Cleveland Guardians</option>
+          <option value="Detroit Tigers">Detroit Tigers</option>
+          <option value="Kansas City Royals">Kansas City Royals</option>
+          <option value="Minnesota Twins">Minnesota Twins</option>
+        </optgroup>
+        <optgroup label="AL WEST">
+          <option value="Houston Astros">Houston Astros</option>
+          <option value="Los Angeles Angels">Los Angeles Angels</option>
+          <option value="Oakland Athletics">Oakland Athletics</option>
+          <option value="Seattle Mariners">Seattle Mariners</option>
+          <option value="Texas Rangers">Texas Rangers</option>
+        </optgroup>
+        <optgroup label="NL EAST">
+          <option value="Atlanta Braves">Atlanta Braves</option>
+          <option value="Miami Marlins">Miami Marlins</option>
+          <option value="New York Mets">New York Mets</option>
+          <option value="Philadelphia Phillies">Philadelphia Phillies</option>
+          <option value="Washington Nationals">Washington Nationals</option>
+        </optgroup>
+        <optgroup label="NL CENTRAL">
+          <option value="Chicago Cubs">Chicago Cubs</option>
+          <option value="Cincinnati Reds">Cincinnati Reds</option>
+          <option value="Milwaukee Brewers">Milwaukee Brewers</option>
+          <option value="Pittsburgh Pirates">Pittsburgh Pirates</option>
+          <option value="St. Louis Cardinals">St. Louis Cardinals</option>
+        </optgroup>
+        <optgroup label="NL WEST">
+          <option value="Arizona Diamondbacks">Arizona Diamondbacks</option>
+          <option value="Colorado Rockies">Colorado Rockies</option>
+          <option value="Los Angeles Dodgers">Los Angeles Dodgers</option>
+          <option value="San Diego Padres">San Diego Padres</option>
+          <option value="San Francisco Giants">San Francisco Giants</option>
+        </optgroup>
+      </select>
+      <span id="saveStatus">SAVING...</span>
+    </div>
+
+    <button class="nav-btn" onclick="changeDate(1)">►</button>
+  </div>
+
+  <div class="container">
+    <div class="header-row">
+      <!-- Date Picker wrapped in a styled display container -->
+      <div class="date-wrapper">
+        <span id="dateDisplay">Loading Date...</span>
+        <input type="date" id="dateInput" onchange="goToDate()">
+        <span style="font-size: 0.8rem;">📅</span>
+      </div>
+    </div>
+
+    <div id="gameGrid" class="grid">
+      <div class="loader">Fetching Games...</div>
+    </div>
+  </div>
+
+<script>
+    var teamColors = {
+      "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
+      "Boston Red Sox": "#BD3039", "Chicago Cubs": "#0E3386", "Chicago White Sox": "#27251F",
+      "Cincinnati Reds": "#C6011F", "Cleveland Guardians": "#002B5C", "Colorado Rockies": "#333366",
+      "Detroit Tigers": "#0C2340", "Houston Astros": "#002D62", "Kansas City Royals": "#004687",
+      "Los Angeles Angels": "#BA0021", "Los Angeles Dodgers": "#005A9C", "Miami Marlins": "#00A3E0",
+      "Milwaukee Brewers": "#12284B", "Minnesota Twins": "#002B5C", "New York Mets": "#002D72",
+      "New York Yankees": "#003087", "Oakland Athletics": "#003831", "Philadelphia Phillies": "#E81828",
+      "Pittsburgh Pirates": "#FFB81C", "San Diego Padres": "#2F241D", "San Francisco Giants": "#FD5A1E",
+      "Seattle Mariners": "#005C5C", "St. Louis Cardinals": "#C41E3A", "Tampa Bay Rays": "#092C5C",
+      "Texas Rangers": "#003278", "Toronto Blue Jays": "#134A8E", "Washington Nationals": "#AB0003"
+    };
+
+    let currentViewDate = new Date();
+    
+    window.onload = function() { 
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('dateInput').value = today;
+      loadDashboard(); 
+    };
+
+    function loadDashboard(targetDateStr = null) {
+      document.getElementById('gameGrid').innerHTML = '<div class="loader">Fetching Games...</div>';
+      google.script.run.withSuccessHandler(renderDashboard).getAppData("dashboard", targetDateStr);
+    }
+
+    function renderDashboard(data) {
+      var teamColor = teamColors[data.myTeam] || "#0046ad";
+      
+      // Update the hidden date input value
+      document.getElementById('dateInput').value = data.currentDateIso;
+      
+      // Format the date with the Day of the Week
+      const parts = data.currentDateIso.split('-');
+      currentViewDate = new Date(parts[0], parts[1]-1, parts[2]);
+      const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+      document.getElementById('dateDisplay').innerText = currentViewDate.toLocaleDateString('en-US', dateOptions);
+
+      document.getElementById('settingsBar').style.backgroundColor = teamColor;
+      document.documentElement.style.setProperty('--navy', teamColor);
+      document.getElementById('teamPicker').value = data.myTeam;
+      
+      var grid = document.getElementById('gameGrid');
+      if (!data.games || data.games.length === 0) {
+        grid.innerHTML = '<div class="loader">No games found for today.</div>';
+        return;
+      }
+
+      var html = "";
+      for (var i = 0; i < data.games.length; i++) { 
+        var g = data.games[i]; 
+        var isFav = (g.fav === 0);
+        var isInProgress = (g.liveText.indexOf("TOP") > -1 || g.liveText.indexOf("BOT") > -1);
+        var isWarmup = (g.liveText === "WARMUP");
+        var isPreview = (g.status === "Preview" || g.status === "Created"); 
+
+        html += '<div class="card ' + (isFav ? 'fav-card' : '') + '">';
+        html += '<div class="status-line">';
+        html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + '">' + g.liveText + '</span>';
+        if (isInProgress || isWarmup) { html += renderSituation(g); }
+        html += '</div>';
+        html += renderTeamRow(g.awayId, g.away, g.awayScore, isPreview);
+        html += renderTeamRow(g.homeId, g.home, g.homeScore, isPreview);
+        html += '<div class="pitching-info">' + renderPitching(g) + '</div>';
+        html += '<div class="card-footer"><span>TV: ' + (g.tv || "N/A") + '</span><span>' + (g.venue || "") + '</span></div>';
+        html += '</div>'; 
+      } 
+      grid.innerHTML = html; 
+    }
+
+    function renderPitching(g) {
+      if (g.status === "Preview" || g.status === "Created") {
+        return '<div><span class="pitch-label">Away:</span> ' + g.awayStarter + '</div>' +
+               '<div><span class="pitch-label">Home:</span> ' + g.homeStarter + '</div>';
+      } else if (g.status === "Live" || g.status === "In Progress") {
+        var html = '<div><span class="pitch-label">P:</span> ' + (g.currentPitcher || "Warmup...");
+        if (g.pitchCount) { html += '<span class="stat-tag">' + g.pitchCount + ' pitches; ' + g.pitchSummary + '</span>'; }
+        html += '</div>';
+        if (g.currentBatter) {
+          html += '<div><span class="pitch-label">B:</span> ' + g.currentBatter;
+          if (g.batterStats) { html += '<span class="stat-tag">' + g.batterStats + ' (' + g.batterAvg + ')</span>'; }
+          html += '</div>';
+        }
+        return html;
+      } else {
+        return '<div><span class="pitch-label">W:</span> ' + (g.winner || "N/A") + ' | <span class="pitch-label">L:</span> ' + (g.loser || "N/A") + '</div>';
+      }
+    }
+
+    function renderSituation(g) {
+      var outDots = '';
+      for (var i = 1; i <= 2; i++) {
+        var filled = (i <= (g.outs || 0)) ? 'filled' : '';
+        outDots += '<div class="out-dot ' + filled + '"></div>';
+      }
+      return '<div class="situation-container" style="display:flex; align-items:center;">' +
+             '  <div class="diamond">' +
+             '    <div class="base b1 ' + (g.runnerOn1 ? 'occupied' : '') + '"></div>' +
+             '    <div class="base b2 ' + (g.runnerOn2 ? 'occupied' : '') + '"></div>' +
+             '    <div class="base b3 ' + (g.runnerOn3 ? 'occupied' : '') + '"></div>' +
+             '  </div>' +
+             '  <div class="outs-container">' + outDots + '</div>' +
+             '</div>';
+    }
+
+    function renderTeamRow(id, name, score, isPreview) {
+      return '<div class="team-line">' +
+             '  <div class="team-info">' +
+             '    <img class="logo" src="https://www.mlbstatic.com/team-logos/' + id + '.svg">' +
+             '    <span class="team-name">' + name + '</span>' +
+             '  </div>' +
+             '  <span class="score">' + (!isPreview ? score : '') + '</span>' +
+             '</div>';
+    }
+
+    function updateFavTeam() {
+      var team = document.getElementById('teamPicker').value;
+      var status = document.getElementById('saveStatus');
+      status.style.visibility = 'visible';
+      status.innerText = "SAVING...";
+      google.script.run.withSuccessHandler(function() {
+        status.innerText = "SAVED!";
+        loadDashboard(); 
+        setTimeout(function() { status.style.visibility = 'hidden'; }, 2000);
+      }).setFavoriteTeam(team);
+    }
+
+    function changeDate(offset) {
+      currentViewDate.setDate(currentViewDate.getDate() + offset);
+      const dateStr = currentViewDate.toISOString().split('T')[0];
+      loadDashboard(dateStr);
+    }
+
+    function goToDate() {
+      const dateStr = document.getElementById('dateInput').value;
+      if (dateStr) { loadDashboard(dateStr); }
+    }
+</script>
+</body>
+</html>
