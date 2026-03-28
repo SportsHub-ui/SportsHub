@@ -477,3 +477,57 @@ function getDivisionId(teamName) {
 // Ensure compatibility with other parts of your app
 function getTeamIdByName(name) { return getTeamId(name); }
 //function getFavoriteTeam() { return SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Configurations").getRange("B1").getValue(); }
+
+/**
+ * Fetches broadcast schedules for all major sports from the ESPN API
+ */
+function getTvGuideData() {
+  const leagues = [
+    { sport: "baseball", league: "mlb", label: "MLB" },
+    { sport: "basketball", league: "nba", label: "NBA" },
+    { sport: "hockey", league: "nhl", label: "NHL" },
+    { sport: "football", league: "nfl", label: "NFL" },
+    { sport: "basketball", league: "mens-college-basketball", label: "NCAA" }
+  ];
+
+  let allGames = [];
+  const today = Utilities.formatDate(new Date(), "GMT", "yyyyMMdd");
+
+  leagues.forEach(l => {
+    try {
+      const url = `https://site.api.espn.com/apis/site/v2/sports/${l.sport}/${l.league}/scoreboard?dates=${today}`;
+      const response = UrlFetchApp.fetch(url, { 'muteHttpExceptions': true });
+      const data = JSON.parse(response.getContentText());
+      console.log(`DEBUG: URL: ${url}`);
+      console.log(`DEBUG: Fetched TV guide data for ${l.label}:`, JSON.stringify(data, null, 2)); 
+
+
+      if (data.events) {
+        data.events.forEach(ev => {
+          const competition = ev.competitions[0];
+          const broadcast = competition.broadcasts && competition.broadcasts.length > 0 
+                            ? competition.broadcasts[0].names.join(", ") 
+                            : "N/A";
+          
+          const gameTime = new Date(ev.date);
+          
+          allGames.push({
+            league: l.label,
+            name: ev.shortName, // e.g. "MIL @ CHC"
+            time: Utilities.formatDate(gameTime, Session.getScriptTimeZone(), "h:mm a"),
+            network: broadcast,
+            status: ev.status.type.shortDetail,
+            unixTime: gameTime.getTime() // Used for sorting
+          });
+        });
+      }
+    } catch (e) {
+      console.error("Error fetching " + l.label + ": " + e);
+    }
+  });
+
+  // Sort games by time (earliest first)
+  allGames.sort((a, b) => a.unixTime - b.unixTime);
+
+  return allGames;
+}

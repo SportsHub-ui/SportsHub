@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<base target="_top">
-			<meta name="viewport" content="width=device-width, initial-scale=1">
-				<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-					<style>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
     :root {
       --navy: #0046ad;
       --gold: #fec524;
@@ -15,7 +17,13 @@
       --nfl: #013369;
     }
 
-    body { font-family: 'Oswald', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+    body {
+      font-family: 'Oswald', sans-serif;
+      background: var(--bg);
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
 
     /* Sticky Filter Bar */
     .filter-bar {
@@ -24,7 +32,7 @@
       position: sticky;
       top: 0;
       z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       border-bottom: 3px solid var(--navy);
     }
 
@@ -38,7 +46,11 @@
       justify-content: space-between;
     }
 
-    .sport-selectors { display: flex; gap: 10px; flex-wrap: wrap; }
+    .sport-selectors {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
 
     /* Custom Checkbox Pills */
     .pill {
@@ -52,18 +64,41 @@
       user-select: none;
       border: 2px solid transparent;
     }
-    .pill input { display: none; }
-    .pill:has(input:checked) { background: var(--navy); color: white; border-color: var(--gold); }
 
-    .time-filter { display: flex; align-items: center; gap: 10px; min-width: 250px; }
-    #timeSlider { flex-grow: 1; cursor: pointer; accent-color: var(--navy); }
+    .pill input {
+      display: none;
+    }
+
+    .pill:has(input:checked) {
+      background: var(--navy);
+      color: white;
+      border-color: var(--gold);
+    }
+
+    .time-filter {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 250px;
+    }
+
+    #timeSlider {
+      flex-grow: 1;
+      cursor: pointer;
+      accent-color: var(--navy);
+    }
 
     /* Grid Layout */
-    .container { padding: 20px; max-width: 1200px; margin: auto; }
-    .grid { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-      gap: 20px; 
+    .container {
+      padding: 20px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
     }
 
     /* Professional Card */
@@ -71,20 +106,37 @@
       background: white;
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
       border-left: 5px solid #ccc;
       transition: transform 0.2s;
     }
-    .card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
-    
-    /* Sport Color Coding */
-    .card.MLB { border-left-color: var(--mlb); }
-    .card.NBA { border-left-color: var(--nba); }
-    .card.NHL { border-left-color: var(--nhl); }
-    .card.NFL { border-left-color: var(--nfl); }
 
-    .card-body { padding: 15px; }
-    
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Sport Color Coding */
+    .card.MLB {
+      border-left-color: var(--mlb);
+    }
+
+    .card.NBA {
+      border-left-color: var(--nba);
+    }
+
+    .card.NHL {
+      border-left-color: var(--nhl);
+    }
+
+    .card.NFL {
+      border-left-color: var(--nfl);
+    }
+
+    .card-body {
+      padding: 15px;
+    }
+
     .league-badge {
       font-size: 0.65rem;
       background: #f0f0f0;
@@ -94,9 +146,19 @@
       color: #666;
     }
 
-    .matchup { font-size: 1.2rem; font-weight: 700; margin: 10px 0; color: #222; }
-    
-    .info-row { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; }
+    .matchup {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin: 10px 0;
+      color: #222;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 15px;
+    }
 
     .network-tag {
       background: #fff8e1;
@@ -108,82 +170,106 @@
       border: 1px solid #ffeeba;
     }
 
-    .time-tag { font-family: 'Roboto Mono', monospace; font-weight: bold; font-size: 0.9rem; color: var(--navy); }
+    .time-tag {
+      font-family: 'Roboto Mono', monospace;
+      font-weight: bold;
+      font-size: 0.9rem;
+      color: var(--navy);
+    }
 
-    .loader { text-align: center; padding: 100px; grid-column: 1/-1; }
-    .no-results { text-align: center; padding: 50px; grid-column: 1/-1; color: #999; }
+    .loader {
+      text-align: center;
+      padding: 100px;
+      grid-column: 1/-1;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 50px;
+      grid-column: 1/-1;
+      color: #999;
+    }
 
     .now-btn {
-  background: var(--gold);
-  color: var(--navy);
-  border: none;
-  padding: 5px 12px;
-  border-radius: 4px;
-  font-family: 'Oswald', sans-serif;
-  font-weight: bold;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  white-space: nowrap;
-}
+      background: var(--gold);
+      color: var(--navy);
+      border: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-family: 'Oswald', sans-serif;
+      font-weight: bold;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      white-space: nowrap;
+    }
 
-.now-btn:hover {
-  background: #e5b120; /* Slightly darker gold */
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-}
+    .now-btn:hover {
+      background: #e5b120;
+      /* Slightly darker gold */
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    }
 
-.now-btn:active {
-  transform: translateY(0);
-}
-
+    .now-btn:active {
+      transform: translateY(0);
+    }
   </style>
-				</head>
-				<body>
-					<div class="filter-bar">
-						<div class="filter-container">
-							<div class="sport-selectors">
-								<label class="pill">
-									<input type="checkbox" class="sport-check" value="MLB" checked onchange="applyFilters()">MLB</label>
-									<label class="pill">
-										<input type="checkbox" class="sport-check" value="NBA" checked onchange="applyFilters()">NBA</label>
-										<label class="pill">
-											<input type="checkbox" class="sport-check" value="NHL" checked onchange="applyFilters()">NHL</label>
-											<label class="pill">
-												<input type="checkbox" class="sport-check" value="NFL" checked onchange="applyFilters()">NFL</label>
-											</div>
-											<div class="time-filter">
-												<span style="font-size: 0.8rem; font-weight: bold; color: #888;">AFTER</span>
-												<input type="range" id="timeSlider" min="0" max="23" value="0" oninput="applyFilters()">
-													<span id="timeLabel" class="time-tag">12:00 AM</span>
-													<button type="button" class="now-btn" onclick="setNow()">Live Now</button>
-												</div>
-											</div>
-										</div>
-										<div class="container">
-											<div id="guideGrid" class="grid">
-												<div class="loader">
-													<h2 style="color: var(--navy)">Building TV Guide...</h2>
-													<p>Scanning broadcasts across leagues</p>
-												</div>
-											</div>
-										</div>
-										<script>
+</head>
+
+<body>
+  <div class="filter-bar">
+    <div class="filter-container">
+      <div class="sport-selectors">
+        <label class="pill">
+          <input type="checkbox" class="sport-check" value="MLB" checked onchange="applyFilters()">MLB</label>
+        <label class="pill">
+          <input type="checkbox" class="sport-check" value="NBA" checked onchange="applyFilters()">NBA</label>
+        <label class="pill">
+          <input type="checkbox" class="sport-check" value="NHL" checked onchange="applyFilters()">NHL</label>
+        <label class="pill">
+          <input type="checkbox" class="sport-check" value="NFL" checked onchange="applyFilters()">NFL</label>
+      </div>
+      <div class="time-filter">
+        <span style="font-size: 0.8rem; font-weight: bold; color: #888;">AFTER</span>
+        <input type="range" id="timeSlider" min="0" max="23" value="0" oninput="applyFilters()">
+        <span id="timeLabel" class="time-tag">12:00 AM</span>
+        <button type="button" class="now-btn" onclick="setNow()">Live Now</button>
+      </div>
+    </div>
+  </div>
+  <div class="container">
+    <div id="guideGrid" class="grid">
+      <div class="loader">
+        <h2 style="color: var(--navy)">Building TV Guide...</h2>
+        <p>Scanning broadcasts across leagues</p>
+      </div>
+    </div>
+  </div>
+  <script>
     let rawData = []; // Store original data for filtering
 
-    window.onload = function() {
+    window.onload = function () {
+      console.log('DEBUG: window.onload fired');
       // Fetch data from Code.gs
       google.script.run
-        .withSuccessHandler(function(data) {
+        .withSuccessHandler(function (data) {
+          console.log('DEBUG: getTvGuideData success', data);
           rawData = data;
           setNow();
+        })
+        .withFailureHandler(function (err) {
+          console.error('DEBUG: getTvGuideData failed', err);
+          const grid = document.getElementById('guideGrid');
+          if (grid) grid.innerHTML = '<div class="no-results"><h3>Failed to load TV Guide data.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
         })
         .getTvGuideData();
     };
 
     function applyFilters() {
+      console.log('DEBUG: applyFilters called');
       // 1. Get Filter Values
       const selectedLeagues = Array.from(document.querySelectorAll('.sport-check:checked')).map(el => el.value);
       const minHour = parseInt(document.getElementById('timeSlider').value);
@@ -197,10 +283,10 @@
       const filtered = rawData.filter(game => {
         const gameDate = new Date(game.time);
         const gameHour = gameDate.getHours();
-        
+
         const matchesLeague = selectedLeagues.includes(game.league);
         const matchesTime = gameHour >= minHour;
-        
+
         return matchesLeague && matchesTime;
       });
 
@@ -211,17 +297,45 @@
     }
 
     function render(games) {
+      console.log('DEBUG: render called with', games.length, 'games');
       const grid = document.getElementById('guideGrid');
-      
+
       if (games.length === 0) {
-        grid.innerHTML = '<div class="no-results">
-												<h3>No games match your filters for today.</h3>
-											</div>';
+        grid.innerHTML = '<div class="no-results"><h3>No games match your filters for today.</h3></div>';
         return;
       }
-
       let html = '';
-      for (let i = 0; i < games.length; i++) { const g=games[i]; const localTime=new Date(g.time).toLocaleTimeString([], { hour:'2-digit' , minute:'2-digit' }); html +='<div class="card ' + g.league +'">' ; html +='  <div class="card-body">' ; html +='    <span class="league-badge">' + g.league +'< span>' ; html +='    <div class="matchup">' + g.name +'< div>' ; html +='    <div class="info-row">' ; html +='      <div class="network-tag">📺 ' + g.network +'< div>' ; html +='      <div class="time-tag">⏰ ' + localTime +'< div>' ; html +='    </div>' ; html +='  </div>' ; html +='</div>' ; } grid.innerHTML=html; } function setNow() { 1. Get current hour (0-23) const now=new Date(); const currentHour=now.getHours(); 2. Update the slider element const slider=document.getElementById('timeSlider' ); slider.value=currentHour; 3. Trigger the existing filter logic applyFilters(); }
-										</script>
-									</body>
-								</html>
+      for (let i = 0; i < games.length; i++) {
+        const g = games[i];
+        const localTime = new Date(g.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        html += '<div class="card ' + g.league + '">';
+        html += '  <div class="card-body">';
+        html += '    <span class="league-badge">' + g.league + '</span>';
+        html += '    <div class="matchup">' + g.name + '</div>';
+        html += '    <div class="info-row">';
+        html += '      <div class="network-tag">📺 ' + g.network + '</div>';
+        html += '      <div class="time-tag">⏰ ' + localTime + '</div>';
+        html += '    </div>';
+        html += '  </div>';
+        html += '</div>';
+      }
+      grid.innerHTML = html;
+    }
+
+    function setNow() {
+      console.log('DEBUG: setNow called');
+      // 1. Get current hour (0 - 23)
+      const now = new Date();
+      const currentHour = now.getHours();
+
+      // 2. Update the slider element
+      const slider = document.getElementById('timeSlider');
+      slider.value = currentHour;
+
+      // 3. Trigger the existing filter logic
+      applyFilters();
+    }
+  </script>
+</body>
+
+</html>
