@@ -335,6 +335,7 @@ function getRosterData() {
     else if (type === 'Infielder') roster.inf.push(player);
     else if (type === 'Outfielder') roster.out.push(player);
   });
+  console.log('DEBUG: Roster after processing:', JSON.stringify(roster, null, 2));
   return roster;
 }
 

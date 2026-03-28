@@ -27,6 +27,12 @@
       line-height: 0.8; margin: 0; text-transform: uppercase; 
       letter-spacing: -4px;
     }
+    @media (max-width: 700px) {
+      .roster-title {
+        font-size: 3.2rem;
+        letter-spacing: -2px;
+      }
+    }
 
     /* Layout Columns */
     .roster-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; }
@@ -58,14 +64,14 @@
 							<div class="roster-grid">
 								<!-- Left Column -->
 								<div class="col">
-									<div id="inf-section"/>
-									<div id="out-section" style="margin-top:30px;"/>
-									<div id="il-section" style="margin-top:30px;"/>
+                  <div id="inf-section"></div>
+                  <div id="out-section" style="margin-top:30px;"></div>
+                  <div id="il-section" style="margin-top:30px;"></div>
 								</div>
 								<!-- Right Column -->
 								<div class="col">
-									<div id="cat-section"/>
-									<div id="pit-section" style="margin-top:30px;"/>
+                  <div id="cat-section"></div>
+                  <div id="pit-section" style="margin-top:30px;"></div>
 								</div>
 							</div>
 						</div>
