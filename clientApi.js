@@ -387,50 +387,183 @@
     return response;
   }
 
-  function buildAiText(teamGame) {
+  function ordinal(value) {
+    const remainder10 = value % 10;
+    const remainder100 = value % 100;
+    if (remainder10 === 1 && remainder100 !== 11) {
+      return value + "st";
+    }
+    if (remainder10 === 2 && remainder100 !== 12) {
+      return value + "nd";
+    }
+    if (remainder10 === 3 && remainder100 !== 13) {
+      return value + "rd";
+    }
+    return value + "th";
+  }
+
+  function getStandingContext(myTeam, standings) {
+    if (!standings || standings.length === 0) {
+      return null;
+    }
+
+    const teamIndex = standings.findIndex(function (entry) {
+      return entry && entry.name === myTeam;
+    });
+
+    if (teamIndex === -1) {
+      return null;
+    }
+
+    const entry = standings[teamIndex];
+    const gbValue = entry.gb === undefined || entry.gb === null || entry.gb === "" ? "-" : entry.gb;
+
+    return {
+      place: ordinal(teamIndex + 1),
+      wins: entry.w,
+      losses: entry.l,
+      gamesBack: gbValue,
+      streak: entry.streak || "-"
+    };
+  }
+
+  function buildStandingsSentence(myTeam, standings) {
+    const context = getStandingContext(myTeam, standings);
+    if (!context) {
+      return "";
+    }
+
+    const gbText = String(context.gamesBack) === "0" ? "lead the division" : "sit " + context.gamesBack + " games back";
+    return (
+      myTeam +
+      " are " +
+      context.place +
+      " in the division at " +
+      context.wins +
+      "-" +
+      context.losses +
+      " and " +
+      gbText +
+      ", carrying a " +
+      context.streak +
+      " streak."
+    );
+  }
+
+  function buildNextGameSentence(upcoming) {
+    if (!upcoming || upcoming.length === 0) {
+      return "";
+    }
+
+    const nextGame = upcoming[0];
+    return "Next up: " + nextGame.opponent + " on " + nextGame.date + " at " + nextGame.time + ".";
+  }
+
+  function buildLiveSituationSentence(teamGame) {
+    const pieces = [];
+
+    if (teamGame.currentBatter) {
+      let batterText = teamGame.currentBatter;
+      if (teamGame.batterAvg && teamGame.batterLine) {
+        batterText += " (" + teamGame.batterAvg + ", " + teamGame.batterLine + ")";
+      }
+      pieces.push("Current hitter: " + batterText);
+    }
+
+    if (teamGame.currentPitcher) {
+      let pitcherText = teamGame.currentPitcher;
+      if (teamGame.pitchSummary) {
+        pitcherText += " [" + teamGame.pitchSummary + "]";
+      }
+      pieces.push("Pitcher: " + pitcherText);
+    }
+
+    if (teamGame.ballStrikeCount) {
+      pieces.push("Count " + teamGame.ballStrikeCount.replace("B:", "").replace(" S:", "-") + ".");
+    }
+
+    return pieces.join(" ");
+  }
+
+  function buildAiText(teamGame, myTeam, standings, upcoming) {
+    const standingsSentence = buildStandingsSentence(myTeam, standings);
+    const nextGameSentence = buildNextGameSentence(upcoming);
+
     if (!teamGame) {
       return {
         aiLabel: "Team Insight",
-        aiReport: "No game is scheduled for your selected date. Use this off day to check standings trends and probable matchups for the next series."
+        aiReport: [
+          standingsSentence || (myTeam + " have an off day on the selected date."),
+          nextGameSentence || "Use the day off to watch the division race and probable pitching setup for the next series."
+        ].join(" ").trim()
       };
     }
 
+    const myTeamIsAway = teamGame.away === myTeam;
+    const opponent = myTeamIsAway ? teamGame.home : teamGame.away;
+    const myScore = myTeamIsAway ? teamGame.awayScore : teamGame.homeScore;
+    const oppScore = myTeamIsAway ? teamGame.homeScore : teamGame.awayScore;
+    const myStarter = myTeamIsAway ? teamGame.awayStarter : teamGame.homeStarter;
+    const oppStarter = myTeamIsAway ? teamGame.homeStarter : teamGame.awayStarter;
+
     if (teamGame.status === "Final") {
-      const winner = teamGame.awayScore > teamGame.homeScore ? teamGame.away : teamGame.home;
+      const didWin = myScore > oppScore;
+      const margin = Math.abs(myScore - oppScore);
       return {
         aiLabel: "Game Recap",
-        aiReport:
-          winner +
-          " took this one " +
-          teamGame.awayScore +
-          "-" +
-          teamGame.homeScore +
-          ". Watch for how that result shifts momentum heading into the next matchup."
+        aiReport: [
+          myTeam +
+            (didWin ? " beat " : " fell to ") +
+            opponent +
+            " " +
+            myScore +
+            "-" +
+            oppScore +
+            (margin > 1 ? ", a " + margin + "-run decision." : "."),
+          standingsSentence || "",
+          nextGameSentence || ""
+        ].join(" ").trim()
       };
     }
 
     if (teamGame.status === "Live") {
       return {
         aiLabel: "Live Snapshot",
-        aiReport:
-          "Live game state: " +
-          teamGame.liveText +
-          ", with " +
-          teamGame.away +
-          " at " +
-          teamGame.home +
-          ". Key swing factor is bullpen execution once the starters turn it over."
+        aiReport: [
+          myTeam +
+            " are " +
+            teamGame.liveText +
+            " against " +
+            opponent +
+            " at " +
+            teamGame.venue +
+            ", with the score " +
+            myScore +
+            "-" +
+            oppScore +
+            ".",
+          buildLiveSituationSentence(teamGame),
+          standingsSentence || ""
+        ].join(" ").trim()
       };
     }
 
     return {
-      aiLabel: "Matchup Insight",
-      aiReport:
-        "Tonight's pitching matchup is " +
-        teamGame.awayStarter +
-        " vs " +
-        teamGame.homeStarter +
-        ". Early command and limiting free baserunners should decide the game."
+      aiLabel: teamGame.gameDateLabel ? "Next Matchup" : "Matchup Insight",
+      aiReport: [
+        myTeam +
+          " draw " +
+          opponent +
+          " at " +
+          teamGame.venue +
+          ", with " +
+          myStarter +
+          " lined up against " +
+          oppStarter +
+          ".",
+        teamGame.tv && teamGame.tv !== "N/A" ? "TV coverage: " + teamGame.tv + "." : "",
+        standingsSentence || nextGameSentence || ""
+      ].join(" ").trim()
     };
   }
 
@@ -559,7 +692,7 @@
       console.warn("Unable to fetch upcoming games", error);
     }
 
-    const aiContent = buildAiText(teamGame);
+    const aiContent = buildAiText(teamGame, myTeam, standings, upcoming);
 
     if (teamGame) {
       teamGame.awayTeamLineup = teamGame.awayLineup || [];
