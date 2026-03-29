@@ -356,10 +356,12 @@
 
     .modal-content {
       background-color: white;
-      padding: 25px;
+      padding: 20px;
       border-radius: 12px;
       width: 90%;
-      max-width: 500px;
+      max-width: 1120px;
+      max-height: 88vh;
+      overflow-y: auto;
       position: relative;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
       animation: slideIn 0.3s ease-out;
@@ -393,6 +395,284 @@
       padding-bottom: 10px;
     }
 
+    .boxscore-wrap {
+      display: grid;
+      gap: 14px;
+    }
+
+    .modal-game-title {
+      margin: 0;
+      font-size: 1.35rem;
+      color: #152238;
+    }
+
+    .modal-subtitle {
+      font-size: 0.9rem;
+      color: #5c6571;
+      margin-top: 4px;
+    }
+
+    .linescore-card,
+    .hitters-card,
+    .decision-row {
+      border: 1px solid #d8dde4;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .box-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .box-table thead th {
+      background: #f3f6fa;
+      color: #3a4350;
+      font-weight: 700;
+      padding: 8px 6px;
+      border-bottom: 1px solid #d8dde4;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .box-table tbody td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #edf0f3;
+      text-align: center;
+      color: #1d2430;
+    }
+
+    .box-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .box-table thead th.box-rhe {
+      background: #e8eef7;
+      color: #1f3555;
+    }
+
+    .box-table tbody td.box-rhe {
+      background: #f2f6fc;
+      color: #1d2f4a;
+      font-weight: 700;
+    }
+
+    .box-table thead th.box-rhe-start,
+    .box-table tbody td.box-rhe-start {
+      border-left: 2px solid #c6d5ea;
+    }
+
+    .box-team-cell {
+      text-align: left !important;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #0f1a2a;
+      min-width: 160px;
+    }
+
+    .box-team-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .box-team-logo {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .decision-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .decision-col {
+      padding: 10px 12px;
+      border-right: 1px solid #e6e9ee;
+    }
+
+    .decision-col:last-child {
+      border-right: none;
+    }
+
+    .decision-label {
+      font-size: 0.75rem;
+      color: #6d7683;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .decision-name {
+      color: #0058b0;
+      font-size: 1rem;
+      line-height: 1.2;
+    }
+
+    .decision-player {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+    }
+
+    .decision-headshot {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid #d8dde4;
+      background: #f4f6f8;
+      flex: 0 0 auto;
+    }
+
+    .hitters-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .extra-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .hitters-title {
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 1.25rem;
+      color: #1b2533;
+      border-bottom: 1px solid #d8dde4;
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hitters-title-logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .hitters-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .hitters-table thead th {
+      background: #f2f5f9;
+      color: #475263;
+      font-weight: 700;
+      padding: 7px 5px;
+      border-bottom: 1px solid #d8dde4;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .hitters-table td {
+      padding: 7px 5px;
+      border-bottom: 1px solid #edf0f3;
+      text-align: center;
+      color: #1c2532;
+    }
+
+    .hitters-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .hitter-name {
+      text-align: left !important;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      min-width: 170px;
+    }
+
+    .hitter-name.hitter-sub {
+      padding-left: 18px;
+      color: #4a586b;
+      font-size: 0.92rem;
+    }
+
+    .hitter-pos {
+      color: #555;
+      font-size: 0.88em;
+      margin-left: 4px;
+    }
+
+    .detail-muted {
+      color: #6c7580;
+      font-size: 0.85rem;
+    }
+
+    .detail-section {
+      padding: 10px 12px 0;
+      border-bottom: 1px solid #edf0f3;
+    }
+
+    .detail-section:last-of-type {
+      border-bottom: none;
+    }
+
+    .detail-section-title {
+      margin: 0 0 6px;
+      font-size: 0.9rem;
+      color: #27364a;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .detail-list {
+      margin: 0;
+      padding: 0 0 8px;
+      list-style: none;
+    }
+
+    .detail-list li {
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: #303a48;
+      margin: 0 0 4px;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .pitching-table-wrap {
+      padding: 0 0 8px;
+    }
+
+    .pitcher-name {
+      text-align: left !important;
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      min-width: 130px;
+      white-space: nowrap;
+    }
+
+    .pitcher-tag {
+      color: #677286;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.78em;
+      margin-left: 4px;
+    }
+
+    .team-row td {
+      background: #f7f9fb;
+      font-weight: 700;
+      color: #27364a;
+    }
+
     .detail-row {
       display: flex;
       justify-content: space-between;
@@ -409,6 +689,63 @@
 
     .detail-value {
       font-family: 'Roboto Mono', monospace;
+    }
+
+    @media (max-width: 700px) {
+      .modal-content {
+        width: 96%;
+        padding: 14px;
+      }
+
+      .modal-game-title {
+        font-size: 1.05rem;
+      }
+
+      .box-table,
+      .hitters-table {
+        font-size: 0.72rem;
+      }
+
+      .box-team-cell {
+        min-width: 120px;
+        font-size: 0.9rem;
+      }
+
+      .box-team-logo {
+        width: 18px;
+        height: 18px;
+      }
+
+      .hitter-name {
+        min-width: 120px;
+        font-size: 0.86rem;
+      }
+
+      .decision-row {
+        grid-template-columns: 1fr;
+      }
+
+      .decision-col {
+        border-right: none;
+        border-bottom: 1px solid #e6e9ee;
+      }
+
+      .decision-col:last-child {
+        border-bottom: none;
+      }
+
+      .decision-headshot {
+        width: 34px;
+        height: 34px;
+      }
+
+      .hitters-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .extra-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
@@ -697,42 +1034,217 @@
       const dateStr = document.getElementById('dateInput').value;
       if (dateStr) { loadDashboard(dateStr); }
     }
+
+    function escapeHtml(value) {
+      return String(value === undefined || value === null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getTeamLogo(teamId) {
+      return 'https://www.mlbstatic.com/team-logos/' + teamId + '.svg';
+    }
+
+    function getPlayerHeadshot(playerId) {
+      if (!playerId) {
+        return 'https://www.mlbstatic.com/mlb/images/players/head_shot/default.jpg';
+      }
+      return 'https://img.mlbstatic.com/mlb-photos/image/upload/w_120,q_auto:best/v1/people/' + playerId + '/headshot/67/current';
+    }
+
+    function renderLinescore(g) {
+      const innings = (g.linescoreInnings || []).slice(0, 9);
+      while (innings.length < 9) {
+        innings.push({ inning: innings.length + 1, away: '-', home: '-' });
+      }
+
+      const inningHead = innings
+        .map(function (inn) {
+          return '<th>' + inn.inning + '</th>';
+        })
+        .join('');
+
+      const awayCells = innings
+        .map(function (inn) {
+          return '<td>' + inn.away + '</td>';
+        })
+        .join('');
+
+      const homeCells = innings
+        .map(function (inn) {
+          return '<td>' + inn.home + '</td>';
+        })
+        .join('');
+
+      const awayTotals = g.awayTotals || { r: g.awayScore || 0, h: '-', e: '-' };
+      const homeTotals = g.homeTotals || { r: g.homeScore || 0, h: '-', e: '-' };
+
+      return (
+        '<div class="linescore-card">' +
+        '<table class="box-table">' +
+        '<thead><tr><th></th>' +
+        inningHead +
+        '<th class="box-rhe box-rhe-start">R</th><th class="box-rhe">H</th><th class="box-rhe">E</th></tr></thead>' +
+        '<tbody>' +
+        '<tr><td class="box-team-cell"><div class="box-team-wrap"><img class="box-team-logo" alt="" src="' + escapeHtml(getTeamLogo(g.awayId)) + '">' + escapeHtml(g.away) + '</div></td>' +
+        awayCells +
+        '<td class="box-rhe box-rhe-start"><strong>' + escapeHtml(awayTotals.r) + '</strong></td>' +
+        '<td class="box-rhe">' + escapeHtml(awayTotals.h) + '</td>' +
+        '<td class="box-rhe">' + escapeHtml(awayTotals.e) + '</td></tr>' +
+        '<tr><td class="box-team-cell"><div class="box-team-wrap"><img class="box-team-logo" alt="" src="' + escapeHtml(getTeamLogo(g.homeId)) + '">' + escapeHtml(g.home) + '</div></td>' +
+        homeCells +
+        '<td class="box-rhe box-rhe-start"><strong>' + escapeHtml(homeTotals.r) + '</strong></td>' +
+        '<td class="box-rhe">' + escapeHtml(homeTotals.h) + '</td>' +
+        '<td class="box-rhe">' + escapeHtml(homeTotals.e) + '</td></tr>' +
+        '</tbody></table></div>'
+      );
+    }
+
+    function renderDecisionBlock(g) {
+      function renderDecisionCol(label, name, playerId) {
+        return (
+          '<div class="decision-col">' +
+          '<div class="decision-label">' + label + '</div>' +
+          '<div class="decision-player">' +
+          '<img class="decision-headshot" alt="" src="' + escapeHtml(getPlayerHeadshot(playerId)) + '" onerror="this.src=\'https://www.mlbstatic.com/mlb/images/players/head_shot/default.jpg\'">' +
+          '<div class="decision-name">' + escapeHtml(name || 'N/A') + '</div>' +
+          '</div>' +
+          '</div>'
+        );
+      }
+
+      return (
+        '<div class="decision-row">' +
+        renderDecisionCol('Win', g.winner, g.winnerId) +
+        renderDecisionCol('Loss', g.loser, g.loserId) +
+        renderDecisionCol('Save', g.save, g.saveId) +
+        '</div>'
+      );
+    }
+
+    function renderHittersTable(teamName, hitters, teamId) {
+      const rows = (hitters || []).length > 0
+        ? hitters
+          .map(function (h) {
+            const isSub = !!h.isSubstitution || /^[a-z]-\s*/i.test(String(h.name || ''));
+            return (
+              '<tr>' +
+              '<td class="hitter-name' + (isSub ? ' hitter-sub' : '') + '">' + escapeHtml(h.name) + ' <span class="hitter-pos">' + escapeHtml(h.position || '-') + '</span></td>' +
+              '<td>' + escapeHtml(h.ab) + '</td>' +
+              '<td>' + escapeHtml(h.r) + '</td>' +
+              '<td>' + escapeHtml(h.h) + '</td>' +
+              '<td>' + escapeHtml(h.rbi) + '</td>' +
+              '<td>' + escapeHtml(h.hr) + '</td>' +
+              '<td>' + escapeHtml(h.bb) + '</td>' +
+              '<td>' + escapeHtml(h.k) + '</td>' +
+              '<td>' + escapeHtml(h.avg) + '</td>' +
+              '<td>' + escapeHtml(h.obp) + '</td>' +
+              '<td>' + escapeHtml(h.slg) + '</td>' +
+              '</tr>'
+            );
+          })
+          .join('')
+        : '<tr><td colspan="11" class="detail-muted">No hitting details available yet.</td></tr>';
+
+      return (
+        '<div class="hitters-card">' +
+        '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Hitting</h3>' +
+        '<table class="hitters-table">' +
+        '<thead><tr><th style="text-align:left;padding-left:8px;">Hitters</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th><th>SLG</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+        '</table></div>'
+      );
+    }
+
+    function renderInfoSection(title, lines) {
+      if (!lines || lines.length === 0) {
+        return '';
+      }
+
+      return (
+        '<div class="detail-section">' +
+        '<h4 class="detail-section-title">' + escapeHtml(title) + '</h4>' +
+        '<ul class="detail-list">' +
+        lines
+          .map(function (line) {
+            return '<li>' + escapeHtml(line) + '</li>';
+          })
+          .join('') +
+        '</ul>' +
+        '</div>'
+      );
+    }
+
+    function renderPitchingTable(teamName, teamId, pitchers, totals, notes) {
+      const pitchingRows = (pitchers || []).length > 0
+        ? pitchers
+          .map(function (p) {
+            return (
+              '<tr>' +
+              '<td class="pitcher-name">' + escapeHtml(p.name) + (p.decisionTag ? ' <span class="pitcher-tag">(' + escapeHtml(p.decisionTag) + ')</span>' : '') + '</td>' +
+              '<td>' + escapeHtml(p.ip) + '</td>' +
+              '<td>' + escapeHtml(p.h) + '</td>' +
+              '<td>' + escapeHtml(p.r) + '</td>' +
+              '<td>' + escapeHtml(p.er) + '</td>' +
+              '<td>' + escapeHtml(p.bb) + '</td>' +
+              '<td>' + escapeHtml(p.k) + '</td>' +
+              '<td>' + escapeHtml(p.hr) + '</td>' +
+              '<td>' + escapeHtml(p.pcst) + '</td>' +
+              '<td>' + escapeHtml(p.era || '-') + '</td>' +
+              '</tr>'
+            );
+          })
+          .join('')
+        : '<tr><td colspan="10" class="detail-muted">No pitching details available yet.</td></tr>';
+
+      const teamTotals = totals || { ip: '0.0', h: 0, r: 0, er: 0, bb: 0, k: 0, hr: 0, pcst: '-' };
+
+      return (
+        '<div class="hitters-card">' +
+        '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Pitching</h3>' +
+        renderInfoSection('Batting', notes && notes.batting) +
+        renderInfoSection('Baserunning', notes && notes.baserunning) +
+        renderInfoSection('Fielding', notes && notes.fielding) +
+        '<div class="detail-section pitching-table-wrap">' +
+        '<h4 class="detail-section-title">Pitchers</h4>' +
+        '<table class="hitters-table">' +
+        '<thead><tr><th style="text-align:left;padding-left:8px;">Pitchers</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th><th>HR</th><th>PC-ST</th><th>ERA</th></tr></thead>' +
+        '<tbody>' +
+        pitchingRows +
+        '<tr class="team-row"><td class="pitcher-name">TEAM</td><td>' + escapeHtml(teamTotals.ip) + '</td><td>' + escapeHtml(teamTotals.h) + '</td><td>' + escapeHtml(teamTotals.r) + '</td><td>' + escapeHtml(teamTotals.er) + '</td><td>' + escapeHtml(teamTotals.bb) + '</td><td>' + escapeHtml(teamTotals.k) + '</td><td>' + escapeHtml(teamTotals.hr) + '</td><td>' + escapeHtml(teamTotals.pcst) + '</td><td>-</td></tr>' +
+        '</tbody>' +
+        '</table>' +
+        '</div>' +
+        renderInfoSection('Pitching', notes && notes.pitching) +
+        '</div>'
+      );
+    }
+
     function showGameDetails(index) {
       const g = currentGamesData[index];
       const modal = document.getElementById('gameModal');
       const body = document.getElementById('modalBody');
 
-      body.innerHTML = `
-    <div class="modal-header">
-      <h2 style="margin:0">${g.away} @ ${g.home}</h2>
-      <div style="font-size:0.9rem; color:#666;">${g.venue} | ${g.liveText}</div>
-    </div>
-    
-    <div class="detail-row">
-      <span class="detail-label">Away Score</span>
-      <span class="detail-value">${g.awayScore}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Home Score</span>
-      <span class="detail-value">${g.homeScore}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Away Starter</span>
-      <span class="detail-value">${g.awayStarter || 'N/A'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Home Starter</span>
-      <span class="detail-value">${g.homeStarter || 'N/A'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">TV Broadcast</span>
-      <span class="detail-value">${g.tv || 'N/A'}</span>
-    </div>
-    <div class="detail-row">
-      <span class="detail-label">Status</span>
-      <span class="detail-value">${g.status}</span>
-    </div>
-  `;
+      body.innerHTML =
+        '<div class="boxscore-wrap">' +
+        '<div class="modal-header">' +
+        '<h2 class="modal-game-title">' + escapeHtml(g.away) + ' @ ' + escapeHtml(g.home) + '</h2>' +
+        '<div class="modal-subtitle">' + escapeHtml(g.venue || 'Ballpark') + ' | ' + escapeHtml(g.liveText || g.status || '') + ' | TV: ' + escapeHtml(g.tv || 'N/A') + '</div>' +
+        '</div>' +
+        renderLinescore(g) +
+        renderDecisionBlock(g) +
+        '<div class="hitters-grid">' +
+        renderHittersTable(g.away, g.awayHitters, g.awayId) +
+        renderHittersTable(g.home, g.homeHitters, g.homeId) +
+        '</div>' +
+        '<div class="extra-grid">' +
+        renderPitchingTable(g.away, g.awayId, g.awayPitchers, g.awayPitchingTotals, g.awayNotes) +
+        renderPitchingTable(g.home, g.homeId, g.homePitchers, g.homePitchingTotals, g.homeNotes) +
+        '</div>' +
+        '</div>';
 
       modal.style.display = 'flex';
     }

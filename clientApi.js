@@ -204,6 +204,214 @@
     return await res.json();
   }
 
+  function formatTripleSlash(value) {
+    if (value === undefined || value === null || value === "") {
+      return ".000";
+    }
+
+    const text = String(value);
+    if (text === "-") {
+      return ".000";
+    }
+
+    if (text.indexOf("0.") === 0) {
+      return text.replace("0.", ".");
+    }
+
+    return text;
+  }
+
+  function buildHittersFromTeam(teamData) {
+    if (!teamData || !Array.isArray(teamData.batters) || !teamData.players) {
+      return [];
+    }
+
+    const seenBattingSlots = {};
+
+    return teamData.batters
+      .map(function (id) {
+        const p = teamData.players["ID" + id];
+        if (!p || !p.person) {
+          return null;
+        }
+
+        const battingOrderRaw = p.battingOrder ? String(p.battingOrder) : "";
+        const battingOrderNum = battingOrderRaw ? parseInt(battingOrderRaw, 10) : NaN;
+        const slot = Number.isNaN(battingOrderNum) ? null : Math.floor(battingOrderNum / 100);
+        const isSubstitution = slot !== null && slot >= 1 && slot <= 9 && seenBattingSlots[slot] === true;
+
+        if (slot !== null && slot >= 1 && slot <= 9) {
+          seenBattingSlots[slot] = true;
+        }
+
+        const gameBatting = p.stats && p.stats.batting ? p.stats.batting : {};
+        const seasonBatting = p.seasonStats && p.seasonStats.batting ? p.seasonStats.batting : {};
+
+        return {
+          name: p.person.fullName,
+          position: p.position && p.position.abbreviation ? p.position.abbreviation : "-",
+          isSubstitution: isSubstitution,
+          ab: gameBatting.atBats || 0,
+          r: gameBatting.runs || 0,
+          h: gameBatting.hits || 0,
+          rbi: gameBatting.rbi || 0,
+          hr: gameBatting.homeRuns || 0,
+          bb: gameBatting.baseOnBalls || 0,
+          k: gameBatting.strikeOuts || 0,
+          avg: formatTripleSlash(seasonBatting.avg || gameBatting.avg || ".000"),
+          obp: formatTripleSlash(seasonBatting.obp || gameBatting.obp || ".000"),
+          slg: formatTripleSlash(seasonBatting.slg || gameBatting.slg || ".000")
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function buildPitchersFromTeam(teamData, decisions) {
+    if (!teamData || !Array.isArray(teamData.pitchers) || !teamData.players) {
+      return [];
+    }
+
+    return teamData.pitchers
+      .map(function (id) {
+        const p = teamData.players["ID" + id];
+        if (!p || !p.person) {
+          return null;
+        }
+
+        const gamePitching = p.stats && p.stats.pitching ? p.stats.pitching : {};
+        const seasonPitching = p.seasonStats && p.seasonStats.pitching ? p.seasonStats.pitching : {};
+
+        let decisionTag = "";
+        if (decisions && decisions.winnerId && Number(decisions.winnerId) === Number(p.person.id)) {
+          decisionTag = "W";
+        } else if (decisions && decisions.loserId && Number(decisions.loserId) === Number(p.person.id)) {
+          decisionTag = "L";
+        } else if (decisions && decisions.saveId && Number(decisions.saveId) === Number(p.person.id)) {
+          decisionTag = "S";
+        }
+
+        const pitchCount = gamePitching.numberOfPitches !== undefined ? gamePitching.numberOfPitches : "-";
+        const strikes = gamePitching.strikes !== undefined ? gamePitching.strikes : "-";
+
+        return {
+          id: p.person.id,
+          name: p.person.fullName,
+          decisionTag: decisionTag,
+          ip: gamePitching.inningsPitched || "0.0",
+          h: gamePitching.hits || 0,
+          r: gamePitching.runs || 0,
+          er: gamePitching.earnedRuns || 0,
+          bb: gamePitching.baseOnBalls || 0,
+          k: gamePitching.strikeOuts || 0,
+          hr: gamePitching.homeRuns || 0,
+          pcst: pitchCount + "-" + strikes,
+          era: seasonPitching.era || gamePitching.era || "0.00"
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function buildTeamPitchingTotals(teamData) {
+    const teamPitching = teamData && teamData.teamStats && teamData.teamStats.pitching ? teamData.teamStats.pitching : {};
+    const pitchCount = teamPitching.numberOfPitches !== undefined ? teamPitching.numberOfPitches : "-";
+    const strikes = teamPitching.strikes !== undefined ? teamPitching.strikes : "-";
+
+    return {
+      ip: teamPitching.inningsPitched || "0.0",
+      h: teamPitching.hits || 0,
+      r: teamPitching.runs || 0,
+      er: teamPitching.earnedRuns || 0,
+      bb: teamPitching.baseOnBalls || 0,
+      k: teamPitching.strikeOuts || 0,
+      hr: teamPitching.homeRuns || 0,
+      pcst: pitchCount + "-" + strikes
+    };
+  }
+
+  function buildTeamInfoLines(teamData, sectionTitle) {
+    if (!teamData || !Array.isArray(teamData.info)) {
+      return [];
+    }
+
+    const section = teamData.info.find(function (infoBlock) {
+      return infoBlock && String(infoBlock.title || "").toLowerCase() === sectionTitle;
+    });
+
+    if (!section || !Array.isArray(section.fieldList)) {
+      return [];
+    }
+
+    return section.fieldList
+      .map(function (field) {
+        if (!field) {
+          return "";
+        }
+        if (field.label && field.value) {
+          return String(field.label).trim() + ": " + String(field.value).trim();
+        }
+        return String(field.value || field.label || "").trim();
+      })
+      .filter(Boolean);
+  }
+
+  function normalizeNoteEntry(entry) {
+    if (entry === undefined || entry === null) {
+      return "";
+    }
+
+    if (typeof entry === "string" || typeof entry === "number") {
+      return String(entry).trim();
+    }
+
+    if (typeof entry === "object") {
+      if (entry.label && entry.value) {
+        return String(entry.label).trim() + ": " + String(entry.value).trim();
+      }
+
+      if (entry.title && Array.isArray(entry.fieldList)) {
+        return entry.fieldList
+          .map(function (field) {
+            if (!field) {
+              return "";
+            }
+            if (field.label && field.value) {
+              return String(field.label).trim() + ": " + String(field.value).trim();
+            }
+            return String(field.value || field.label || "").trim();
+          })
+          .filter(Boolean)
+          .join("; ");
+      }
+
+      if (entry.text) {
+        return String(entry.text).trim();
+      }
+
+      if (entry.value) {
+        return String(entry.value).trim();
+      }
+    }
+
+    return "";
+  }
+
+  function buildTeamNotes(teamData) {
+    const pitchingNotes = Array.isArray(teamData && teamData.note)
+      ? teamData.note
+          .map(function (line) {
+            return normalizeNoteEntry(line);
+          })
+          .filter(Boolean)
+      : [];
+
+    return {
+      batting: buildTeamInfoLines(teamData, "batting"),
+      baserunning: buildTeamInfoLines(teamData, "baserunning"),
+      fielding: buildTeamInfoLines(teamData, "fielding"),
+      pitching: pitchingNotes
+    };
+  }
+
   async function enrichLiveData(gameObj, gameRaw) {
     try {
       const boxscoreUrl = "https://statsapi.mlb.com/api/v1/game/" + gameRaw.gamePk + "/boxscore";
@@ -226,6 +434,54 @@
           return p ? { name: p.person.fullName, position: (p.position && p.position.abbreviation) || "?" } : null;
         })
         .filter(Boolean);
+
+      const innings = gameRaw.linescore && Array.isArray(gameRaw.linescore.innings) ? gameRaw.linescore.innings : [];
+      gameObj.linescoreInnings = innings.map(function (inning, idx) {
+        return {
+          inning: idx + 1,
+          away: inning.away && inning.away.runs !== undefined ? inning.away.runs : "-",
+          home: inning.home && inning.home.runs !== undefined ? inning.home.runs : "-"
+        };
+      });
+
+      gameObj.awayTotals = {
+        r:
+          gameRaw.linescore && gameRaw.linescore.teams && gameRaw.linescore.teams.away && gameRaw.linescore.teams.away.runs !== undefined
+            ? gameRaw.linescore.teams.away.runs
+            : gameObj.awayScore,
+        h:
+          gameRaw.linescore && gameRaw.linescore.teams && gameRaw.linescore.teams.away && gameRaw.linescore.teams.away.hits !== undefined
+            ? gameRaw.linescore.teams.away.hits
+            : "-",
+        e:
+          gameRaw.linescore && gameRaw.linescore.teams && gameRaw.linescore.teams.away && gameRaw.linescore.teams.away.errors !== undefined
+            ? gameRaw.linescore.teams.away.errors
+            : "-"
+      };
+
+      gameObj.homeTotals = {
+        r:
+          gameRaw.linescore && gameRaw.linescore.teams && gameRaw.linescore.teams.home && gameRaw.linescore.teams.home.runs !== undefined
+            ? gameRaw.linescore.teams.home.runs
+            : gameObj.homeScore,
+        h:
+          gameRaw.linescore && gameRaw.linescore.teams && gameRaw.linescore.teams.home && gameRaw.linescore.teams.home.hits !== undefined
+            ? gameRaw.linescore.teams.home.hits
+            : "-",
+        e:
+          gameRaw.linescore && gameRaw.linescore.teams && gameRaw.linescore.teams.home && gameRaw.linescore.teams.home.errors !== undefined
+            ? gameRaw.linescore.teams.home.errors
+            : "-"
+      };
+
+      gameObj.awayHitters = buildHittersFromTeam(teams.away);
+      gameObj.homeHitters = buildHittersFromTeam(teams.home);
+      gameObj.awayPitchers = buildPitchersFromTeam(teams.away, gameObj);
+      gameObj.homePitchers = buildPitchersFromTeam(teams.home, gameObj);
+      gameObj.awayPitchingTotals = buildTeamPitchingTotals(teams.away);
+      gameObj.homePitchingTotals = buildTeamPitchingTotals(teams.home);
+      gameObj.awayNotes = buildTeamNotes(teams.away);
+      gameObj.homeNotes = buildTeamNotes(teams.home);
 
       if (gameObj.status !== "Live") {
         return;
@@ -335,13 +591,28 @@
       runnerOn2: false,
       runnerOn3: false,
       winner: game.decisions && game.decisions.winner ? game.decisions.winner.fullName : "N/A",
+      winnerId: game.decisions && game.decisions.winner ? game.decisions.winner.id || null : null,
       loser: game.decisions && game.decisions.loser ? game.decisions.loser.fullName : "N/A",
+      loserId: game.decisions && game.decisions.loser ? game.decisions.loser.id || null : null,
+      save: game.decisions && game.decisions.save ? game.decisions.save.fullName : "N/A",
+      saveId: game.decisions && game.decisions.save ? game.decisions.save.id || null : null,
       tv: tvList.length > 0 ? tvList.slice(0, 2).join(", ") : "N/A",
       umpire: "TBD",
       venue: game.venue && game.venue.name ? game.venue.name : "Ballpark",
       fav: game.teams.away.team.id === teamId || game.teams.home.team.id === teamId ? 0 : 1,
       awayLineup: [],
-      homeLineup: []
+      homeLineup: [],
+      awayHitters: [],
+      homeHitters: [],
+      awayPitchers: [],
+      homePitchers: [],
+      awayPitchingTotals: { ip: "0.0", h: 0, r: 0, er: 0, bb: 0, k: 0, hr: 0, pcst: "-" },
+      homePitchingTotals: { ip: "0.0", h: 0, r: 0, er: 0, bb: 0, k: 0, hr: 0, pcst: "-" },
+      awayNotes: { batting: [], baserunning: [], fielding: [], pitching: [] },
+      homeNotes: { batting: [], baserunning: [], fielding: [], pitching: [] },
+      linescoreInnings: [],
+      awayTotals: { r: game.teams.away.score || 0, h: "-", e: "-" },
+      homeTotals: { r: game.teams.home.score || 0, h: "-", e: "-" }
     };
   }
 
