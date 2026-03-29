@@ -19,6 +19,7 @@ This project now runs as a static site on GitHub Pages.
 - `LeagueCards.html` - NFL/NBA league scoreboards (query-driven)
 - `MyTeam.html` - favorite-team dashboard
 - `Roster.html` - roster view
+- `TopNews.html` - cross-sport top headlines
 - `TVGuide.html` - TV schedule view
 
 ## What Changed From Apps Script
@@ -28,7 +29,7 @@ This project now runs as a static site on GitHub Pages.
 - Shared browser data logic is in `clientApi.js`.
 - Pages call public APIs directly:
 	- MLB Stats API for games, standings, roster, lineups
-	- ESPN API for TV guide data
+	- ESPN API for TV guide data, league scoreboards, and news headlines
 
 ## Notes
 

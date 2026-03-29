@@ -74,12 +74,13 @@
     pga: { label: "PGA", icon: "⛳", staticPath: "TVGuide.html?sport=pga", dynamicPage: "tv", sport: "pga" },
     atp: { label: "ATP", icon: "🎾", staticPath: "TVGuide.html?sport=atp", dynamicPage: "tv", sport: "atp" },
     wta: { label: "WTA", icon: "🎾", staticPath: "TVGuide.html?sport=wta", dynamicPage: "tv", sport: "wta" },
+    news: { label: "Top News", icon: "📰", staticPath: "TopNews.html", dynamicPage: "news" },
     tv: { label: "TV", icon: "📺", staticPath: "TVGuide.html", dynamicPage: "tv" },
     home: { label: "Home", staticPath: "index.html", dynamicPage: "home" },
     games: { label: "Games", staticPath: "GameCards.html", dynamicPage: "games" },
     myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" }
   };
-  const SPORTS_NAV_ORDER = ["mlb", "nfl", "nba", "pga", "atp", "wta", "tv"];
+  const SPORTS_NAV_ORDER = ["mlb", "nfl", "nba", "pga", "atp", "wta", "news", "tv"];
 
   function resolvePageKey(pageKey) {
     if (pageKey === "games" || pageKey === "home" || pageKey === "myteam") {
@@ -1570,6 +1571,70 @@
     return allGames;
   }
 
+  async function getTopNewsData(limitPerSport) {
+    const limit = Number(limitPerSport) > 0 ? Number(limitPerSport) : 5;
+    const leagueFeeds = [
+      { key: "mlb", label: "MLB", sport: "baseball", league: "mlb" },
+      { key: "nfl", label: "NFL", sport: "football", league: "nfl" },
+      { key: "nba", label: "NBA", sport: "basketball", league: "nba" },
+      { key: "pga", label: "PGA", sport: "golf", league: "pga" },
+      { key: "atp", label: "ATP", sport: "tennis", league: "atp" },
+      { key: "wta", label: "WTA", sport: "tennis", league: "wta" }
+    ];
+
+    const results = await Promise.all(
+      leagueFeeds.map(async function (feed) {
+        try {
+          const url =
+            "https://site.api.espn.com/apis/site/v2/sports/" +
+            feed.sport +
+            "/" +
+            feed.league +
+            "/news";
+          const payload = await fetchJson(url);
+          const articles = (Array.isArray(payload && payload.articles) ? payload.articles : [])
+            .slice(0, limit)
+            .map(function (article) {
+              const links = article && article.links ? article.links : {};
+              const images = Array.isArray(article && article.images) ? article.images : [];
+              const image = images[0] || {};
+
+              return {
+                id: article && (article.id || article.guid) ? article.id || article.guid : "",
+                headline: article && article.headline ? article.headline : "Top Story",
+                description: article && article.description ? article.description : "",
+                published: article && article.published ? article.published : "",
+                image: image.url || "",
+                source: article && article.source ? article.source : "ESPN",
+                link:
+                  links && links.web && links.web.href
+                    ? links.web.href
+                    : links && links.mobile && links.mobile.href
+                      ? links.mobile.href
+                      : ""
+              };
+            });
+
+          return {
+            key: feed.key,
+            label: feed.label,
+            articles: articles,
+            error: ""
+          };
+        } catch (error) {
+          return {
+            key: feed.key,
+            label: feed.label,
+            articles: [],
+            error: error && error.message ? error.message : String(error)
+          };
+        }
+      })
+    );
+
+    return results;
+  }
+
   window.MLBClient = {
     getFavoriteTeam: getFavoriteTeam,
     setFavoriteTeam: setFavoriteTeam,
@@ -1578,6 +1643,7 @@
     getRosterData: getRosterData,
     getLeagueScoreboardData: getLeagueScoreboardData,
     getLeagueGameDetails: getLeagueGameDetails,
+    getTopNewsData: getTopNewsData,
     getTvGuideData: getTvGuideData,
     getTeamId: getTeamId,
     getPageUrl: getPageUrl,
