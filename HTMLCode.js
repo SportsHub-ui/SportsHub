@@ -364,7 +364,7 @@ function getPostGameSummary(game, apiKey) {
 
   try {
     //const prompt = `Summarize this MLB game result in 2 professional, sporty sentences: 
-    const prompt = `Summarize this MLB game result in 2 professional, sporty sentences. Add a sentence about a strange play in the game: 
+    const prompt = `Summarize this MLB game result in 2 professional, sporty sentences.  
         The ${game.away} scored ${game.awayScore} and the ${game.home} scored ${game.homeScore}. 
         Winner: ${game.winner || 'N/A'}, Loser: ${game.loser || 'N/A'}.`;
 
