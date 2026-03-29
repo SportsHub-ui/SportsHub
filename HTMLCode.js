@@ -126,9 +126,17 @@ function getAppData(currentPage = "dashboard", targetDateStr = null) {
                 }
               }
 
+              // Extract outs and runners on base from linescore
+              if (g.linescore) {
+                gameObj.outs = g.linescore.outs || 0;
+                gameObj.runnerOn1 = !!g.linescore.offense?.first;
+                gameObj.runnerOn2 = !!g.linescore.offense?.second;
+                gameObj.runnerOn3 = !!g.linescore.offense?.third;
+              }
+
               // Extract ball/strike count from linescore
               if (g.linescore?.balls !== undefined && g.linescore?.strikes !== undefined) {
-                gameObj.ballStrikeCount = g.linescore.balls + "-" + g.linescore.strikes;
+                gameObj.ballStrikeCount = "B:" + g.linescore.balls + " S:" + g.linescore.strikes;
               }
 
               // Extract batter info - find the actual current batter in the array
@@ -146,22 +154,25 @@ function getAppData(currentPage = "dashboard", targetDateStr = null) {
                 if (currentBatter) {
                   gameObj.currentBatter = currentBatter.person.fullName;
 
-                  // Access seasonStats.batting directly (not an array)
-                  const battingStats = currentBatter.seasonStats?.batting || currentBatter.stats?.batting;
+                  // Use current game's stats for hits/atBats, but season average for avg
+                  let gameHits = null, gameAtBats = null;
+                  if (currentBatter.stats && currentBatter.stats.batting) {
+                    gameHits = currentBatter.stats.batting.hits || 0;
+                    gameAtBats = currentBatter.stats.batting.atBats || 0;
+                  }
+                  gameObj.batterLine = (gameHits !== null && gameAtBats !== null) ? (gameHits + "-" + gameAtBats) : "-";
 
-                  if (battingStats && Object.keys(battingStats).length > 0) {
-                    const hits = battingStats.hits || 0;
-                    const atBats = battingStats.atBats || 0;
-
-                    gameObj.batterLine = hits + "-" + atBats;
-
-                    if (atBats > 0) {
-                      gameObj.batterAvg = (hits / atBats).toFixed(3).substring(1);
-                    } else if (battingStats.avg) {
-                      gameObj.batterAvg = battingStats.avg.toString().replace('0.', '.');
-                    } else {
-                      gameObj.batterAvg = ".000";
-                    }
+                  // Use season average for batterAvg
+                  let seasonAvg = null;
+                  if (currentBatter.seasonStats && currentBatter.seasonStats.batting && currentBatter.seasonStats.batting.avg) {
+                    seasonAvg = currentBatter.seasonStats.batting.avg;
+                  } else if (currentBatter.stats && currentBatter.stats.batting && currentBatter.stats.batting.avg) {
+                    seasonAvg = currentBatter.stats.batting.avg;
+                  }
+                  if (seasonAvg !== null) {
+                    gameObj.batterAvg = seasonAvg.toString().replace('0.', '.');
+                  } else {
+                    gameObj.batterAvg = ".000";
                   }
                 }
               }
@@ -353,7 +364,7 @@ function getPostGameSummary(game, apiKey) {
 
   try {
     //const prompt = `Summarize this MLB game result in 2 professional, sporty sentences: 
-    const prompt = `Summarize this MLB game result in 2 funny, silly sentences. Add a sentence about a strange play in the game: 
+    const prompt = `Summarize this MLB game result in 2 professional, sporty sentences. Add a sentence about a strange play in the game: 
         The ${game.away} scored ${game.awayScore} and the ${game.home} scored ${game.homeScore}. 
         Winner: ${game.winner || 'N/A'}, Loser: ${game.loser || 'N/A'}.`;
 
