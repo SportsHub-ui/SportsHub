@@ -498,6 +498,7 @@
     </div>
   </div>
 
+  <script src="clientApi.js"></script>
   <script>
 
     let currentGamesData = []; // Store games globally so modal can access them
@@ -529,7 +530,11 @@
 
     function loadDashboard(targetDateStr = null) {
       document.getElementById('gameGrid').innerHTML = '<div class="loader">Fetching Games...</div>';
-      google.script.run.withSuccessHandler(renderDashboard).getAppData("dashboard", targetDateStr);
+      MLBClient.getDashboardData(targetDateStr)
+        .then(renderDashboard)
+        .catch(function (err) {
+          document.getElementById('gameGrid').innerHTML = '<div class="loader">Failed to load games: ' + (err && err.message ? err.message : err) + '</div>';
+        });
     }
 
     function renderDashboard(data) {
@@ -672,11 +677,12 @@
       var status = document.getElementById('saveStatus');
       status.style.visibility = 'visible';
       status.innerText = "SAVING...";
-      google.script.run.withSuccessHandler(function () {
+      MLBClient.setFavoriteTeam(team);
+      setTimeout(function () {
         status.innerText = "SAVED!";
         loadDashboard();
         setTimeout(function () { status.style.visibility = 'hidden'; }, 2000);
-      }).setFavoriteTeam(team);
+      }, 200);
     }
 
     function changeDate(offset) {

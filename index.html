@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLB Board</title>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0046ad;
+      --gold: #fec524;
+      --ink: #102a43;
+      --bg1: #f5f8fc;
+      --bg2: #dbe8f5;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Oswald', sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 20% 10%, white 0%, var(--bg1) 45%, var(--bg2) 100%);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .shell {
+      width: min(920px, 100%);
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0, 30, 60, 0.15);
+      overflow: hidden;
+      border: 1px solid #d7e3ef;
+    }
+
+    .hero {
+      padding: 28px;
+      background: linear-gradient(135deg, var(--navy), #133f88);
+      color: white;
+    }
+
+    .hero h1 {
+      margin: 0;
+      letter-spacing: 0.03em;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      text-transform: uppercase;
+    }
+
+    .hero p {
+      margin: 10px 0 0;
+      opacity: 0.9;
+      font-size: 1rem;
+      font-family: sans-serif;
+    }
+
+    .nav-grid {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      padding: 22px;
+    }
+
+    .nav-card {
+      text-decoration: none;
+      color: inherit;
+      border: 2px solid #dbe6f2;
+      border-radius: 12px;
+      padding: 16px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      background: #fbfdff;
+    }
+
+    .nav-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--gold);
+      box-shadow: 0 10px 20px rgba(0, 44, 101, 0.12);
+    }
+
+    .nav-card strong {
+      display: block;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .nav-card span {
+      font-family: sans-serif;
+      color: #516173;
+      font-size: 0.92rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <h1>MLB Dashboard</h1>
+      <p>GitHub Pages edition. All data now loads directly from public APIs.</p>
+    </section>
+
+    <section class="nav-grid">
+      <a class="nav-card" href="GameCards.html">
+        <strong>Games Dashboard</strong>
+        <span>Daily scoreboard with live state and matchup cards.</span>
+      </a>
+      <a class="nav-card" href="MyTeam.html">
+        <strong>My Team</strong>
+        <span>Focused view for your saved favorite team.</span>
+      </a>
+      <a class="nav-card" href="Roster.html">
+        <strong>Roster</strong>
+        <span>40-man roster grouped by position.</span>
+      </a>
+      <a class="nav-card" href="TVGuide.html">
+        <strong>TV Guide</strong>
+        <span>Cross-league broadcast schedule filters.</span>
+      </a>
+    </section>
+  </main>
+</body>
+</html>

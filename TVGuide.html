@@ -248,24 +248,23 @@
       </div>
     </div>
   </div>
+  <script src="clientApi.js"></script>
   <script>
     let rawData = []; // Store original data for filtering
 
     window.onload = function () {
       console.log('DEBUG: window.onload fired');
-      // Fetch data from Code.gs
-      google.script.run
-        .withSuccessHandler(function (data) {
+      MLBClient.getTvGuideData()
+        .then(function (data) {
           console.log('DEBUG: getTvGuideData success', data);
           rawData = data;
           setNow();
         })
-        .withFailureHandler(function (err) {
+        .catch(function (err) {
           console.error('DEBUG: getTvGuideData failed', err);
           const grid = document.getElementById('guideGrid');
           if (grid) grid.innerHTML = '<div class="no-results"><h3>Failed to load TV Guide data.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
-        })
-        .getTvGuideData();
+        });
     };
 
     function applyFilters() {

@@ -75,9 +75,14 @@
 								</div>
 							</div>
 						</div>
+						<script src="clientApi.js"></script>
 						<script>
     window.onload = function() {
-      google.script.run.withSuccessHandler(renderRoster).getRosterData();
+      MLBClient.getRosterData()
+        .then(renderRoster)
+        .catch(function (err) {
+          document.getElementById('loading').innerText = 'Failed to load roster: ' + (err && err.message ? err.message : err);
+        });
     };
 
     var teamColors = {
