@@ -131,6 +131,40 @@
     return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split("T")[0];
   }
 
+  function formatLocalTime(dateValue) {
+    if (!dateValue) {
+      return "Scheduled";
+    }
+
+    const parsed = new Date(dateValue);
+    if (Number.isNaN(parsed.getTime())) {
+      return "Scheduled";
+    }
+
+    return parsed.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit"
+    });
+  }
+
+  function formatLeagueStatusText(statusType, startTime) {
+    const state = statusType && statusType.state ? statusType.state : "pre";
+
+    if (state === "pre") {
+      return formatLocalTime(startTime);
+    }
+
+    if (state === "post") {
+      return statusType && (statusType.shortDetail || statusType.detail || statusType.description)
+        ? statusType.shortDetail || statusType.detail || statusType.description
+        : "Final";
+    }
+
+    return statusType && (statusType.shortDetail || statusType.detail || statusType.description)
+      ? statusType.shortDetail || statusType.detail || statusType.description
+      : "Live";
+  }
+
   function isAppsScriptWebApp() {
     const host = window.location.hostname.toLowerCase();
     if (
@@ -1158,7 +1192,7 @@
         id: ev.id,
         name: ev.shortName || "Matchup",
         startTime: ev.date,
-        statusShort: statusType.shortDetail || statusType.detail || "Scheduled",
+        statusShort: formatLeagueStatusText(statusType, ev.date),
         statusState: state,
         venue: competition.venue && competition.venue.fullName ? competition.venue.fullName : "",
         network: network,
@@ -1503,7 +1537,10 @@
       gameId: gameId,
       statusDetail:
         headerCompetition && headerCompetition.status && headerCompetition.status.type
-          ? headerCompetition.status.type.shortDetail || headerCompetition.status.type.detail || "Game"
+          ? formatLeagueStatusText(
+              headerCompetition.status.type,
+              headerCompetition.date || (data && data.header ? data.header.date : "")
+            )
           : "Game",
       venue: venue && venue.fullName ? venue.fullName : "",
       city: venue && venue.address ? [venue.address.city || "", venue.address.state || ""].filter(Boolean).join(", ") : "",
