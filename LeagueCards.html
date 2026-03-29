@@ -534,11 +534,23 @@
       margin-left: 4px;
     }
 
-    .nba-dnp {
-      color: #718195;
-      text-align: left;
-      padding-left: 4px !important;
+    .nba-dnp-row {
+      padding: 6px 10px !important;
       white-space: normal !important;
+    }
+
+    .nba-dnp-inline {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .nba-dnp-status {
+      color: #718195;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.9em;
+      letter-spacing: 0.01em;
       overflow-wrap: anywhere;
       word-break: break-word;
     }
@@ -1110,7 +1122,7 @@
 
       var rows = (section.rows || []).map(function (row) {
         if (row.statusText) {
-          return '<tr><td class="nba-player-name">' + row.name + (row.position ? '<span class="nba-player-pos">' + row.position + '</span>' : '') + '</td><td class="nba-dnp" colspan="' + section.headers.length + '">' + row.statusText + '</td></tr>';
+          return '<tr><td class="nba-dnp-row" colspan="' + (section.headers.length + 1) + '"><div class="nba-dnp-inline"><span class="nba-player-name">' + row.name + (row.position ? '<span class="nba-player-pos">' + row.position + '</span>' : '') + '</span><span class="nba-dnp-status">' + row.statusText + '</span></div></td></tr>';
         }
 
         return '<tr><td class="nba-player-name">' + row.name + (row.position ? '<span class="nba-player-pos">' + row.position + '</span>' : '') + '</td>' +
