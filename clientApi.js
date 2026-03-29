@@ -440,7 +440,12 @@
     const dateIso = targetDateStr || toIsoDate(new Date());
     const currentYear = new Date().getFullYear();
 
-    const dashboardData = await getDashboardData(dateIso);
+    let dashboardData = { games: [] };
+    try {
+      dashboardData = await getDashboardData(dateIso);
+    } catch (error) {
+      console.warn("Unable to fetch schedule data", error);
+    }
 
     let teamGame = null;
     for (let i = 0; i < dashboardData.games.length; i += 1) {
@@ -486,16 +491,32 @@
         currentYear +
         "&standingsTypes=regularSeason";
       const standData = await fetchJson(standUrl);
-      const division = (standData.records || []).find(function (r) {
-        return r.division && r.division.id === divisionId;
+      const records = standData.records || [];
+      let division = records.find(function (r) {
+        return r.division && Number(r.division.id) === Number(divisionId);
       });
+
+      // Fallback: find the record set that actually contains the favorite team.
+      if (!division) {
+        division = records.find(function (r) {
+          return (r.teamRecords || []).some(function (tr) {
+            return tr.team && Number(tr.team.id) === Number(teamId);
+          });
+        });
+      }
+
+      // Last-resort fallback prevents a blank table when API grouping is unexpected.
+      if (!division && records.length > 0) {
+        division = records[0];
+      }
+
       if (division) {
         standings = (division.teamRecords || []).map(function (tr) {
           return {
             name: tr.team.name,
             w: tr.wins,
             l: tr.losses,
-            gb: tr.divisionGamesBack,
+            gb: tr.divisionGamesBack || tr.gamesBack || "-",
             streak: tr.streak && tr.streak.streakCode ? tr.streak.streakCode : "-",
             isMe: tr.team.id === teamId
           };

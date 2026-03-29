@@ -429,12 +429,12 @@
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').style.display = 'grid';
 
-        renderMatchup(data.teamGame);
-        renderAI(data.aiReport, data.aiLabel);
+        try { renderMatchup(data.teamGame); } catch(e) { console.error('renderMatchup error', e); }
+        try { renderAI(data.aiReport, data.aiLabel); } catch(e) { console.error('renderAI error', e); }
         // Pass favorite team name to renderLineups
-        renderLineups(data.teamGame, data.myTeam);
-        renderStandings(data.standings);
-        renderUpcoming(data.upcoming);
+        try { renderLineups(data.teamGame, data.myTeam); } catch(e) { console.error('renderLineups error', e); }
+        try { renderStandings(data.standings); } catch(e) { console.error('renderStandings error', e); }
+        try { renderUpcoming(data.upcoming); } catch(e) { console.error('renderUpcoming error', e); }
       }
 
       // New Date Control Functions
