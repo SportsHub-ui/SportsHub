@@ -31,6 +31,5 @@ This project now runs as a static site on GitHub Pages.
 
 ## Notes
 
-- Old Apps Script files are still in the repo for reference (`Main.js`, `HTMLCode.js`, `TeamDashboard.js`, `TeamRoster.js`, `appsscript.json`), but they are not required for GitHub Pages hosting.
 - AI/Gemini server-side generation was replaced with a local matchup insight summary so no secret API key is required in client code.
 
