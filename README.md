@@ -16,6 +16,7 @@ This project now runs as a static site on GitHub Pages.
 
 - `index.html` - landing page
 - `GameCards.html` - league-wide scoreboard
+- `LeagueCards.html` - NFL/NBA league scoreboards (query-driven)
 - `MyTeam.html` - favorite-team dashboard
 - `Roster.html` - roster view
 - `TVGuide.html` - TV schedule view

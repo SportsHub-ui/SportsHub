@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --navy: #0a356f;
+      --accent: #ff9f1c;
+      --bg: #f2f5f9;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: #1f2a38;
+      font-family: 'Oswald', sans-serif;
+    }
+
+    .settings-bar {
+      background: var(--navy);
+      padding: 8px;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: all 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: white;
+    }
+
+    .picker-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    #teamPicker {
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 2px solid var(--accent);
+      font-family: 'Oswald', sans-serif;
+      background: white;
+      color: #333;
+      font-weight: bold;
+      min-width: 170px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .header-title {
+      margin: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-size: 1.1rem;
+    }
+
+    .header-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin: 12px 0 16px;
+      border-bottom: 3px solid var(--navy);
+      padding-bottom: 8px;
+    }
+
+    .date-wrapper {
+      position: relative;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid #ccd6e2;
+      padding: 4px 12px;
+      transition: border-color 0.2s;
+    }
+
+    .date-wrapper:hover {
+      border-color: var(--navy);
+    }
+
+    #dateDisplay {
+      font-size: 0.92rem;
+      color: var(--navy);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    #dateInput {
+      position: absolute;
+      opacity: 0;
+      right: 0;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 14px 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #d9e1ea;
+      box-shadow: 0 3px 8px rgba(26, 40, 58, 0.08);
+      overflow: hidden;
+    }
+
+    .card.fav-card {
+      border-color: rgba(255, 159, 28, 0.55);
+      box-shadow: 0 6px 14px rgba(255, 159, 28, 0.2);
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      border-bottom: 1px solid #e8edf3;
+      background: #f8fbff;
+    }
+
+    .status-pill {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      color: #47576b;
+      background: #e8edf3;
+    }
+
+    .status-pill.live {
+      background: #ffe1df;
+      color: #ab2a22;
+    }
+
+    .status-pill.final {
+      background: #e3f2e7;
+      color: #23613d;
+    }
+
+    .network {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.72rem;
+      color: #5f6e82;
+    }
+
+    .fav-pill {
+      margin-left: 8px;
+      font-size: 0.62rem;
+      background: #fff4de;
+      color: #9c5c04;
+      border: 1px solid #ffd495;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .rows {
+      padding: 10px 12px;
+    }
+
+    .team-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .team-row:last-child {
+      border-bottom: none;
+    }
+
+    .team-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .team-logo {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .team-name {
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .team-rec {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.72rem;
+      color: #6d7c90;
+      margin-left: 4px;
+    }
+
+    .score {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1.45rem;
+      color: #0e355d;
+      font-weight: 700;
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .card-foot {
+      border-top: 1px solid #eef2f7;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: #63758b;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .loader,
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 60px 10px;
+      color: #62768f;
+    }
+
+    @media (max-width: 700px) {
+      .settings-bar {
+        gap: 6px;
+      }
+
+      .header-title {
+        font-size: 0.9rem;
+      }
+
+      #teamPicker {
+        min-width: 130px;
+        font-size: 0.72rem;
+      }
+
+      #dateDisplay {
+        font-size: 0.82rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="siteNav"></div>
+  <div class="settings-bar" id="headerBar">
+    <button class="nav-btn" onclick="changeDate(-1)">◄</button>
+    <div class="picker-container">
+      <select id="teamPicker" onchange="onFavoriteTeamChange()">
+        <option value="">My Team (Optional)</option>
+      </select>
+    </div>
+    <h2 class="header-title" id="pageTitle">League Dashboard</h2>
+    <button class="nav-btn" onclick="changeDate(1)">►</button>
+  </div>
+
+  <div class="container">
+    <div class="header-row">
+      <div class="date-wrapper">
+        <span id="dateDisplay">Loading Date...</span>
+        <input type="date" id="dateInput" onchange="goToDate()">
+        <span style="font-size: 0.8rem;">📅</span>
+      </div>
+    </div>
+
+    <div class="grid" id="gameGrid">
+      <div class="loader">Loading games...</div>
+    </div>
+  </div>
+
+  <script src="clientApi.js"></script>
+  <script>
+    var sportConfig = {
+      nfl: { title: 'NFL Scoreboard', color: '#013369' },
+      nba: { title: 'NBA Scoreboard', color: '#ef420a' }
+    };
+
+    var leagueTeamLists = {
+      nfl: [
+        'Arizona Cardinals', 'Atlanta Falcons', 'Baltimore Ravens', 'Buffalo Bills',
+        'Carolina Panthers', 'Chicago Bears', 'Cincinnati Bengals', 'Cleveland Browns',
+        'Dallas Cowboys', 'Denver Broncos', 'Detroit Lions', 'Green Bay Packers',
+        'Houston Texans', 'Indianapolis Colts', 'Jacksonville Jaguars', 'Kansas City Chiefs',
+        'Las Vegas Raiders', 'Los Angeles Chargers', 'Los Angeles Rams', 'Miami Dolphins',
+        'Minnesota Vikings', 'New England Patriots', 'New Orleans Saints', 'New York Giants',
+        'New York Jets', 'Philadelphia Eagles', 'Pittsburgh Steelers', 'San Francisco 49ers',
+        'Seattle Seahawks', 'Tampa Bay Buccaneers', 'Tennessee Titans', 'Washington Commanders'
+      ],
+      nba: [
+        'Atlanta Hawks', 'Boston Celtics', 'Brooklyn Nets', 'Charlotte Hornets',
+        'Chicago Bulls', 'Cleveland Cavaliers', 'Dallas Mavericks', 'Denver Nuggets',
+        'Detroit Pistons', 'Golden State Warriors', 'Houston Rockets', 'Indiana Pacers',
+        'LA Clippers', 'Los Angeles Lakers', 'Memphis Grizzlies', 'Miami Heat',
+        'Milwaukee Bucks', 'Minnesota Timberwolves', 'New Orleans Pelicans', 'New York Knicks',
+        'Oklahoma City Thunder', 'Orlando Magic', 'Philadelphia 76ers', 'Phoenix Suns',
+        'Portland Trail Blazers', 'Sacramento Kings', 'San Antonio Spurs', 'Toronto Raptors',
+        'Utah Jazz', 'Washington Wizards'
+      ]
+    };
+
+    var nbaTeamColors = {
+      'Atlanta Hawks': '#E03A3E',
+      'Boston Celtics': '#007A33',
+      'Brooklyn Nets': '#111111',
+      'Charlotte Hornets': '#1D1160',
+      'Chicago Bulls': '#CE1141',
+      'Cleveland Cavaliers': '#860038',
+      'Dallas Mavericks': '#00538C',
+      'Denver Nuggets': '#0E2240',
+      'Detroit Pistons': '#C8102E',
+      'Golden State Warriors': '#1D428A',
+      'Houston Rockets': '#CE1141',
+      'Indiana Pacers': '#002D62',
+      'LA Clippers': '#C8102E',
+      'Los Angeles Lakers': '#552583',
+      'Memphis Grizzlies': '#5D76A9',
+      'Miami Heat': '#98002E',
+      'Milwaukee Bucks': '#00471B',
+      'Minnesota Timberwolves': '#0C2340',
+      'New Orleans Pelicans': '#0C2340',
+      'New York Knicks': '#006BB6',
+      'Oklahoma City Thunder': '#007AC1',
+      'Orlando Magic': '#0077C0',
+      'Philadelphia 76ers': '#006BB6',
+      'Phoenix Suns': '#1D1160',
+      'Portland Trail Blazers': '#E03A3E',
+      'Sacramento Kings': '#5A2D81',
+      'San Antonio Spurs': '#111111',
+      'Toronto Raptors': '#CE1141',
+      'Utah Jazz': '#002B5C',
+      'Washington Wizards': '#002B5C'
+    };
+
+    var nflTeamColors = {
+      'Arizona Cardinals': '#97233F',
+      'Atlanta Falcons': '#A71930',
+      'Baltimore Ravens': '#241773',
+      'Buffalo Bills': '#00338D',
+      'Carolina Panthers': '#0085CA',
+      'Chicago Bears': '#0B162A',
+      'Cincinnati Bengals': '#FB4F14',
+      'Cleveland Browns': '#311D00',
+      'Dallas Cowboys': '#003594',
+      'Denver Broncos': '#FB4F14',
+      'Detroit Lions': '#0076B6',
+      'Green Bay Packers': '#203731',
+      'Houston Texans': '#03202F',
+      'Indianapolis Colts': '#002C5F',
+      'Jacksonville Jaguars': '#006778',
+      'Kansas City Chiefs': '#E31837',
+      'Las Vegas Raiders': '#000000',
+      'Los Angeles Chargers': '#0080C6',
+      'Los Angeles Rams': '#003594',
+      'Miami Dolphins': '#008E97',
+      'Minnesota Vikings': '#4F2683',
+      'New England Patriots': '#002244',
+      'New Orleans Saints': '#D3BC8D',
+      'New York Giants': '#0B2265',
+      'New York Jets': '#125740',
+      'Philadelphia Eagles': '#004C54',
+      'Pittsburgh Steelers': '#FFB612',
+      'San Francisco 49ers': '#AA0000',
+      'Seattle Seahawks': '#002244',
+      'Tampa Bay Buccaneers': '#D50A0A',
+      'Tennessee Titans': '#0C2340',
+      'Washington Commanders': '#5A1414'
+    };
+
+    var currentSport = 'nfl';
+    var currentDate = new Date();
+    var lastPayload = null;
+
+    function favoriteStorageKey() {
+      return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
+    }
+
+    function getFavoriteLeagueTeam() {
+      return localStorage.getItem(favoriteStorageKey()) || '';
+    }
+
+    function setFavoriteLeagueTeam(teamName) {
+      if (!teamName) {
+        localStorage.removeItem(favoriteStorageKey());
+        return '';
+      }
+      localStorage.setItem(favoriteStorageKey(), teamName);
+      return teamName;
+    }
+
+    function toIso(date) {
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    }
+
+    function parseSportFromQuery() {
+      var params = new URLSearchParams(window.location.search);
+      var sport = (params.get('sport') || '').toLowerCase();
+      return sportConfig[sport] ? sport : 'nfl';
+    }
+
+    function setPageTheme() {
+      var conf = sportConfig[currentSport] || sportConfig.nfl;
+      var favorite = getFavoriteLeagueTeam();
+      var color = conf.color;
+      if (currentSport === 'nba' && favorite && nbaTeamColors[favorite]) {
+        color = nbaTeamColors[favorite];
+      }
+      if (currentSport === 'nfl' && favorite && nflTeamColors[favorite]) {
+        color = nflTeamColors[favorite];
+      }
+
+      document.getElementById('pageTitle').innerText = conf.title;
+      document.documentElement.style.setProperty('--navy', color);
+      document.getElementById('headerBar').style.background = color;
+      MLBClient.renderSiteNav(currentSport, 'siteNav');
+    }
+
+    function updateDateDisplay() {
+      var dateIso = toIso(currentDate);
+      document.getElementById('dateInput').value = dateIso;
+      var label = currentDate.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('dateDisplay').innerText = label;
+    }
+
+    function statusClass(state) {
+      if (state === 'in') return 'live';
+      if (state === 'post') return 'final';
+      return '';
+    }
+
+    function syncTeamPicker(games) {
+      var picker = document.getElementById('teamPicker');
+      var currentFavorite = getFavoriteLeagueTeam();
+      var teams = [];
+      var seen = {};
+
+      (leagueTeamLists[currentSport] || []).forEach(function (name) {
+        if (!name || seen[name]) {
+          return;
+        }
+        seen[name] = true;
+        teams.push(name);
+      });
+
+      (games || []).forEach(function (g) {
+        [g.away && g.away.name, g.home && g.home.name].forEach(function (name) {
+          if (!name || seen[name]) {
+            return;
+          }
+          seen[name] = true;
+          teams.push(name);
+        });
+      });
+
+      if (currentFavorite && !seen[currentFavorite]) {
+        teams.push(currentFavorite);
+      }
+
+      teams.sort(function (a, b) {
+        return a.localeCompare(b);
+      });
+
+      var html = '<option value="">My Team (Optional)</option>';
+      teams.forEach(function (name) {
+        html += '<option value="' + name.replace(/"/g, '&quot;') + '">' + name + '</option>';
+      });
+      picker.innerHTML = html;
+      picker.value = currentFavorite;
+    }
+
+    function sortGamesByFavorite(games) {
+      var favorite = getFavoriteLeagueTeam();
+      var sorted = (games || []).slice();
+      sorted.sort(function (a, b) {
+        var aFav = favorite && (a.away.name === favorite || a.home.name === favorite) ? 0 : 1;
+        var bFav = favorite && (b.away.name === favorite || b.home.name === favorite) ? 0 : 1;
+        if (aFav !== bFav) {
+          return aFav - bFav;
+        }
+        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+      });
+      return sorted;
+    }
+
+    function renderGames(payload) {
+      var grid = document.getElementById('gameGrid');
+      var games = payload && payload.games ? sortGamesByFavorite(payload.games) : [];
+      var favorite = getFavoriteLeagueTeam();
+
+      syncTeamPicker(payload && payload.games ? payload.games : []);
+
+      if (!games.length) {
+        grid.innerHTML = '<div class="empty">No games found for this date.</div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < games.length; i++) {
+        var g = games[i];
+        var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+        var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
+        html += '<article class="card ' + (isFavoriteGame ? 'fav-card' : '') + '">';
+        html += '<div class="card-head">';
+        html += '<span class="status-pill ' + statusClass(g.statusState) + '">' + (g.statusShort || 'Scheduled') + '</span>';
+        if (isFavoriteGame) {
+          html += '<span class="fav-pill">My Team</span>';
+        }
+        html += '<span class="network">' + (g.network || 'N/A') + '</span>';
+        html += '</div>';
+
+        html += '<div class="rows">';
+        html += '<div class="team-row">';
+        html += '<div class="team-main"><img class="team-logo" src="' + (g.away.logo || '') + '" alt=""><span class="team-name">' + g.away.name + '</span><span class="team-rec">' + (g.away.record || '') + '</span></div>';
+        html += '<div class="score">' + (g.away.score || '0') + '</div>';
+        html += '</div>';
+
+        html += '<div class="team-row">';
+        html += '<div class="team-main"><img class="team-logo" src="' + (g.home.logo || '') + '" alt=""><span class="team-name">' + g.home.name + '</span><span class="team-rec">' + (g.home.record || '') + '</span></div>';
+        html += '<div class="score">' + (g.home.score || '0') + '</div>';
+        html += '</div>';
+        html += '</div>';
+
+        html += '<div class="card-foot"><span>' + localTime + '</span><span>' + (g.venue || '') + '</span></div>';
+        html += '</article>';
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function loadLeague() {
+      document.getElementById('gameGrid').innerHTML = '<div class="loader">Loading games...</div>';
+      MLBClient.getLeagueScoreboardData(currentSport, toIso(currentDate))
+        .then(function (payload) {
+          lastPayload = payload;
+          renderGames(payload);
+        })
+        .catch(function (err) {
+          document.getElementById('gameGrid').innerHTML = '<div class="empty">Failed to load games: ' + (err && err.message ? err.message : err) + '</div>';
+        });
+    }
+
+    function changeDate(offset) {
+      currentDate.setDate(currentDate.getDate() + offset);
+      updateDateDisplay();
+      loadLeague();
+    }
+
+    function goToDate() {
+      var dateStr = document.getElementById('dateInput').value;
+      if (!dateStr) {
+        return;
+      }
+      var parts = dateStr.split('-');
+      currentDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      updateDateDisplay();
+      loadLeague();
+    }
+
+    function onFavoriteTeamChange() {
+      var picker = document.getElementById('teamPicker');
+      setFavoriteLeagueTeam(picker.value || '');
+      setPageTheme();
+      if (lastPayload) {
+        renderGames(lastPayload);
+      }
+    }
+
+    window.onload = function () {
+      currentSport = parseSportFromQuery();
+      setPageTheme();
+      updateDateDisplay();
+      loadLeague();
+    };
+  </script>
+</body>
+
+</html>

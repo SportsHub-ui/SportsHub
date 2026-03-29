@@ -56,39 +56,12 @@
       text-align: center;
     }
 
-    .nav-grid {
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-      padding: 22px;
-    }
-
-    .nav-card {
-      text-decoration: none;
-      color: inherit;
-      border: 2px solid #dbe6f2;
-      border-radius: 12px;
-      padding: 16px;
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-      background: #fbfdff;
-    }
-
-    .nav-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--gold);
-      box-shadow: 0 10px 20px rgba(0, 44, 101, 0.12);
-    }
-
-    .nav-card strong {
-      display: block;
-      font-size: 1.1rem;
-      margin-bottom: 4px;
-    }
-
-    .nav-card span {
+    .landing-note {
+      padding: 28px;
+      text-align: center;
       font-family: sans-serif;
-      color: #516173;
-      font-size: 0.92rem;
+      color: #41556d;
+      font-size: 0.98rem;
     }
   </style>
 </head>
@@ -101,29 +74,14 @@
     </section>
 
     <div id="siteNav"></div>
-
-    <section class="nav-grid">
-      <a class="nav-card" id="gamesLink" href="GameCards.html">
-        <strong>Games Dashboard</strong>
-        <span>Daily scoreboard with live state and matchup cards.</span>
-      </a>
-      <a class="nav-card" id="myTeamLink" href="MyTeam.html">
-        <strong>My Team</strong>
-        <span>Focused view for your saved favorite team.</span>
-      </a>
-      <a class="nav-card" id="tvLink" href="TVGuide.html">
-        <strong>TV Guide</strong>
-        <span>Cross-league broadcast schedule filters.</span>
-      </a>
+    <section class="landing-note">
+      Use the sports menu above to jump between MLB, league views, and TV schedule.
     </section>
   </main>
 
   <script src="clientApi.js"></script>
   <script>
-    MLBClient.renderSiteNav('home', 'siteNav');
-    document.getElementById('gamesLink').href = MLBClient.getPageUrl('games');
-    document.getElementById('myTeamLink').href = MLBClient.getPageUrl('myteam');
-    document.getElementById('tvLink').href = MLBClient.getPageUrl('tv');
+    MLBClient.renderSiteNav('mlb', 'siteNav');
   </script>
 </body>
 </html>

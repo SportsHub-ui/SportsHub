@@ -44,6 +44,28 @@
       position: relative;
     }
 
+    .myteam-btn {
+      background: rgba(255, 255, 255, 0.16);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      padding: 6px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .myteam-btn:hover {
+      background: rgba(255, 255, 255, 0.28);
+      border-color: #fff;
+      transform: translateY(-1px);
+    }
+
     #teamPicker {
       padding: 5px 10px;
       border-radius: 4px;
@@ -767,6 +789,7 @@
   </div>
 
   <div class="settings-bar" id="settingsBar">
+    <button class="myteam-btn" onclick="MLBClient.navigateToPage('myteam')">My Team</button>
     <button class="nav-btn" onclick="changeDate(-1)">◄</button>
 
     <div class="picker-container">

@@ -68,11 +68,32 @@
   const FAVORITE_KEY = "MY_FAV_TEAM";
   const DEFAULT_TEAM = "Milwaukee Brewers";
   const PAGE_ROUTES = {
+    mlb: { label: "MLB", icon: "⚾", staticPath: "GameCards.html", dynamicPage: "games" },
+    nfl: { label: "NFL", icon: "🏈", staticPath: "LeagueCards.html?sport=nfl", dynamicPage: "tv", sport: "nfl" },
+    nba: { label: "NBA", icon: "🏀", staticPath: "LeagueCards.html?sport=nba", dynamicPage: "tv", sport: "nba" },
+    pga: { label: "PGA", icon: "⛳", staticPath: "TVGuide.html?sport=pga", dynamicPage: "tv", sport: "pga" },
+    atp: { label: "ATP", icon: "🎾", staticPath: "TVGuide.html?sport=atp", dynamicPage: "tv", sport: "atp" },
+    wta: { label: "WTA", icon: "🎾", staticPath: "TVGuide.html?sport=wta", dynamicPage: "tv", sport: "wta" },
+    tv: { label: "TV", icon: "📺", staticPath: "TVGuide.html", dynamicPage: "tv" },
     home: { label: "Home", staticPath: "index.html", dynamicPage: "home" },
     games: { label: "Games", staticPath: "GameCards.html", dynamicPage: "games" },
-    myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" },
-    tv: { label: "TV Guide", staticPath: "TVGuide.html", dynamicPage: "tv" }
+    myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" }
   };
+  const SPORTS_NAV_ORDER = ["mlb", "nfl", "nba", "pga", "atp", "wta", "tv"];
+
+  function resolvePageKey(pageKey) {
+    if (pageKey === "games" || pageKey === "home" || pageKey === "myteam") {
+      return "mlb";
+    }
+    return PAGE_ROUTES[pageKey] ? pageKey : "mlb";
+  }
+
+  function resolveRouteKey(pageKey) {
+    if (pageKey === "games" || pageKey === "home" || pageKey === "myteam") {
+      return pageKey;
+    }
+    return PAGE_ROUTES[pageKey] ? pageKey : "mlb";
+  }
 
   function getFavoriteTeam() {
     return localStorage.getItem(FAVORITE_KEY) || DEFAULT_TEAM;
@@ -124,7 +145,8 @@
   }
 
   function getPageUrl(pageKey) {
-    const route = PAGE_ROUTES[pageKey] || PAGE_ROUTES.games;
+    const resolvedKey = resolveRouteKey(pageKey);
+    const route = PAGE_ROUTES[resolvedKey] || PAGE_ROUTES.mlb;
 
     if (!isAppsScriptWebApp()) {
       return route.staticPath;
@@ -132,6 +154,11 @@
 
     const url = new URL(window.location.href);
     url.searchParams.set("page", route.dynamicPage);
+    if (route.sport) {
+      url.searchParams.set("sport", route.sport);
+    } else {
+      url.searchParams.delete("sport");
+    }
     return url.toString();
   }
 
@@ -151,14 +178,14 @@
       "display:flex;justify-content:center;padding:16px 16px 8px;" +
       "}" +
       ".site-nav__rail{" +
-      "display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;" +
-      "background:rgba(0,70,173,0.08);border:1px solid rgba(0,70,173,0.12);" +
-      "padding:10px 12px;border-radius:999px;backdrop-filter:blur(6px);" +
+      "display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;" +
+      "background:rgba(0,70,173,0.08);border:1px solid rgba(0,70,173,0.14);" +
+      "padding:8px 10px;border-radius:12px;backdrop-filter:blur(6px);" +
       "}" +
       ".site-nav__link{" +
       "text-decoration:none;color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;" +
-      "font-size:0.95rem;letter-spacing:0.03em;text-transform:uppercase;font-weight:700;" +
-      "padding:8px 14px;border-radius:999px;border:1px solid transparent;" +
+      "font-size:0.82rem;letter-spacing:0.02em;text-transform:uppercase;font-weight:700;" +
+      "padding:7px 10px;border-radius:999px;border:1px solid transparent;display:inline-flex;align-items:center;gap:5px;" +
       "transition:background-color 0.2s ease,color 0.2s ease,border-color 0.2s ease,transform 0.2s ease;" +
       "}" +
       ".site-nav__link:hover{" +
@@ -167,10 +194,20 @@
       ".site-nav__link.is-active{" +
       "background:var(--navy,#0046ad);color:#fff;border-color:var(--navy,#0046ad);" +
       "}" +
+      ".site-nav__icon{font-size:0.9rem;line-height:1;}" +
+      ".site-nav__sublink{" +
+      "margin-left:6px;text-decoration:none;color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;" +
+      "font-size:0.78rem;letter-spacing:0.02em;text-transform:uppercase;font-weight:700;" +
+      "padding:6px 10px;border-radius:999px;border:1px solid rgba(0,70,173,0.22);" +
+      "background:rgba(255,255,255,0.75);transition:all 0.2s ease;" +
+      "}" +
+      ".site-nav__sublink:hover{background:rgba(0,70,173,0.1);}" +
+      ".site-nav__sublink.is-active{background:var(--navy,#0046ad);color:#fff;border-color:var(--navy,#0046ad);}" +
       "@media (max-width: 600px){" +
       ".site-nav{padding:12px 12px 6px;}" +
-      ".site-nav__rail{border-radius:18px;padding:10px;gap:8px;}" +
-      ".site-nav__link{font-size:0.82rem;padding:7px 10px;}" +
+      ".site-nav__rail{border-radius:10px;padding:8px;gap:6px;}" +
+      ".site-nav__link{font-size:0.72rem;padding:6px 8px;}" +
+      ".site-nav__sublink{font-size:0.7rem;padding:5px 8px;}" +
       "}";
 
     document.head.appendChild(style);
@@ -180,10 +217,11 @@
     ensureNavStyles();
 
     const mountNode = mountId ? document.getElementById(mountId) : null;
-    const linksHtml = Object.keys(PAGE_ROUTES)
+    const resolvedCurrent = resolvePageKey(currentPageKey);
+    const linksHtml = SPORTS_NAV_ORDER
       .map(function (pageKey) {
         const route = PAGE_ROUTES[pageKey];
-        const isActive = pageKey === currentPageKey;
+        const isActive = pageKey === resolvedCurrent;
         return (
           '<a class="site-nav__link' +
           (isActive ? ' is-active' : '') +
@@ -192,12 +230,22 @@
           '"' +
           (isActive ? ' aria-current="page"' : '') +
           '>' +
+          '<span class="site-nav__icon">' + (route.icon || "") + '</span>' +
           route.label +
           '</a>'
         );
       })
       .join("");
-    const navHtml = '<nav class="site-nav" aria-label="Site"><div class="site-nav__rail">' + linksHtml + '</div></nav>';
+    const subLinkHtml =
+      resolvedCurrent === "mlb"
+        ? '<a class="site-nav__sublink' +
+          (currentPageKey === "myteam" ? ' is-active' : '') +
+          '" href="' +
+          getPageUrl("myteam") +
+          '">My Team</a>'
+        : "";
+    const navHtml =
+      '<nav class="site-nav" aria-label="Sports"><div class="site-nav__rail">' + linksHtml + subLinkHtml + '</div></nav>';
 
     if (mountNode) {
       mountNode.innerHTML = navHtml;
@@ -1043,6 +1091,89 @@
     return roster;
   }
 
+  async function getLeagueScoreboardData(leagueKey, dateIso) {
+    const leagueMap = {
+      nfl: { sport: "football", league: "nfl", label: "NFL" },
+      nba: { sport: "basketball", league: "nba", label: "NBA" }
+    };
+
+    const key = String(leagueKey || "").toLowerCase();
+    const config = leagueMap[key];
+    if (!config) {
+      throw new Error("Unsupported league: " + leagueKey);
+    }
+
+    let dateParam = "";
+    if (dateIso) {
+      dateParam = String(dateIso).replace(/-/g, "");
+    } else {
+      dateParam = toIsoDate(new Date()).replace(/-/g, "");
+    }
+
+    const url =
+      "https://site.api.espn.com/apis/site/v2/sports/" +
+      config.sport +
+      "/" +
+      config.league +
+      "/scoreboard?dates=" +
+      dateParam;
+
+    const data = await fetchJson(url);
+    const events = data.events || [];
+
+    const games = events.map(function (ev) {
+      const competition = ev.competitions && ev.competitions[0] ? ev.competitions[0] : {};
+      const competitors = Array.isArray(competition.competitors) ? competition.competitors : [];
+
+      let away = null;
+      let home = null;
+      competitors.forEach(function (c) {
+        const side = c && c.homeAway;
+        const normalized = {
+          name: c && c.team ? c.team.displayName || c.team.shortDisplayName || "Team" : "Team",
+          abbr: c && c.team ? c.team.abbreviation || "" : "",
+          logo: c && c.team && c.team.logo ? c.team.logo : "",
+          score: c && c.score !== undefined ? c.score : "0",
+          record:
+            c && Array.isArray(c.records) && c.records[0] && c.records[0].summary
+              ? c.records[0].summary
+              : ""
+        };
+
+        if (side === "home") {
+          home = normalized;
+        } else if (side === "away") {
+          away = normalized;
+        }
+      });
+
+      const broadcasts = Array.isArray(competition.broadcasts) ? competition.broadcasts : [];
+      const network = broadcasts.length > 0 && broadcasts[0].names ? broadcasts[0].names.join(", ") : "N/A";
+
+      const statusType = ev.status && ev.status.type ? ev.status.type : {};
+      const state = statusType.state || "pre";
+
+      return {
+        id: ev.id,
+        name: ev.shortName || "Matchup",
+        startTime: ev.date,
+        statusShort: statusType.shortDetail || statusType.detail || "Scheduled",
+        statusState: state,
+        venue: competition.venue && competition.venue.fullName ? competition.venue.fullName : "",
+        network: network,
+        away: away || { name: "Away", abbr: "", logo: "", score: "0", record: "" },
+        home: home || { name: "Home", abbr: "", logo: "", score: "0", record: "" }
+      };
+    });
+
+    return {
+      leagueKey: key,
+      leagueLabel: config.label,
+      currentDateIso: dateParam.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3"),
+      games: games
+    };
+  }
+
   async function getTvGuideData() {
     const leagues = [
       { sport: "baseball", league: "mlb", label: "MLB" },
@@ -1099,6 +1230,7 @@
     getDashboardData: getDashboardData,
     getMyTeamData: getMyTeamData,
     getRosterData: getRosterData,
+    getLeagueScoreboardData: getLeagueScoreboardData,
     getTvGuideData: getTvGuideData,
     getTeamId: getTeamId,
     getPageUrl: getPageUrl,

@@ -252,9 +252,41 @@
   <script src="clientApi.js"></script>
   <script>
     let rawData = []; // Store original data for filtering
+    let sportFilterFromUrl = null;
+
+    function getSportFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const sport = (params.get('sport') || '').toLowerCase();
+      return sport || null;
+    }
+
+    function applyQuerySportSelection() {
+      const sportMap = {
+        mlb: ['MLB'],
+        nba: ['NBA'],
+        nfl: ['NFL'],
+        nhl: ['NHL'],
+        pga: [],
+        atp: [],
+        wta: [],
+        tv: ['MLB', 'NBA', 'NHL', 'NFL']
+      };
+
+      const allowed = sportMap[sportFilterFromUrl || 'tv'];
+      if (!allowed) {
+        return;
+      }
+
+      const checks = Array.from(document.querySelectorAll('.sport-check'));
+      checks.forEach(function (el) {
+        el.checked = allowed.indexOf(el.value) > -1;
+      });
+    }
 
     window.onload = function () {
-      MLBClient.renderSiteNav('tv', 'siteNav');
+      sportFilterFromUrl = getSportFromQuery();
+      MLBClient.renderSiteNav(sportFilterFromUrl || 'tv', 'siteNav');
+      applyQuerySportSelection();
       console.log('DEBUG: window.onload fired');
       MLBClient.getTvGuideData()
         .then(function (data) {
