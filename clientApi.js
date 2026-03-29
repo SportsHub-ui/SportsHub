@@ -98,14 +98,24 @@
     return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split("T")[0];
   }
 
-  function isStaticHtmlRoute() {
-    return /\.html$/i.test(window.location.pathname);
+  function isAppsScriptWebApp() {
+    const host = window.location.hostname.toLowerCase();
+    if (
+      host === "script.google.com" ||
+      host.endsWith(".script.google.com") ||
+      host === "script.googleusercontent.com" ||
+      host.endsWith(".script.googleusercontent.com")
+    ) {
+      return true;
+    }
+
+    return !!(window.google && window.google.script && window.google.script.run);
   }
 
   function getPageUrl(pageKey) {
     const route = PAGE_ROUTES[pageKey] || PAGE_ROUTES.games;
 
-    if (isStaticHtmlRoute()) {
+    if (!isAppsScriptWebApp()) {
       return route.staticPath;
     }
 
