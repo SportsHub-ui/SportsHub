@@ -216,6 +216,7 @@
     .now-btn:active {
       transform: translateY(0);
     }
+
   </style>
 </head>
 
@@ -235,7 +236,7 @@
       </div>
       <div class="time-filter">
         <span style="font-size: 0.8rem; font-weight: bold; color: #888;">AFTER</span>
-        <input type="range" id="timeSlider" min="0" max="23" value="0" oninput="applyFilters()">
+        <input type="range" id="timeSlider" min="0" max="23" value="0" oninput="updateTimeLabel(); applyFilters()">
         <span id="timeLabel" class="time-tag">12:00 AM</span>
         <button type="button" class="now-btn" onclick="setNow()">Live Now</button>
       </div>
@@ -307,12 +308,7 @@
       const selectedLeagues = Array.from(document.querySelectorAll('.sport-check:checked')).map(el => el.value);
       const minHour = parseInt(document.getElementById('timeSlider').value);
 
-      // 2. Update Time Label
-      const ampm = minHour >= 12 ? 'PM' : 'AM';
-      const displayHour = minHour % 12 || 12;
-      document.getElementById('timeLabel').innerText = displayHour + ':00 ' + ampm;
-
-      // 3. Filter Data
+      // 2. Filter Data
       const filtered = rawData.filter(game => {
         const gameDate = new Date(game.time);
         const gameHour = gameDate.getHours();
@@ -323,10 +319,17 @@
         return matchesLeague && matchesTime;
       });
 
-      // 4. Sort by time
+      // 3. Sort by time
       filtered.sort((a, b) => new Date(a.time) - new Date(b.time));
 
       render(filtered);
+    }
+
+    function updateTimeLabel() {
+      const minHour = parseInt(document.getElementById('timeSlider').value);
+      const ampm = minHour >= 12 ? 'PM' : 'AM';
+      const displayHour = minHour % 12 || 12;
+      document.getElementById('timeLabel').innerText = displayHour + ':00 ' + ampm;
     }
 
     function render(games) {
@@ -364,6 +367,8 @@
       // 2. Update the slider element
       const slider = document.getElementById('timeSlider');
       slider.value = currentHour;
+
+      updateTimeLabel();
 
       // 3. Trigger the existing filter logic
       applyFilters();

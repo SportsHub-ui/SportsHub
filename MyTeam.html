@@ -284,10 +284,9 @@
     #dateInput {
       position: absolute;
       opacity: 0;
-      right: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       cursor: pointer;
+      z-index: 1;
     }
 
     .roster-modal-overlay {
@@ -424,7 +423,7 @@
   <div class="container" style="max-width: 1100px; margin: auto; padding: 0 20px;">
     <!-- Date Selector Row -->
     <div class="header-row">
-      <div class="date-wrapper">
+      <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
@@ -536,6 +535,7 @@
         // Set initial date input to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('dateInput').value = today;
+        previewSelectedDate();
         fetchMyTeamData();
       };
 
@@ -582,16 +582,49 @@
         try { renderUpcoming(data.upcoming); } catch(e) { console.error('renderUpcoming error', e); }
       }
 
+      function openDatePicker() {
+        var input = document.getElementById('dateInput');
+        if (!input) {
+          return;
+        }
+        if (typeof input.showPicker === 'function') {
+          input.showPicker();
+          return;
+        }
+        input.focus();
+        input.click();
+      }
+
+      function toLocalIso(date) {
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+      }
+
+      function previewSelectedDate() {
+        const dateStr = document.getElementById('dateInput').value;
+        if (!dateStr) {
+          return;
+        }
+        const parts = dateStr.split('-');
+        currentViewDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        document.getElementById('dateDisplay').innerText = currentViewDate.toLocaleDateString('en-US', dateOptions);
+      }
+
       // New Date Control Functions
       function changeDate(offset) {
         currentViewDate.setDate(currentViewDate.getDate() + offset);
-        const dateStr = currentViewDate.toISOString().split('T')[0];
+        const dateStr = toLocalIso(currentViewDate);
+        document.getElementById('dateInput').value = dateStr;
+        previewSelectedDate();
         fetchMyTeamData(dateStr);
       }
 
       function goToDate() {
         const dateStr = document.getElementById('dateInput').value;
-        if (dateStr) { fetchMyTeamData(dateStr); }
+        if (dateStr) {
+          previewSelectedDate();
+          fetchMyTeamData(dateStr);
+        }
       }
 
       function renderAI(text, label) {

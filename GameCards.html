@@ -150,10 +150,9 @@
     #dateInput {
       position: absolute;
       opacity: 0;
-      right: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       cursor: pointer;
+      z-index: 1;
     }
 
     .grid {
@@ -847,7 +846,7 @@
   <div class="container">
     <div class="header-row">
       <!-- Date Picker wrapped in a styled display container -->
-      <div class="date-wrapper">
+      <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
@@ -883,11 +882,8 @@
       MLBClient.renderSiteNav('games', 'siteNav');
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('dateInput').value = today;
+      previewSelectedDate();
       loadDashboard();
-      // Auto-refresh every 2 minutes
-      setInterval(function () {
-        loadDashboard(document.getElementById('dateInput').value);
-      }, 120000);
     };
 
     function loadDashboard(targetDateStr = null) {
@@ -1047,15 +1043,52 @@
       }, 200);
     }
 
+    function openDatePicker() {
+      var input = document.getElementById('dateInput');
+      if (!input) {
+        return;
+      }
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+        return;
+      }
+      input.focus();
+      input.click();
+    }
+
+    function toLocalIso(date) {
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    }
+
+    function previewSelectedDate() {
+      var dateStr = document.getElementById('dateInput').value;
+      if (!dateStr) {
+        return;
+      }
+      var parts = dateStr.split('-');
+      currentViewDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      document.getElementById('dateDisplay').innerText = currentViewDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
     function changeDate(offset) {
       currentViewDate.setDate(currentViewDate.getDate() + offset);
-      const dateStr = currentViewDate.toISOString().split('T')[0];
+      const dateStr = toLocalIso(currentViewDate);
+      document.getElementById('dateInput').value = dateStr;
+      previewSelectedDate();
       loadDashboard(dateStr);
     }
 
     function goToDate() {
       const dateStr = document.getElementById('dateInput').value;
-      if (dateStr) { loadDashboard(dateStr); }
+      if (dateStr) {
+        previewSelectedDate();
+        loadDashboard(dateStr);
+      }
     }
 
     function escapeHtml(value) {

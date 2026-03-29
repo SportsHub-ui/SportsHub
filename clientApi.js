@@ -1174,6 +1174,352 @@
     };
   }
 
+  function normalizeLeagueCompetitor(competitor) {
+    if (!competitor) {
+      return {
+        id: "",
+        name: "Team",
+        shortName: "Team",
+        abbr: "",
+        logo: "",
+        score: "0",
+        record: "",
+        teamColor: "",
+        alternateColor: "",
+        homeAway: "",
+        winner: false,
+        linescores: []
+      };
+    }
+
+    const team = competitor.team || {};
+
+    return {
+      id: team.id || "",
+      name: team.displayName || team.shortDisplayName || "Team",
+      shortName: team.shortDisplayName || team.displayName || "Team",
+      abbr: team.abbreviation || "",
+      logo: resolveTeamLogo(team),
+      score: competitor.score !== undefined ? competitor.score : "0",
+      record:
+        Array.isArray(competitor.records) && competitor.records[0] && competitor.records[0].summary
+          ? competitor.records[0].summary
+          : "",
+      teamColor: team.color ? "#" + String(team.color).replace(/^#/, "") : "",
+      alternateColor: team.alternateColor ? "#" + String(team.alternateColor).replace(/^#/, "") : "",
+      homeAway: competitor.homeAway || "",
+      winner: competitor.winner === true,
+      linescores: Array.isArray(competitor.linescores)
+        ? competitor.linescores.map(function (line, index) {
+            return {
+              period: line.period !== undefined ? line.period : index + 1,
+              value: line.displayValue || line.value || "-"
+            };
+          })
+        : []
+    };
+  }
+
+  function resolveTeamLogo(team) {
+    if (!team) {
+      return "";
+    }
+
+    if (team.logo) {
+      return team.logo;
+    }
+
+    const logos = Array.isArray(team.logos) ? team.logos : [];
+    if (!logos.length) {
+      return "";
+    }
+
+    const scoreboardLogo = logos.find(function (entry) {
+      return Array.isArray(entry && entry.rel) && entry.rel.indexOf("scoreboard") !== -1 && entry.href;
+    });
+    if (scoreboardLogo && scoreboardLogo.href) {
+      return scoreboardLogo.href;
+    }
+
+    const defaultLogo = logos.find(function (entry) {
+      return Array.isArray(entry && entry.rel) && entry.rel.indexOf("default") !== -1 && entry.href;
+    });
+    if (defaultLogo && defaultLogo.href) {
+      return defaultLogo.href;
+    }
+
+    return logos[0] && logos[0].href ? logos[0].href : "";
+  }
+
+  function humanizeStatKey(key) {
+    const raw = String(key || "").trim();
+    if (!raw) {
+      return "";
+    }
+
+    return raw
+      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+      .replace(/[-_]/g, " ")
+      .replace(/\s+/g, " ")
+      .replace(/\bpct\b/i, "%")
+      .replace(/\bfg\b/gi, "FG")
+      .replace(/\bft\b/gi, "FT")
+      .replace(/\bast\b/gi, "AST")
+      .replace(/\breb\b/gi, "REB")
+      .replace(/\bstl\b/gi, "STL")
+      .replace(/\bblk\b/gi, "BLK")
+      .replace(/\bto\b/gi, "TO")
+      .replace(/\boreb\b/gi, "OREB")
+      .replace(/\bdreb\b/gi, "DREB")
+      .replace(/\b3 pt\b/gi, "3PT")
+      .replace(/(^|\s)([a-z])/g, function (_, lead, char) {
+        return lead + char.toUpperCase();
+      });
+  }
+
+  function normalizeStatSection(section) {
+    const headersSource = Array.isArray(section && section.labels) && section.labels.length > 0
+      ? section.labels
+      : Array.isArray(section && section.names) && section.names.length > 0
+        ? section.names
+        : section && section.keys
+          ? section.keys
+          : [];
+    const descriptions = Array.isArray(section && section.descriptions) ? section.descriptions : [];
+    const headers = headersSource.map(function (header, index) {
+      const label = header || descriptions[index] || "";
+      return String(label || "").trim() || humanizeStatKey(section && section.keys ? section.keys[index] : "");
+    });
+
+    const athletes = Array.isArray(section && section.athletes) ? section.athletes : [];
+    const rows = athletes.map(function (athleteEntry) {
+      const athlete = athleteEntry && athleteEntry.athlete ? athleteEntry.athlete : {};
+      const jersey = athlete.jersey ? " #" + athlete.jersey : "";
+      const position = athlete.position && athlete.position.abbreviation ? athlete.position.abbreviation : "";
+      const stats = Array.isArray(athleteEntry && athleteEntry.stats) ? athleteEntry.stats : [];
+      let statusText = "";
+
+      if ((!stats || stats.length === 0) && athleteEntry) {
+        statusText = athleteEntry.reason || athleteEntry.comment || athleteEntry.displayValue || athleteEntry.note || "";
+      }
+
+      return {
+        name: (athlete.displayName || "Player") + jersey,
+        position: position,
+        values: stats,
+        statusText: statusText
+      };
+    });
+
+    return {
+      title: section && (section.displayName || section.label || section.name) ? String(section.displayName || section.label || section.name).toUpperCase() : "STATS",
+      headers: headers,
+      rows: rows,
+      totals: Array.isArray(section && section.totals) ? section.totals : []
+    };
+  }
+
+  function normalizeLeaderGroups(leaders) {
+    return (Array.isArray(leaders) ? leaders : []).map(function (group) {
+      const team = group && group.team ? group.team : {};
+      const items = Array.isArray(group && group.leaders)
+        ? group.leaders.map(function (category) {
+            const entry = Array.isArray(category && category.leaders) && category.leaders[0] ? category.leaders[0] : {};
+            const athlete = entry && entry.athlete ? entry.athlete : {};
+            const headshot = athlete && athlete.headshot ? athlete.headshot.href || athlete.headshot : "";
+            return {
+              label: category && (category.displayName || category.name) ? String(category.displayName || category.name) : "Leader",
+              athleteName: athlete.displayName || athlete.shortName || entry.displayValue || "Leader",
+              value: entry && entry.mainStat ? [entry.mainStat.value || "", entry.mainStat.label || ""].filter(Boolean).join(" ") : entry.displayValue || entry.value || "",
+              summary: entry.summary || "",
+              teamAbbr: team.abbreviation || "",
+              teamLogo: resolveTeamLogo(team),
+              image: headshot
+            };
+          })
+        : [];
+
+      return {
+        title: (team.displayName || team.shortDisplayName || group && (group.displayName || group.name) || "Leaders").toUpperCase(),
+        teamAbbr: team.abbreviation || "",
+        teamLogo: resolveTeamLogo(team),
+        items: items
+      };
+    });
+  }
+
+  function normalizeTeamStatBlocks(teamBlocks) {
+    return (Array.isArray(teamBlocks) ? teamBlocks : []).map(function (teamBlock) {
+      const team = teamBlock && teamBlock.team ? teamBlock.team : {};
+      return {
+        team: {
+          name: team.displayName || team.shortDisplayName || "Team",
+          abbr: team.abbreviation || "",
+          logo: resolveTeamLogo(team),
+          color: team.color ? "#" + String(team.color).replace(/^#/, "") : ""
+        },
+        stats: Array.isArray(teamBlock && teamBlock.statistics)
+          ? teamBlock.statistics.map(function (entry) {
+              return {
+                label:
+                  entry && (entry.label || entry.displayName || entry.abbreviation)
+                    ? entry.label || entry.displayName || entry.abbreviation
+                    : humanizeStatKey(entry && entry.name ? entry.name : "Stat"),
+                value: entry && entry.displayValue !== undefined ? entry.displayValue : entry && entry.value !== undefined ? entry.value : ""
+              };
+            })
+          : []
+      };
+    });
+  }
+
+  function normalizeOfficials(officials) {
+    return (Array.isArray(officials) ? officials : []).map(function (official) {
+      return {
+        name: official && official.fullName ? official.fullName : official && official.displayName ? official.displayName : "Official",
+        role: official && (official.position || official.type) ? official.position || official.type : ""
+      };
+    });
+  }
+
+  function normalizeBroadcasts(broadcasts) {
+    return (Array.isArray(broadcasts) ? broadcasts : []).map(function (broadcast) {
+      if (Array.isArray(broadcast && broadcast.names) && broadcast.names.length) {
+        return broadcast.names.join(", ");
+      }
+      const market = broadcast && broadcast.market ? broadcast.market.type || broadcast.market.name || "" : "";
+      const media = broadcast && broadcast.media ? broadcast.media.shortName || broadcast.media.name || "" : "";
+      const label = [market, media].filter(Boolean).join(": ");
+      return label || broadcast && broadcast.name ? broadcast.name : "";
+    }).filter(Boolean);
+  }
+
+  function normalizeOdds(odds) {
+    const primary = Array.isArray(odds) && odds[0] ? odds[0] : null;
+    if (!primary) {
+      return null;
+    }
+
+    return {
+      details: primary.details || "",
+      overUnder: primary.overUnder || "",
+      provider: primary.provider && primary.provider.name ? primary.provider.name : ""
+    };
+  }
+
+  function normalizeSituation(situation) {
+    if (!situation) {
+      return null;
+    }
+
+    return {
+      downDistanceText: situation.downDistanceText || "",
+      lastPlayText: situation.lastPlay && situation.lastPlay.text ? situation.lastPlay.text : "",
+      possessionText:
+        situation.possession && situation.possession.abbreviation
+          ? situation.possession.abbreviation + " ball"
+          : ""
+    };
+  }
+
+  function buildPeriodLabels(leagueKey, awayLines, homeLines) {
+    const count = Math.max(awayLines.length, homeLines.length, leagueKey === "nfl" ? 4 : 4);
+    const labels = [];
+    for (let i = 0; i < count; i++) {
+      if (leagueKey === "nfl") {
+        labels.push(i < 4 ? "Q" + (i + 1) : "OT" + (i === 4 ? "" : i - 3));
+      } else {
+        labels.push(i < 4 ? String(i + 1) : "OT" + (i === 4 ? "" : i - 3));
+      }
+    }
+    return labels;
+  }
+
+  function normalizePlayerBoxes(playerBlocks) {
+    return (Array.isArray(playerBlocks) ? playerBlocks : []).map(function (teamBlock) {
+      const team = teamBlock && teamBlock.team ? teamBlock.team : {};
+      return {
+        team: {
+          name: team.displayName || team.shortDisplayName || "Team",
+          abbr: team.abbreviation || "",
+          logo: resolveTeamLogo(team),
+          color: team.color ? "#" + String(team.color).replace(/^#/, "") : ""
+        },
+        sections: Array.isArray(teamBlock && teamBlock.statistics)
+          ? teamBlock.statistics.map(function (section) {
+              return normalizeStatSection(section);
+            })
+          : []
+      };
+    });
+  }
+
+  async function getLeagueGameDetails(leagueKey, gameId) {
+    const leagueMap = {
+      nba: { sport: "basketball", league: "nba", label: "NBA" },
+      nfl: { sport: "football", league: "nfl", label: "NFL" }
+    };
+
+    const key = String(leagueKey || "").toLowerCase();
+    const config = leagueMap[key];
+    if (!config) {
+      throw new Error("Unsupported game details league: " + leagueKey);
+    }
+
+    const url =
+      "https://site.api.espn.com/apis/site/v2/sports/" +
+      config.sport +
+      "/" +
+      config.league +
+      "/summary?event=" +
+      encodeURIComponent(gameId);
+
+    const data = await fetchJson(url);
+    const headerCompetition = data && data.header && Array.isArray(data.header.competitions) ? data.header.competitions[0] : {};
+    const competitors = Array.isArray(headerCompetition && headerCompetition.competitors) ? headerCompetition.competitors : [];
+
+    let away = null;
+    let home = null;
+    competitors.forEach(function (competitor) {
+      if (competitor && competitor.homeAway === "away") {
+        away = normalizeLeagueCompetitor(competitor);
+      }
+      if (competitor && competitor.homeAway === "home") {
+        home = normalizeLeagueCompetitor(competitor);
+      }
+    });
+
+    const boxscorePlayers = data && data.boxscore && Array.isArray(data.boxscore.players) ? data.boxscore.players : [];
+    const teamBoxes = normalizePlayerBoxes(boxscorePlayers);
+    const teamStats = normalizeTeamStatBlocks(data && data.boxscore ? data.boxscore.teams : []);
+    const venue = headerCompetition && headerCompetition.venue ? headerCompetition.venue : {};
+    const broadcasts = normalizeBroadcasts(headerCompetition && headerCompetition.broadcasts);
+    const attendance = headerCompetition && headerCompetition.attendance ? headerCompetition.attendance : data && data.gameInfo ? data.gameInfo.attendance : "";
+
+    return {
+      leagueKey: key,
+      leagueLabel: config.label,
+      gameId: gameId,
+      statusDetail:
+        headerCompetition && headerCompetition.status && headerCompetition.status.type
+          ? headerCompetition.status.type.shortDetail || headerCompetition.status.type.detail || "Game"
+          : "Game",
+      venue: venue && venue.fullName ? venue.fullName : "",
+      city: venue && venue.address ? [venue.address.city || "", venue.address.state || ""].filter(Boolean).join(", ") : "",
+      attendance: attendance || "",
+      broadcasts: broadcasts,
+      odds: normalizeOdds(data && data.odds),
+      situation: normalizeSituation(data && data.situation),
+      officials: normalizeOfficials(data && data.officials),
+      leaders: normalizeLeaderGroups(data && data.leaders),
+      periodLabels: buildPeriodLabels(key, away ? away.linescores : [], home ? home.linescores : []),
+      away: away || normalizeLeagueCompetitor(null),
+      home: home || normalizeLeagueCompetitor(null),
+      teamBoxes: teamBoxes,
+      teamStats: teamStats
+    };
+  }
+
   async function getTvGuideData() {
     const leagues = [
       { sport: "baseball", league: "mlb", label: "MLB" },
@@ -1231,6 +1577,7 @@
     getMyTeamData: getMyTeamData,
     getRosterData: getRosterData,
     getLeagueScoreboardData: getLeagueScoreboardData,
+    getLeagueGameDetails: getLeagueGameDetails,
     getTvGuideData: getTvGuideData,
     getTeamId: getTeamId,
     getPageUrl: getPageUrl,

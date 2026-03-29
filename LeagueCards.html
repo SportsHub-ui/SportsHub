@@ -117,10 +117,9 @@
     #dateInput {
       position: absolute;
       opacity: 0;
-      right: 0;
-      width: 100%;
-      height: 100%;
+      inset: 0;
       cursor: pointer;
+      z-index: 1;
     }
 
     .container {
@@ -141,6 +140,16 @@
       border: 1px solid #d9e1ea;
       box-shadow: 0 3px 8px rgba(26, 40, 58, 0.08);
       overflow: hidden;
+    }
+
+    .card.is-clickable {
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card.is-clickable:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(26, 40, 58, 0.14);
     }
 
     .card.fav-card {
@@ -269,6 +278,429 @@
       color: #62768f;
     }
 
+    .detail-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2200;
+      background: rgba(6, 14, 24, 0.72);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .detail-modal {
+      background: #fff;
+      width: min(1060px, 100%);
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 14px;
+      border-top: 5px solid var(--detail-away, #17345b);
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+    }
+
+    .detail-modal-header {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: linear-gradient(90deg, var(--detail-away, #17345b), var(--detail-home, #446586));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .detail-title {
+      margin: 0;
+      font-size: 1.15rem;
+      color: #fff;
+      text-transform: uppercase;
+    }
+
+    .detail-close {
+      border: none;
+      background: transparent;
+      color: #fff;
+      font-size: 1.6rem;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .detail-body {
+      padding: 14px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .nba-summary {
+      border: 1px solid #dce4ee;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .nba-summary-top {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e9eef4;
+      background: linear-gradient(135deg, rgba(22, 52, 91, 0.05), rgba(255, 255, 255, 0.94) 50%, rgba(22, 52, 91, 0.04));
+    }
+
+    .nba-side {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .nba-side.is-home {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .nba-logo {
+      width: 42px;
+      height: 42px;
+      object-fit: contain;
+      flex: 0 0 auto;
+    }
+
+    .nba-team-meta {
+      min-width: 0;
+    }
+
+    .nba-team-name {
+      font-size: 1.15rem;
+      color: #112943;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .nba-team-record {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.78rem;
+      color: #66778c;
+    }
+
+    .nba-score-block {
+      text-align: center;
+      min-width: 240px;
+    }
+
+    .nba-status {
+      font-family: 'Roboto Mono', monospace;
+      color: #43566e;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .nba-scoreline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 1.25rem;
+      color: #0f2e54;
+      font-weight: 700;
+    }
+
+    .nba-scoreline strong {
+      font-size: 2.3rem;
+      line-height: 1;
+    }
+
+    .nba-linescore {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.78rem;
+    }
+
+    .nba-linescore th,
+    .nba-linescore td {
+      padding: 7px 6px;
+      text-align: center;
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .nba-linescore thead th {
+      background: #f6f9fc;
+      color: #53647b;
+    }
+
+    .nba-linescore td:first-child,
+    .nba-linescore th:first-child {
+      text-align: left;
+      padding-left: 12px;
+      color: #223750;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .nba-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .nba-team-card {
+      border: 1px solid #dce4ee;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .nba-team-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 1.1rem;
+      color: #153355;
+      background: #f8fbff;
+      border-bottom: 1px solid #e7edf4;
+    }
+
+    .nba-team-card-title img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+    }
+
+    .nba-stat-section {
+      border-bottom: 1px solid #eef2f7;
+    }
+
+    .nba-stat-section:last-child {
+      border-bottom: none;
+    }
+
+    .nba-stat-section h4 {
+      margin: 0;
+      padding: 8px 12px;
+      font-size: 0.88rem;
+      color: #334862;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      background: #fbfdff;
+    }
+
+    .nba-stat-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.74rem;
+    }
+
+    .nba-stat-table th,
+    .nba-stat-table td {
+      padding: 6px 5px;
+      border-bottom: 1px solid #eef2f7;
+      text-align: center;
+      color: #3e4f64;
+      white-space: nowrap;
+    }
+
+    .nba-stat-table th:first-child,
+    .nba-stat-table td:first-child {
+      text-align: left;
+      padding-left: 10px;
+    }
+
+    .nba-stat-table thead th {
+      background: #f4f8fc;
+      color: #4e6179;
+    }
+
+    .nba-player-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.95rem;
+      color: #1d2e47;
+    }
+
+    .nba-player-pos {
+      color: #6e7d90;
+      font-size: 0.78em;
+      margin-left: 4px;
+    }
+
+    .nba-dnp {
+      color: #718195;
+      text-align: left;
+      padding-left: 12px !important;
+    }
+
+    .nba-team-total-row td {
+      background: #f7fafc;
+      font-weight: 700;
+      color: #233954;
+    }
+
+    .detail-meta-grid,
+    .detail-info-grid,
+    .detail-leaders-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .detail-meta-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .detail-info-grid,
+    .detail-leaders-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-meta-card,
+    .detail-info-card,
+    .detail-leader-card,
+    .detail-team-stats {
+      border: 1px solid #dce4ee;
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .detail-meta-card {
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #fbfdff, #f6f9fd);
+    }
+
+    .detail-meta-label {
+      font-size: 0.76rem;
+      color: #667a92;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .detail-meta-value {
+      color: #17345b;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.84rem;
+    }
+
+    .detail-info-card h4,
+    .detail-leader-card h4,
+    .detail-team-stats h4 {
+      margin: 0;
+      padding: 9px 12px;
+      font-size: 0.88rem;
+      color: #334862;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      background: #f7faff;
+      border-bottom: 1px solid #e8eef5;
+    }
+
+    .detail-list {
+      margin: 0;
+      padding: 10px 12px;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .detail-list li {
+      color: #213750;
+      font-size: 0.92rem;
+    }
+
+    .detail-list small {
+      color: #718195;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.74rem;
+      margin-left: 6px;
+    }
+
+    .detail-leader-items {
+      padding: 10px 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .detail-leader-entry {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 8px;
+      align-items: center;
+      color: #1d2f48;
+      font-size: 0.92rem;
+    }
+
+    .detail-leader-entry img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      border-radius: 50%;
+      background: #f4f7fb;
+    }
+
+    .detail-leader-value {
+      font-family: 'Roboto Mono', monospace;
+      color: #556a83;
+      text-align: right;
+    }
+
+    .detail-leader-text {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .detail-leader-text strong {
+      color: #1d2f48;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .detail-leader-text small {
+      color: #667a92;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.72rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .detail-team-compare {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.77rem;
+    }
+
+    .detail-team-compare th,
+    .detail-team-compare td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf2f7;
+      text-align: center;
+      color: #3f5065;
+    }
+
+    .detail-team-compare th {
+      background: #f7faff;
+      color: #52677f;
+    }
+
+    .detail-team-compare th:first-child,
+    .detail-team-compare td:first-child {
+      text-align: left;
+      font-family: 'Oswald', sans-serif;
+      color: #1b324e;
+    }
+
     @media (max-width: 700px) {
       .settings-bar {
         gap: 6px;
@@ -286,6 +718,26 @@
       #dateDisplay {
         font-size: 0.82rem;
       }
+
+      .nba-summary-top,
+      .nba-detail-grid,
+      .detail-info-grid,
+      .detail-leaders-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nba-side.is-home {
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .nba-score-block {
+        min-width: 0;
+      }
+
+      .detail-body {
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -295,7 +747,7 @@
   <div class="settings-bar" id="headerBar">
     <button class="nav-btn" onclick="changeDate(-1)">◄</button>
     <div class="picker-container">
-      <select id="teamPicker" onchange="onFavoriteTeamChange()">
+      <select id="teamPicker" onchange="applyFavoriteTeamChange()">
         <option value="">My Team (Optional)</option>
       </select>
     </div>
@@ -305,7 +757,7 @@
 
   <div class="container">
     <div class="header-row">
-      <div class="date-wrapper">
+      <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
@@ -314,6 +766,16 @@
 
     <div class="grid" id="gameGrid">
       <div class="loader">Loading games...</div>
+    </div>
+  </div>
+
+  <div id="detailModalOverlay" class="detail-modal-overlay" onclick="closeGameDetailModal(event)">
+    <div class="detail-modal" onclick="event.stopPropagation()">
+      <div class="detail-modal-header">
+        <h3 class="detail-title" id="detailModalTitle">Game Details</h3>
+        <button class="detail-close" onclick="hideGameDetailModal()" aria-label="Close">&times;</button>
+      </div>
+      <div class="detail-body" id="detailModalBody"></div>
     </div>
   </div>
 
@@ -418,6 +880,7 @@
     var currentSport = 'nfl';
     var currentDate = new Date();
     var lastPayload = null;
+    var detailRequestId = 0;
 
     function favoriteStorageKey() {
       return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
@@ -468,6 +931,30 @@
       document.getElementById('dateInput').value = dateIso;
       var label = currentDate.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
       document.getElementById('dateDisplay').innerText = label;
+    }
+
+    function previewSelectedDate() {
+      var dateStr = document.getElementById('dateInput').value;
+      if (!dateStr) {
+        return;
+      }
+      var parts = dateStr.split('-');
+      currentDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      var label = currentDate.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+      document.getElementById('dateDisplay').innerText = label;
+    }
+
+    function openDatePicker() {
+      var input = document.getElementById('dateInput');
+      if (!input) {
+        return;
+      }
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+        return;
+      }
+      input.focus();
+      input.click();
     }
 
     function statusClass(state) {
@@ -548,7 +1035,10 @@
         var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
         var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
-        html += '<article class="card ' + (isFavoriteGame ? 'fav-card' : '') + '">';
+        var canOpenDetail = currentSport === 'nba' || currentSport === 'nfl';
+        var clickableClass = canOpenDetail ? ' is-clickable' : '';
+        var clickAttr = canOpenDetail ? ' onclick="openGameDetailModal(\'' + g.id + '\')"' : '';
+        html += '<article class="card ' + (isFavoriteGame ? 'fav-card' : '') + clickableClass + '"' + clickAttr + '>';
         html += '<div class="card-head">';
         html += '<span class="status-pill ' + statusClass(g.statusState) + '">' + (g.statusShort || 'Scheduled') + '</span>';
         if (isFavoriteGame) {
@@ -576,6 +1066,248 @@
       grid.innerHTML = html;
     }
 
+    function applyDetailTheme(details) {
+      var modal = document.querySelector('.detail-modal');
+      if (!modal) {
+        return;
+      }
+      modal.style.setProperty('--detail-away', details.away.teamColor || details.away.alternateColor || '#17345b');
+      modal.style.setProperty('--detail-home', details.home.teamColor || details.home.alternateColor || '#446586');
+    }
+
+    function renderLeagueLinescore(details) {
+      var awayPeriods = details.away.linescores || [];
+      var homePeriods = details.home.linescores || [];
+      var labels = details.periodLabels || [];
+      var periodCount = Math.max(awayPeriods.length, homePeriods.length, labels.length, 4);
+      var headers = '';
+      var awayCells = '';
+      var homeCells = '';
+
+      for (var i = 0; i < periodCount; i++) {
+        headers += '<th>' + (labels[i] || (i + 1)) + '</th>';
+        awayCells += '<td>' + (awayPeriods[i] ? awayPeriods[i].value : '-') + '</td>';
+        homeCells += '<td>' + (homePeriods[i] ? homePeriods[i].value : '-') + '</td>';
+      }
+
+      return (
+        '<table class="nba-linescore">' +
+        '<thead><tr><th></th>' + headers + '<th>T</th></tr></thead>' +
+        '<tbody>' +
+        '<tr><td>' + details.away.abbr + '</td>' + awayCells + '<td><strong>' + details.away.score + '</strong></td></tr>' +
+        '<tr><td>' + details.home.abbr + '</td>' + homeCells + '<td><strong>' + details.home.score + '</strong></td></tr>' +
+        '</tbody>' +
+        '</table>'
+      );
+    }
+
+    function renderPlayerStatSection(section) {
+      var headCells = '<th>Players</th>' +
+        (section.headers || []).map(function (header) { return '<th>' + header + '</th>'; }).join('');
+
+      var rows = (section.rows || []).map(function (row) {
+        if (row.statusText) {
+          return '<tr><td class="nba-player-name">' + row.name + (row.position ? '<span class="nba-player-pos">' + row.position + '</span>' : '') + '</td><td class="nba-dnp" colspan="' + section.headers.length + '">' + row.statusText + '</td></tr>';
+        }
+
+        return '<tr><td class="nba-player-name">' + row.name + (row.position ? '<span class="nba-player-pos">' + row.position + '</span>' : '') + '</td>' +
+          (row.values || []).map(function (value) { return '<td>' + value + '</td>'; }).join('') +
+          '</tr>';
+      }).join('');
+
+      var totalRow = '';
+      if (section.totals && section.totals.length) {
+        totalRow = '<tr class="nba-team-total-row"><td>TEAM</td>' + section.totals.map(function (value) { return '<td>' + value + '</td>'; }).join('') + '</tr>';
+      }
+
+      return (
+        '<section class="nba-stat-section">' +
+        '<h4>' + section.title + '</h4>' +
+        '<table class="nba-stat-table">' +
+        '<thead><tr>' + headCells + '</tr></thead>' +
+        '<tbody>' + rows + totalRow + '</tbody>' +
+        '</table>' +
+        '</section>'
+      );
+    }
+
+    function renderPlayerTeamCard(teamBox) {
+      return (
+        '<article class="nba-team-card">' +
+        '<h3 class="nba-team-card-title"><img src="' + (teamBox.team.logo || '') + '" alt="">' + teamBox.team.name + '</h3>' +
+        (teamBox.sections || []).map(function (section) { return renderPlayerStatSection(section); }).join('') +
+        '</article>'
+      );
+    }
+
+    function renderMetaCards(details) {
+      var cards = [];
+
+      if (details.venue) {
+        cards.push({ label: 'Venue', value: details.venue + (details.city ? ' | ' + details.city : '') });
+      }
+      if (details.broadcasts && details.broadcasts.length) {
+        cards.push({ label: 'Broadcast', value: details.broadcasts.join(', ') });
+      }
+      if (details.attendance) {
+        cards.push({ label: 'Attendance', value: String(details.attendance) });
+      }
+      if (details.odds && (details.odds.details || details.odds.overUnder)) {
+        cards.push({ label: 'Odds', value: [details.odds.details, details.odds.overUnder ? 'O/U ' + details.odds.overUnder : '', details.odds.provider].filter(Boolean).join(' | ') });
+      }
+
+      if (!cards.length) {
+        return '';
+      }
+
+      return '<section class="detail-meta-grid">' + cards.map(function (card) {
+        return '<article class="detail-meta-card"><div class="detail-meta-label">' + card.label + '</div><div class="detail-meta-value">' + card.value + '</div></article>';
+      }).join('') + '</section>';
+    }
+
+    function renderInfoPanels(details) {
+      var sections = [];
+
+      if (details.officials && details.officials.length) {
+        sections.push(
+          '<article class="detail-info-card"><h4>Officials</h4><ul class="detail-list">' +
+          details.officials.map(function (official) {
+            return '<li>' + official.name + (official.role ? '<small>' + official.role + '</small>' : '') + '</li>';
+          }).join('') +
+          '</ul></article>'
+        );
+      }
+
+      if (details.situation && (details.situation.downDistanceText || details.situation.lastPlayText || details.situation.possessionText)) {
+        var items = [];
+        if (details.situation.possessionText) {
+          items.push('<li>' + details.situation.possessionText + '</li>');
+        }
+        if (details.situation.downDistanceText) {
+          items.push('<li>' + details.situation.downDistanceText + '</li>');
+        }
+        if (details.situation.lastPlayText) {
+          items.push('<li>' + details.situation.lastPlayText + '</li>');
+        }
+        sections.push('<article class="detail-info-card"><h4>Situation</h4><ul class="detail-list">' + items.join('') + '</ul></article>');
+      }
+
+      if (!sections.length) {
+        return '';
+      }
+
+      return '<section class="detail-info-grid">' + sections.join('') + '</section>';
+    }
+
+    function renderLeaderCards(details) {
+      if (!details.leaders || !details.leaders.length) {
+        return '';
+      }
+
+      return '<section class="detail-leaders-grid">' + details.leaders.map(function (group) {
+        return '<article class="detail-leader-card"><h4>' + group.title + '</h4><div class="detail-leader-items">' +
+          (group.items || []).map(function (item) {
+            return '<div class="detail-leader-entry">' +
+              '<img src="' + (item.image || item.teamLogo || '') + '" alt="">' +
+              '<span class="detail-leader-text"><strong>' + item.label + ': ' + item.athleteName + '</strong>' + (item.summary ? '<small>' + item.summary + '</small>' : '') + '</span>' +
+              '<span class="detail-leader-value">' + item.value + '</span>' +
+              '</div>';
+          }).join('') +
+          '</div></article>';
+      }).join('') + '</section>';
+    }
+
+    function renderTeamComparison(details) {
+      if (!details.teamStats || details.teamStats.length < 2) {
+        return '';
+      }
+
+      var awayStats = details.teamStats[0];
+      var homeStats = details.teamStats[1];
+      var statMap = {};
+      var statOrder = [];
+
+      (awayStats.stats || []).forEach(function (entry) {
+        statMap[entry.label] = statMap[entry.label] || {};
+        statMap[entry.label].away = entry.value;
+        statOrder.push(entry.label);
+      });
+
+      (homeStats.stats || []).forEach(function (entry) {
+        statMap[entry.label] = statMap[entry.label] || {};
+        statMap[entry.label].home = entry.value;
+        if (statOrder.indexOf(entry.label) === -1) {
+          statOrder.push(entry.label);
+        }
+      });
+
+      return '<section class="detail-team-stats"><h4>Team Comparison</h4><table class="detail-team-compare"><thead><tr><th>Stat</th><th>' + awayStats.team.abbr + '</th><th>' + homeStats.team.abbr + '</th></tr></thead><tbody>' +
+        statOrder.map(function (label) {
+          var values = statMap[label] || {};
+          return '<tr><td>' + label + '</td><td>' + (values.away || '-') + '</td><td>' + (values.home || '-') + '</td></tr>';
+        }).join('') +
+        '</tbody></table></section>';
+    }
+
+    function renderLeagueGameDetails(details) {
+      var body = document.getElementById('detailModalBody');
+      var title = document.getElementById('detailModalTitle');
+      title.innerText = details.away.name + ' at ' + details.home.name;
+      applyDetailTheme(details);
+
+      body.innerHTML =
+        '<section class="nba-summary">' +
+        '<div class="nba-summary-top">' +
+        '<div class="nba-side"><img class="nba-logo" src="' + (details.away.logo || '') + '" alt=""><div class="nba-team-meta"><div class="nba-team-name">' + details.away.name + '</div><div class="nba-team-record">' + (details.away.record || '') + '</div></div></div>' +
+        '<div class="nba-score-block"><div class="nba-status">' + (details.leagueLabel || '') + ' | ' + (details.statusDetail || '') + '</div><div class="nba-scoreline"><strong>' + details.away.score + '</strong><span>-</span><strong>' + details.home.score + '</strong></div></div>' +
+        '<div class="nba-side is-home"><div class="nba-team-meta"><div class="nba-team-name">' + details.home.name + '</div><div class="nba-team-record">' + (details.home.record || '') + '</div></div><img class="nba-logo" src="' + (details.home.logo || '') + '" alt=""></div>' +
+        '</div>' +
+        renderLeagueLinescore(details) +
+        '</section>' +
+        renderMetaCards(details) +
+        renderInfoPanels(details) +
+        renderLeaderCards(details) +
+        renderTeamComparison(details) +
+        '<div class="nba-detail-grid">' +
+        (details.teamBoxes || []).map(function (teamBox) { return renderPlayerTeamCard(teamBox); }).join('') +
+        '</div>';
+    }
+
+    function openGameDetailModal(gameId) {
+      if (currentSport !== 'nba' && currentSport !== 'nfl') {
+        return;
+      }
+
+      var requestId = Date.now();
+      detailRequestId = requestId;
+      document.getElementById('detailModalTitle').innerText = 'Game Details';
+      document.getElementById('detailModalBody').innerHTML = '<div class="loader">Loading game details...</div>';
+      document.getElementById('detailModalOverlay').style.display = 'flex';
+
+      MLBClient.getLeagueGameDetails(currentSport, gameId)
+        .then(function (details) {
+          if (detailRequestId !== requestId) {
+            return;
+          }
+          renderLeagueGameDetails(details);
+        })
+        .catch(function (err) {
+          if (detailRequestId !== requestId) {
+            return;
+          }
+          document.getElementById('detailModalBody').innerHTML = '<div class="empty">Failed to load game details: ' + (err && err.message ? err.message : err) + '</div>';
+        });
+    }
+
+    function hideGameDetailModal() {
+      detailRequestId = 0;
+      document.getElementById('detailModalOverlay').style.display = 'none';
+    }
+
+    function closeGameDetailModal(event) {
+      hideGameDetailModal();
+    }
+
     function loadLeague() {
       document.getElementById('gameGrid').innerHTML = '<div class="loader">Loading games...</div>';
       MLBClient.getLeagueScoreboardData(currentSport, toIso(currentDate))
@@ -599,13 +1331,11 @@
       if (!dateStr) {
         return;
       }
-      var parts = dateStr.split('-');
-      currentDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      updateDateDisplay();
+      previewSelectedDate();
       loadLeague();
     }
 
-    function onFavoriteTeamChange() {
+    function applyFavoriteTeamChange() {
       var picker = document.getElementById('teamPicker');
       setFavoriteLeagueTeam(picker.value || '');
       setPageTheme();
