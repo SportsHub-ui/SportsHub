@@ -71,7 +71,6 @@
     home: { label: "Home", staticPath: "index.html", dynamicPage: "home" },
     games: { label: "Games", staticPath: "GameCards.html", dynamicPage: "games" },
     myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" },
-    roster: { label: "Roster", staticPath: "Roster.html", dynamicPage: "roster" },
     tv: { label: "TV Guide", staticPath: "TVGuide.html", dynamicPage: "tv" }
   };
 
@@ -88,6 +87,18 @@
 
   function getTeamId(name) {
     return TEAM_IDS[name] || TEAM_IDS[DEFAULT_TEAM];
+  }
+
+  function getTeamNameById(teamId) {
+    const target = Number(teamId);
+    const names = Object.keys(TEAM_IDS);
+    for (let i = 0; i < names.length; i += 1) {
+      const name = names[i];
+      if (Number(TEAM_IDS[name]) === target) {
+        return name;
+      }
+    }
+    return null;
   }
 
   function getDivisionId(teamName) {
@@ -981,9 +992,21 @@
     };
   }
 
-  async function getRosterData() {
-    const myTeam = getFavoriteTeam();
-    const teamId = getTeamId(myTeam);
+  async function getRosterData(teamRef) {
+    let myTeam = getFavoriteTeam();
+    let teamId = getTeamId(myTeam);
+
+    if (teamRef !== undefined && teamRef !== null && teamRef !== "") {
+      const teamRefText = String(teamRef);
+      if (/^\d+$/.test(teamRefText)) {
+        teamId = Number(teamRefText);
+        myTeam = getTeamNameById(teamId) || myTeam;
+      } else if (TEAM_IDS[teamRefText]) {
+        myTeam = teamRefText;
+        teamId = getTeamId(myTeam);
+      }
+    }
+
     const rosterUrl = "https://statsapi.mlb.com/api/v1/teams/" + teamId + "/roster?rosterType=40Man";
     const rosterRes = await fetchJson(rosterUrl);
 

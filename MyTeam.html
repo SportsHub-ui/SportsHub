@@ -94,6 +94,18 @@
       margin-bottom: 10px;
     }
 
+    .team-box.is-clickable {
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 8px;
+      transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .team-box.is-clickable:hover {
+      background: rgba(0, 70, 173, 0.08);
+      transform: translateY(-2px);
+    }
+
     .team-name {
       font-size: 1.5rem;
       font-weight: 700;
@@ -277,6 +289,126 @@
       height: 100%;
       cursor: pointer;
     }
+
+    .roster-modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 2100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .roster-modal {
+      background: #fff;
+      width: min(980px, 100%);
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .roster-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e6eaf0;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+    }
+
+    .roster-modal-logo {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+
+    .roster-modal-title {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--navy);
+      flex: 1;
+    }
+
+    .roster-modal-close {
+      border: none;
+      background: transparent;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      color: #6e7b8c;
+    }
+
+    .roster-modal-body {
+      padding: 14px 16px 18px;
+    }
+
+    .roster-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .roster-card {
+      border: 1px solid #d8dde4;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .roster-card h4 {
+      margin: 0;
+      padding: 10px 12px;
+      font-size: 1rem;
+      color: #1f2f49;
+      border-bottom: 1px solid #e6eaf0;
+      background: #f7fafc;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .roster-list {
+      margin: 0;
+      padding: 10px 12px;
+      list-style: none;
+    }
+
+    .roster-list li {
+      display: flex;
+      gap: 10px;
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f3f6;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .roster-list li:last-child {
+      border-bottom: none;
+    }
+
+    .roster-num {
+      width: 28px;
+      color: #2f496b;
+      font-weight: 700;
+      flex: 0 0 28px;
+    }
+
+    @media (max-width: 760px) {
+      .roster-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 
@@ -370,6 +502,17 @@
       </div>
     </div>
 
+    <div id="rosterModalOverlay" class="roster-modal-overlay" onclick="closeRosterModal(event)">
+      <div class="roster-modal" onclick="event.stopPropagation()">
+        <div class="roster-modal-header">
+          <img id="rosterModalLogo" class="roster-modal-logo" alt="Team logo">
+          <h3 id="rosterModalTitle" class="roster-modal-title">Roster</h3>
+          <button class="roster-modal-close" onclick="hideRosterModal()" aria-label="Close roster">&times;</button>
+        </div>
+        <div id="rosterModalBody" class="roster-modal-body"></div>
+      </div>
+    </div>
+
     <script src="clientApi.js"></script>
     <script>
       var teamColors = {
@@ -386,6 +529,7 @@
       };
 
       let currentViewDate = new Date();
+      let currentRenderedGame = null;
 
       window.onload = function () {
         MLBClient.renderSiteNav('myteam', 'siteNav');
@@ -430,6 +574,7 @@
         document.getElementById('content').style.display = 'grid';
 
         try { renderMatchup(data.teamGame); } catch(e) { console.error('renderMatchup error', e); }
+        currentRenderedGame = data.teamGame || null;
         try { renderAI(data.aiReport, data.aiLabel); } catch(e) { console.error('renderAI error', e); }
         // Pass favorite team name to renderLineups
         try { renderLineups(data.teamGame, data.myTeam); } catch(e) { console.error('renderLineups error', e); }
@@ -583,9 +728,9 @@
         }
 
         html += '<div class="matchup-grid">';
-        html += '<div class="team-box"><img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.awayScore : "") + '</div></div>';
+        html += '<div class="team-box is-clickable" onclick="openRosterForSide(\'away\')" title="Open ' + game.away + ' roster"><img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.awayScore : "") + '</div></div>';
         html += '<div class="vs-circle">VS</div>';
-        html += '<div class="team-box"><img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.homeScore : "") + '</div></div>';
+        html += '<div class="team-box is-clickable" onclick="openRosterForSide(\'home\')" title="Open ' + game.home + ' roster"><img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.homeScore : "") + '</div></div>';
         html += '</div>';
         
         // Add broadcasting and umpire info below matchup
@@ -595,6 +740,66 @@
         html += '</div>';
 
         container.innerHTML = html;
+      }
+
+      function renderRosterSectionHtml(title, players) {
+        if (!players || players.length === 0) {
+          return '';
+        }
+
+        var rows = players
+          .map(function (p) {
+            return '<li><span class="roster-num">' + (p.number || '--') + '</span><span>' + (p.name || '') + '</span></li>';
+          })
+          .join('');
+
+        return '<div class="roster-card"><h4>' + title + '</h4><ul class="roster-list">' + rows + '</ul></div>';
+      }
+
+      function openRosterForSide(side) {
+        if (!currentRenderedGame) {
+          return;
+        }
+
+        var isAway = side === 'away';
+        var teamId = isAway ? currentRenderedGame.awayId : currentRenderedGame.homeId;
+        var teamName = isAway ? currentRenderedGame.away : currentRenderedGame.home;
+        if (!teamId) {
+          return;
+        }
+
+        var overlay = document.getElementById('rosterModalOverlay');
+        var title = document.getElementById('rosterModalTitle');
+        var logo = document.getElementById('rosterModalLogo');
+        var body = document.getElementById('rosterModalBody');
+
+        title.innerText = teamName + ' Roster';
+        logo.src = 'https://www.mlbstatic.com/team-logos/' + teamId + '.svg';
+        body.innerHTML = '<div style="padding: 8px; color: #5f6d80; font-family: Roboto Mono, monospace;">Loading roster...</div>';
+        overlay.style.display = 'flex';
+
+        MLBClient.getRosterData(String(teamId))
+          .then(function (roster) {
+            var sections = '';
+            sections += renderRosterSectionHtml('Infielders', roster.inf);
+            sections += renderRosterSectionHtml('Outfielders', roster.out);
+            sections += renderRosterSectionHtml('Catchers', roster.cat);
+            sections += renderRosterSectionHtml('Pitchers', roster.pit);
+            sections += renderRosterSectionHtml('Injured List', roster.il);
+
+            body.innerHTML = '<div class="roster-grid">' + sections + '</div>';
+          })
+          .catch(function (err) {
+            body.innerHTML = '<div style="padding: 8px; color: #8a2f2f;">Failed to load roster: ' + (err && err.message ? err.message : err) + '</div>';
+          });
+      }
+
+      function hideRosterModal() {
+        document.getElementById('rosterModalOverlay').style.display = 'none';
+      }
+
+      function closeRosterModal(event) {
+        hideRosterModal();
       }
 
       function renderStandings(standings) {
