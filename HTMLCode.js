@@ -7,6 +7,14 @@
 function doGet(e) {
   const page = (e && e.parameter && e.parameter.page) ? e.parameter.page.toLowerCase() : "dashboard";
 
+  if (page === "home" || page === "index") {
+    return HtmlService.createTemplateFromFile('index').evaluate().setTitle("MLB Board").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  if (page === "games" || page === "dashboard") {
+    return HtmlService.createTemplateFromFile('GameCards').evaluate().setTitle("MLB Board").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
   if (page === "roster") {
     return HtmlService.createTemplateFromFile('Roster').evaluate().setTitle("Team Roster").setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }

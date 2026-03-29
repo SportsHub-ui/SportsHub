@@ -414,6 +414,7 @@
 </head>
 
 <body>
+  <div id="siteNav"></div>
 
   <!-- Game Detail Modal -->
   <div id="gameModal" class="modal-overlay" onclick="closeModal(event)">
@@ -519,6 +520,7 @@
     let currentViewDate = new Date();
 
     window.onload = function () {
+      MLBClient.renderSiteNav('games', 'siteNav');
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('dateInput').value = today;
       loadDashboard();

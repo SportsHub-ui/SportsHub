@@ -220,6 +220,7 @@
 </head>
 
 <body>
+  <div id="siteNav"></div>
   <div class="filter-bar">
     <div class="filter-container">
       <div class="sport-selectors">
@@ -253,6 +254,7 @@
     let rawData = []; // Store original data for filtering
 
     window.onload = function () {
+      MLBClient.renderSiteNav('tv', 'siteNav');
       console.log('DEBUG: window.onload fired');
       MLBClient.getTvGuideData()
         .then(function (data) {

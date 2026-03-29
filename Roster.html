@@ -55,6 +55,7 @@
   </style>
 				</head>
 				<body>
+          <div id="siteNav"></div>
 					<div id="loading" class="loader">LOADING ROSTER...</div>
 					<div class="roster-container" id="content" style="display:none;">
 						<div class="header">
@@ -78,6 +79,7 @@
 						<script src="clientApi.js"></script>
 						<script>
     window.onload = function() {
+        MLBClient.renderSiteNav('roster', 'siteNav');
       MLBClient.getRosterData()
         .then(renderRoster)
         .catch(function (err) {

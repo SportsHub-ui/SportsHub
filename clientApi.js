@@ -67,6 +67,13 @@
 
   const FAVORITE_KEY = "MY_FAV_TEAM";
   const DEFAULT_TEAM = "Milwaukee Brewers";
+  const PAGE_ROUTES = {
+    home: { label: "Home", staticPath: "index.html", dynamicPage: "home" },
+    games: { label: "Games", staticPath: "GameCards.html", dynamicPage: "games" },
+    myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" },
+    roster: { label: "Roster", staticPath: "Roster.html", dynamicPage: "roster" },
+    tv: { label: "TV Guide", staticPath: "TVGuide.html", dynamicPage: "tv" }
+  };
 
   function getFavoriteTeam() {
     return localStorage.getItem(FAVORITE_KEY) || DEFAULT_TEAM;
@@ -89,6 +96,94 @@
 
   function toIsoDate(date) {
     return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split("T")[0];
+  }
+
+  function isStaticHtmlRoute() {
+    return /\.html$/i.test(window.location.pathname);
+  }
+
+  function getPageUrl(pageKey) {
+    const route = PAGE_ROUTES[pageKey] || PAGE_ROUTES.games;
+
+    if (isStaticHtmlRoute()) {
+      return route.staticPath;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", route.dynamicPage);
+    return url.toString();
+  }
+
+  function navigateToPage(pageKey) {
+    window.location.href = getPageUrl(pageKey);
+  }
+
+  function ensureNavStyles() {
+    if (document.getElementById("mlb-site-nav-style")) {
+      return;
+    }
+
+    const style = document.createElement("style");
+    style.id = "mlb-site-nav-style";
+    style.textContent =
+      ".site-nav{" +
+      "display:flex;justify-content:center;padding:16px 16px 8px;" +
+      "}" +
+      ".site-nav__rail{" +
+      "display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;" +
+      "background:rgba(0,70,173,0.08);border:1px solid rgba(0,70,173,0.12);" +
+      "padding:10px 12px;border-radius:999px;backdrop-filter:blur(6px);" +
+      "}" +
+      ".site-nav__link{" +
+      "text-decoration:none;color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;" +
+      "font-size:0.95rem;letter-spacing:0.03em;text-transform:uppercase;font-weight:700;" +
+      "padding:8px 14px;border-radius:999px;border:1px solid transparent;" +
+      "transition:background-color 0.2s ease,color 0.2s ease,border-color 0.2s ease,transform 0.2s ease;" +
+      "}" +
+      ".site-nav__link:hover{" +
+      "background:rgba(0,70,173,0.12);border-color:rgba(0,70,173,0.18);transform:translateY(-1px);" +
+      "}" +
+      ".site-nav__link.is-active{" +
+      "background:var(--navy,#0046ad);color:#fff;border-color:var(--navy,#0046ad);" +
+      "}" +
+      "@media (max-width: 600px){" +
+      ".site-nav{padding:12px 12px 6px;}" +
+      ".site-nav__rail{border-radius:18px;padding:10px;gap:8px;}" +
+      ".site-nav__link{font-size:0.82rem;padding:7px 10px;}" +
+      "}";
+
+    document.head.appendChild(style);
+  }
+
+  function renderSiteNav(currentPageKey, mountId) {
+    ensureNavStyles();
+
+    const mountNode = mountId ? document.getElementById(mountId) : null;
+    const linksHtml = Object.keys(PAGE_ROUTES)
+      .map(function (pageKey) {
+        const route = PAGE_ROUTES[pageKey];
+        const isActive = pageKey === currentPageKey;
+        return (
+          '<a class="site-nav__link' +
+          (isActive ? ' is-active' : '') +
+          '" href="' +
+          getPageUrl(pageKey) +
+          '"' +
+          (isActive ? ' aria-current="page"' : '') +
+          '>' +
+          route.label +
+          '</a>'
+        );
+      })
+      .join("");
+    const navHtml = '<nav class="site-nav" aria-label="Site"><div class="site-nav__rail">' + linksHtml + '</div></nav>';
+
+    if (mountNode) {
+      mountNode.innerHTML = navHtml;
+      return;
+    }
+
+    document.body.insertAdjacentHTML("afterbegin", navHtml);
   }
 
   async function fetchJson(url) {
@@ -547,6 +642,9 @@
     getMyTeamData: getMyTeamData,
     getRosterData: getRosterData,
     getTvGuideData: getTvGuideData,
-    getTeamId: getTeamId
+    getTeamId: getTeamId,
+    getPageUrl: getPageUrl,
+    navigateToPage: navigateToPage,
+    renderSiteNav: renderSiteNav
   };
 })();

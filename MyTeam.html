@@ -281,6 +281,8 @@
 </head>
 
 <body>
+  <div id="siteNav"></div>
+
   <div class="settings-bar" id="dynamicHeader">
     <button class="nav-btn" onclick="changeDate(-1)">◄</button>
     <h2 id="pageTitle" style="margin:0; text-transform: uppercase; font-size: 1.4rem;">My Team</h2>
@@ -386,6 +388,7 @@
       let currentViewDate = new Date();
 
       window.onload = function () {
+        MLBClient.renderSiteNav('myteam', 'siteNav');
         // Set initial date input to today
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('dateInput').value = today;
