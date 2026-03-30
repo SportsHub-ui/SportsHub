@@ -666,6 +666,7 @@
       var currentViewDate = new Date();
       var currentRenderedGame = null;
       var currentSport = "mlb";
+      var jsonCache = {};
 
       window.onload = function () {
         currentSport = parseSportFromQuery();
@@ -1594,11 +1595,45 @@
       }
 
       async function fetchJsonRaw(url) {
-        var res = await fetch(url);
-        if (!res.ok) {
-          throw new Error('Request failed: ' + res.status + ' ' + res.statusText);
+        var now = Date.now();
+        var ttl = url.indexOf('/standings') > -1 ? 300000 : 60000;
+        var cached = jsonCache[url];
+
+        if (cached && cached.data && cached.expiresAt > now) {
+          return cached.data;
         }
-        return await res.json();
+
+        if (cached && cached.promise) {
+          return cached.promise;
+        }
+
+        var pending = fetch(url)
+          .then(function (res) {
+            if (!res.ok) {
+              throw new Error('Request failed: ' + res.status + ' ' + res.statusText);
+            }
+            return res.json();
+          })
+          .then(function (data) {
+            jsonCache[url] = {
+              data: data,
+              expiresAt: Date.now() + ttl,
+              promise: null
+            };
+            return data;
+          })
+          .catch(function (error) {
+            delete jsonCache[url];
+            throw error;
+          });
+
+        jsonCache[url] = {
+          data: null,
+          expiresAt: now + ttl,
+          promise: pending
+        };
+
+        return pending;
       }
     </script>
 </body>

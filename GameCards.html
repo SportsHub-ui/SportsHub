@@ -177,6 +177,21 @@
       z-index: 1;
     }
 
+    .refresh-hint {
+      margin-top: -10px;
+      margin-bottom: 14px;
+      text-align: center;
+      font-size: 0.74rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .refresh-hint.is-attention {
+      color: #8a5a00;
+      font-weight: 700;
+    }
+
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -875,6 +890,7 @@
       </div>
       <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
     </div>
+    <div id="refreshHint" class="refresh-hint"></div>
 
     <div id="gameGrid" class="grid">
       <div class="loader">Fetching Games...</div>
@@ -889,7 +905,7 @@
     let autoRefreshEnabled = true;
     let autoRefreshTimer = null;
     let refreshInFlight = false;
-    const AUTO_REFRESH_MS = 15000;
+    const LIVE_REFRESH_MS = 30000;
 
     var teamColors = {
       "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
@@ -940,6 +956,7 @@
       }
       btn.classList.toggle('is-off', !autoRefreshEnabled);
       btn.innerText = autoRefreshEnabled ? 'Auto: On' : 'Auto: Off';
+      updateRefreshHint();
     }
 
     function toggleAutoRefresh() {
@@ -954,23 +971,78 @@
 
     function startAutoRefresh() {
       stopAutoRefresh();
-      autoRefreshTimer = setInterval(function () {
-        if (!autoRefreshEnabled || document.hidden || refreshInFlight) {
-          return;
-        }
-        refreshInFlight = true;
-        loadDashboard(toLocalIso(currentViewDate), { showLoader: false, patchOnly: true })
-          .finally(function () {
-            refreshInFlight = false;
-          });
-      }, AUTO_REFRESH_MS);
+      scheduleNextAutoRefresh();
     }
 
     function stopAutoRefresh() {
       if (autoRefreshTimer) {
-        clearInterval(autoRefreshTimer);
+        clearTimeout(autoRefreshTimer);
         autoRefreshTimer = null;
       }
+    }
+
+    function isViewingToday() {
+      return toLocalIso(currentViewDate) === toLocalIso(new Date());
+    }
+
+    function getAutoRefreshDelay() {
+      if (!isViewingToday()) {
+        return 0;
+      }
+      return currentGamesData.some(gameIsLive) ? LIVE_REFRESH_MS : 0;
+    }
+
+    function updateRefreshHint() {
+      var hint = document.getElementById('refreshHint');
+      if (!hint) {
+        return;
+      }
+
+      var message = '';
+      var needsAttention = false;
+
+      if (!autoRefreshEnabled) {
+        message = 'Auto refresh is off.';
+      } else if (!isViewingToday()) {
+        message = 'Auto refresh only runs for today.';
+      } else if (!currentGamesData.some(gameIsLive)) {
+        message = 'Manual refresh is required after games begin to start auto refresh.';
+        needsAttention = true;
+      } else {
+        message = 'Auto refresh is active for live games every 30 seconds.';
+      }
+
+      hint.classList.toggle('is-attention', needsAttention);
+      hint.innerText = message;
+    }
+
+    function scheduleNextAutoRefresh() {
+      stopAutoRefresh();
+      if (!autoRefreshEnabled) {
+        return;
+      }
+
+      var delay = getAutoRefreshDelay();
+      if (!delay) {
+        updateRefreshHint();
+        return;
+      }
+
+      autoRefreshTimer = setTimeout(function () {
+        if (!autoRefreshEnabled || document.hidden || refreshInFlight) {
+          scheduleNextAutoRefresh();
+          return;
+        }
+
+        refreshInFlight = true;
+        loadDashboard(toLocalIso(currentViewDate), { showLoader: false, patchOnly: true })
+          .finally(function () {
+            refreshInFlight = false;
+            scheduleNextAutoRefresh();
+          });
+      }, delay);
+
+      updateRefreshHint();
     }
 
     function manualRefresh() {
@@ -1146,6 +1218,7 @@
         grid.innerHTML = '<div class="loader">No games found for today.</div>';
         currentGamesData = [];
         previousGamesById = {};
+        updateRefreshHint();
         return;
       }
 
@@ -1194,6 +1267,12 @@
       previousGamesById = {};
       for (var m = 0; m < sortedGames.length; m++) {
         previousGamesById[String(sortedGames[m].gameId)] = sortedGames[m];
+      }
+
+      updateRefreshHint();
+
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
       }
     }
 
@@ -1293,6 +1372,9 @@
       const dateStr = toLocalIso(currentViewDate);
       document.getElementById('dateInput').value = dateStr;
       previewSelectedDate();
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      }
       loadDashboard(dateStr, { showLoader: true, patchOnly: false });
     }
 
@@ -1300,6 +1382,9 @@
       const dateStr = document.getElementById('dateInput').value;
       if (dateStr) {
         previewSelectedDate();
+        if (autoRefreshEnabled) {
+          startAutoRefresh();
+        }
         loadDashboard(dateStr, { showLoader: true, patchOnly: false });
       }
     }

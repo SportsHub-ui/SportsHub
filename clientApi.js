@@ -81,6 +81,7 @@
     myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" }
   };
   const SPORTS_NAV_ORDER = ["mlb", "nfl", "nba", "pga", "atp", "wta", "news", "tv"];
+  const JSON_CACHE = new Map();
 
   function resolvePageKey(pageKey) {
     if (pageKey === "games" || pageKey === "home" || pageKey === "myteam") {
@@ -362,6 +363,49 @@
       throw new Error("Request failed: " + res.status + " " + res.statusText);
     }
     return await res.json();
+  }
+
+  async function fetchJsonCached(url, ttlMs) {
+    const ttl = Number(ttlMs) > 0 ? Number(ttlMs) : 0;
+    if (!ttl) {
+      return fetchJson(url);
+    }
+
+    const now = Date.now();
+    const cached = JSON_CACHE.get(url);
+    if (cached && cached.data && cached.expiresAt > now) {
+      return cached.data;
+    }
+
+    if (cached && cached.promise) {
+      return cached.promise;
+    }
+
+    const pending = fetchJson(url)
+      .then(function (data) {
+        JSON_CACHE.set(url, {
+          data: data,
+          expiresAt: Date.now() + ttl,
+          promise: null
+        });
+        return data;
+      })
+      .catch(function (error) {
+        JSON_CACHE.delete(url);
+        throw error;
+      });
+
+    JSON_CACHE.set(url, {
+      data: null,
+      expiresAt: now + ttl,
+      promise: pending
+    });
+
+    return pending;
+  }
+
+  function isTodayIso(dateIso) {
+    return String(dateIso || "") === toIsoDate(new Date());
   }
 
   function formatTripleSlash(value) {
@@ -1219,7 +1263,7 @@
       "/scoreboard?dates=" +
       dateParam;
 
-    const data = await fetchJson(url);
+    const data = await fetchJsonCached(url, isTodayIso(dateParam.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")) ? 10000 : 300000);
     const events = data.events || [];
 
     const games = events.map(function (ev) {
@@ -1575,7 +1619,7 @@
       "/summary?event=" +
       encodeURIComponent(gameId);
 
-    const data = await fetchJson(url);
+    const data = await fetchJsonCached(url, 15000);
     const headerCompetition = data && data.header && Array.isArray(data.header.competitions) ? data.header.competitions[0] : {};
     const competitors = Array.isArray(headerCompetition && headerCompetition.competitors) ? headerCompetition.competitors : [];
 
@@ -1646,7 +1690,7 @@
             l.league +
             "/scoreboard?dates=" +
             today;
-          const data = await fetchJson(url);
+          const data = await fetchJsonCached(url, 60000);
 
           (data.events || []).forEach(function (ev) {
             const competition = ev.competitions && ev.competitions[0] ? ev.competitions[0] : null;
@@ -1688,7 +1732,7 @@
 
       let payload;
       try {
-        payload = await fetchJson(url);
+        payload = await fetchJsonCached(url, 3600000);
       } catch (error) {
         continue;
       }
@@ -1813,7 +1857,7 @@
             "/" +
             feed.league +
             "/news";
-          const payload = await fetchJson(url);
+          const payload = await fetchJsonCached(url, 300000);
           const articles = (Array.isArray(payload && payload.articles) ? payload.articles : [])
             .slice(0, limit)
             .map(function (article) {

@@ -164,6 +164,21 @@
       z-index: 1;
     }
 
+    .refresh-hint {
+      margin-top: -8px;
+      margin-bottom: 12px;
+      text-align: center;
+      font-size: 0.74rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .refresh-hint.is-attention {
+      color: #8a5a00;
+      font-weight: 700;
+    }
+
     .container {
       max-width: 1180px;
       margin: 0 auto;
@@ -821,6 +836,7 @@
       </div>
       <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
     </div>
+    <div id="refreshHint" class="refresh-hint"></div>
 
     <div class="grid" id="gameGrid">
       <div class="loader">Loading games...</div>
@@ -943,7 +959,7 @@
     var autoRefreshEnabled = true;
     var autoRefreshTimer = null;
     var refreshInFlight = false;
-    var AUTO_REFRESH_MS = 15000;
+    var LIVE_REFRESH_MS = 30000;
 
     function favoriteStorageKey() {
       return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
@@ -1090,6 +1106,7 @@
       }
       btn.classList.toggle('is-off', !autoRefreshEnabled);
       btn.innerText = autoRefreshEnabled ? 'Auto: On' : 'Auto: Off';
+      updateRefreshHint();
     }
 
     function toggleAutoRefresh() {
@@ -1104,23 +1121,88 @@
 
     function stopAutoRefresh() {
       if (autoRefreshTimer) {
-        clearInterval(autoRefreshTimer);
+        clearTimeout(autoRefreshTimer);
         autoRefreshTimer = null;
       }
     }
 
     function startAutoRefresh() {
       stopAutoRefresh();
-      autoRefreshTimer = setInterval(function () {
+      scheduleNextAutoRefresh();
+    }
+
+    function isViewingToday() {
+      return toIso(currentDate) === toIso(new Date());
+    }
+
+    function hasLiveLeagueGames() {
+      var games = lastPayload && Array.isArray(lastPayload.games) ? lastPayload.games : [];
+      for (var i = 0; i < games.length; i++) {
+        if (games[i] && games[i].statusState === 'in') {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function getAutoRefreshDelay() {
+      if (!isViewingToday()) {
+        return 0;
+      }
+      return hasLiveLeagueGames() ? LIVE_REFRESH_MS : 0;
+    }
+
+    function updateRefreshHint() {
+      var hint = document.getElementById('refreshHint');
+      if (!hint) {
+        return;
+      }
+
+      var message = '';
+      var needsAttention = false;
+
+      if (!autoRefreshEnabled) {
+        message = 'Auto refresh is off.';
+      } else if (!isViewingToday()) {
+        message = 'Auto refresh only runs for today.';
+      } else if (!hasLiveLeagueGames()) {
+        message = 'Manual refresh is required after games begin to start auto refresh.';
+        needsAttention = true;
+      } else {
+        message = 'Auto refresh is active for live games every 30 seconds.';
+      }
+
+      hint.classList.toggle('is-attention', needsAttention);
+      hint.innerText = message;
+    }
+
+    function scheduleNextAutoRefresh() {
+      stopAutoRefresh();
+      if (!autoRefreshEnabled) {
+        return;
+      }
+
+      var delay = getAutoRefreshDelay();
+      if (!delay) {
+        updateRefreshHint();
+        return;
+      }
+
+      autoRefreshTimer = setTimeout(function () {
         if (!autoRefreshEnabled || document.hidden || refreshInFlight) {
+          scheduleNextAutoRefresh();
           return;
         }
+
         refreshInFlight = true;
         loadLeague({ showLoader: false, patchOnly: true })
           .finally(function () {
             refreshInFlight = false;
+            scheduleNextAutoRefresh();
           });
-      }, AUTO_REFRESH_MS);
+      }, delay);
+
+      updateRefreshHint();
     }
 
     function manualRefresh() {
@@ -1248,6 +1330,7 @@
       if (!games.length) {
         grid.innerHTML = '<div class="empty">No games found for this date.</div>';
         previousGamesById = {};
+        updateRefreshHint();
         return;
       }
 
@@ -1293,6 +1376,12 @@
       previousGamesById = {};
       for (var m = 0; m < games.length; m++) {
         previousGamesById[gameKey(games[m])] = games[m];
+      }
+
+      updateRefreshHint();
+
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
       }
     }
 
@@ -1559,6 +1648,9 @@
     function changeDate(offset) {
       currentDate.setDate(currentDate.getDate() + offset);
       updateDateDisplay();
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      }
       loadLeague({ showLoader: true, patchOnly: false });
     }
 
@@ -1568,6 +1660,9 @@
         return;
       }
       previewSelectedDate();
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      }
       loadLeague({ showLoader: true, patchOnly: false });
     }
 
