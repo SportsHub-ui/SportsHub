@@ -425,6 +425,29 @@
     return text;
   }
 
+  function toCompactPlayerName(fullName) {
+    const text = String(fullName || "").trim();
+    if (!text) {
+      return "";
+    }
+
+    const tokens = text.split(/\s+/).filter(Boolean);
+    if (tokens.length < 2) {
+      return text;
+    }
+
+    const firstInitial = tokens[0].charAt(0).toUpperCase();
+    const suffixes = { jr: true, sr: true, ii: true, iii: true, iv: true, v: true };
+    const lastToken = tokens[tokens.length - 1];
+    const lastTokenKey = lastToken.toLowerCase().replace(/\./g, "");
+
+    if (suffixes[lastTokenKey] && tokens.length >= 3) {
+      return firstInitial + ". " + tokens[tokens.length - 2] + " " + lastToken;
+    }
+
+    return firstInitial + ". " + lastToken;
+  }
+
   function buildHittersFromTeam(teamData) {
     if (!teamData || !Array.isArray(teamData.batters) || !teamData.players) {
       return [];
@@ -453,7 +476,7 @@
 
         return {
           id: p.person.id,
-          name: p.person.fullName,
+          name: toCompactPlayerName(p.person.fullName),
           position: p.position && p.position.abbreviation ? p.position.abbreviation : "-",
           battingSlot: slot,
           isSubstitution: isSubstitution,
@@ -501,7 +524,7 @@
 
         return {
           id: p.person.id,
-          name: p.person.fullName,
+          name: toCompactPlayerName(p.person.fullName),
           record: (seasonPitching.wins !== undefined && seasonPitching.losses !== undefined)
             ? seasonPitching.wins + "-" + seasonPitching.losses : null,
           saves: seasonPitching.saves !== undefined ? seasonPitching.saves : null,
@@ -633,14 +656,14 @@
       gameObj.awayLineup = awayBatters
         .map(function (id) {
           const p = teams.away && teams.away.players ? teams.away.players["ID" + id] : null;
-          return p ? { name: p.person.fullName, position: (p.position && p.position.abbreviation) || "?" } : null;
+          return p ? { name: toCompactPlayerName(p.person.fullName), position: (p.position && p.position.abbreviation) || "?" } : null;
         })
         .filter(Boolean);
 
       gameObj.homeLineup = homeBatters
         .map(function (id) {
           const p = teams.home && teams.home.players ? teams.home.players["ID" + id] : null;
-          return p ? { name: p.person.fullName, position: (p.position && p.position.abbreviation) || "?" } : null;
+          return p ? { name: toCompactPlayerName(p.person.fullName), position: (p.position && p.position.abbreviation) || "?" } : null;
         })
         .filter(Boolean);
 
@@ -714,7 +737,7 @@
         const currentPitcherId = pitchingTeam.pitchers[pitchingTeam.pitchers.length - 1];
         const pitcher = pitchingTeam.players ? pitchingTeam.players["ID" + currentPitcherId] : null;
         if (pitcher) {
-          gameObj.currentPitcher = pitcher.person.fullName;
+          gameObj.currentPitcher = toCompactPlayerName(pitcher.person.fullName);
           const pitchingStats = pitcher.stats && pitcher.stats.pitching;
           if (pitchingStats) {
             gameObj.pitchCount = pitchingStats.numberOfPitches || null;
@@ -744,7 +767,7 @@
         }
 
         if (currentBatter) {
-          gameObj.currentBatter = currentBatter.person.fullName;
+          gameObj.currentBatter = toCompactPlayerName(currentBatter.person.fullName);
           const gameBatting = currentBatter.stats && currentBatter.stats.batting;
           const gameHits = gameBatting ? gameBatting.hits || 0 : null;
           const gameAtBats = gameBatting ? gameBatting.atBats || 0 : null;
@@ -816,10 +839,10 @@
           ? String(game.teams.home.leagueRecord.wins || 0) + "-" + String(game.teams.home.leagueRecord.losses || 0)
           : "",
       homeScore: game.teams.home.score || 0,
-      awayStarter: game.teams.away.probablePitcher ? game.teams.away.probablePitcher.fullName : "TBD",
+      awayStarter: game.teams.away.probablePitcher ? toCompactPlayerName(game.teams.away.probablePitcher.fullName) : "TBD",
       awayStarterId: game.teams.away.probablePitcher ? game.teams.away.probablePitcher.id : null,
       awayStarterRecord: null,
-      homeStarter: game.teams.home.probablePitcher ? game.teams.home.probablePitcher.fullName : "TBD",
+      homeStarter: game.teams.home.probablePitcher ? toCompactPlayerName(game.teams.home.probablePitcher.fullName) : "TBD",
       homeStarterId: game.teams.home.probablePitcher ? game.teams.home.probablePitcher.id : null,
       homeStarterRecord: null,
       currentPitcher: null,
@@ -833,11 +856,11 @@
       runnerOn1: false,
       runnerOn2: false,
       runnerOn3: false,
-      winner: game.decisions && game.decisions.winner ? game.decisions.winner.fullName : "N/A",
+      winner: game.decisions && game.decisions.winner ? toCompactPlayerName(game.decisions.winner.fullName) : "N/A",
       winnerId: game.decisions && game.decisions.winner ? game.decisions.winner.id || null : null,
-      loser: game.decisions && game.decisions.loser ? game.decisions.loser.fullName : "N/A",
+      loser: game.decisions && game.decisions.loser ? toCompactPlayerName(game.decisions.loser.fullName) : "N/A",
       loserId: game.decisions && game.decisions.loser ? game.decisions.loser.id || null : null,
-      save: game.decisions && game.decisions.save ? game.decisions.save.fullName : "N/A",
+      save: game.decisions && game.decisions.save ? toCompactPlayerName(game.decisions.save.fullName) : "N/A",
       saveId: game.decisions && game.decisions.save ? game.decisions.save.id || null : null,
       tv: tvList.length > 0 ? tvList.slice(0, 2).join(", ") : "N/A",
       umpire: "TBD",
@@ -1255,7 +1278,7 @@
     (rosterRes.roster || []).forEach(function (p) {
       const player = {
         number: p.jerseyNumber || "--",
-        name: (p.person.fullName || "").toUpperCase()
+        name: toCompactPlayerName(p.person.fullName || "").toUpperCase()
       };
 
       const posType = p.position && p.position.type ? p.position.type : "";
@@ -1488,7 +1511,7 @@
       }
 
       return {
-        name: (athlete.displayName || "Player") + jersey,
+        name: toCompactPlayerName(athlete.displayName || "Player") + jersey,
         position: position,
         values: stats,
         statusText: statusText
@@ -1513,7 +1536,7 @@
             const headshot = athlete && athlete.headshot ? athlete.headshot.href || athlete.headshot : "";
             return {
               label: category && (category.displayName || category.name) ? String(category.displayName || category.name) : "Leader",
-              athleteName: athlete.displayName || athlete.shortName || entry.displayValue || "Leader",
+              athleteName: toCompactPlayerName(athlete.displayName || athlete.shortName || entry.displayValue || "Leader"),
               value: entry && entry.mainStat ? [entry.mainStat.value || "", entry.mainStat.label || ""].filter(Boolean).join(" ") : entry.displayValue || entry.value || "",
               summary: entry.summary || "",
               teamAbbr: team.abbreviation || "",
@@ -1817,8 +1840,8 @@
           return {
             id: c && c.id !== undefined && c.id !== null ? String(c.id) : String(idx + 1),
             pos: c && c.order !== undefined && c.order !== null ? String(c.order) : String(idx + 1),
-            name: athlete.displayName || athlete.shortName || "Unknown",
-            fullName: athlete.fullName || athlete.displayName || athlete.shortName || "Unknown",
+            name: toCompactPlayerName(athlete.displayName || athlete.shortName || "Unknown"),
+            fullName: toCompactPlayerName(athlete.fullName || athlete.displayName || athlete.shortName || "Unknown"),
             flag: athlete && athlete.flag && athlete.flag.href ? athlete.flag.href : "",
             toPar: scoreText,
             rounds: roundText || "-",
