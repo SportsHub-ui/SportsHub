@@ -809,7 +809,12 @@
 
       .box-table,
       .hitters-table {
-        font-size: 0.72rem;
+        font-size: 0.64rem;
+      }
+
+      .box-table thead th,
+      .hitters-table thead th {
+        font-size: 0.62rem;
       }
 
       .box-table thead th,
@@ -823,14 +828,25 @@
       }
 
       .box-team-cell {
-        min-width: 56px;
-        font-size: 0.78rem;
+        min-width: 44px;
+        font-size: 0.66rem;
       }
 
       .box-team-logo {
         display: inline-block;
-        width: 14px;
-        height: 14px;
+        width: 11px;
+        height: 11px;
+      }
+
+      .box-team-wrap {
+        gap: 4px;
+      }
+
+      .table-scroll .box-table thead th:first-child,
+      .table-scroll .box-table tbody td:first-child {
+        width: 44px;
+        max-width: 44px;
+        min-width: 44px;
       }
 
       .box-team-name-full {
@@ -844,13 +860,17 @@
 
       .hitter-name {
         min-width: 0;
-        font-size: 0.86rem;
+        font-size: 0.76rem;
+      }
+
+      .hitter-name.hitter-sub {
+        font-size: 0.76rem;
       }
 
       .hitters-table thead th:first-child,
       .hitters-table tbody td:first-child {
-        width: 22%;
-        max-width: 22%;
+        width: 18%;
+        max-width: 18%;
       }
 
       .table-scroll {
@@ -863,7 +883,55 @@
       }
 
       .table-scroll .hitters-table {
-        min-width: 760px;
+        min-width: 600px;
+        table-layout: auto;
+      }
+
+      .table-scroll .hitting-stats-table {
+        min-width: 560px;
+        table-layout: fixed;
+      }
+
+      .table-scroll .pitching-stats-table {
+        min-width: 520px;
+        table-layout: fixed;
+      }
+
+      .table-scroll .pitching-stats-table th:first-child,
+      .table-scroll .pitching-stats-table td:first-child {
+        width: 17%;
+        max-width: 17%;
+      }
+
+      .table-scroll .pitching-stats-table th:nth-child(n + 2):nth-child(-n + 8),
+      .table-scroll .pitching-stats-table td:nth-child(n + 2):nth-child(-n + 8) {
+        width: 7%;
+      }
+
+      .table-scroll .pitching-stats-table th:nth-child(9),
+      .table-scroll .pitching-stats-table td:nth-child(9) {
+        width: 14%;
+      }
+
+      .table-scroll .pitching-stats-table th:nth-child(10),
+      .table-scroll .pitching-stats-table td:nth-child(10) {
+        width: 8%;
+      }
+
+      .table-scroll .pitching-stats-table th,
+      .table-scroll .pitching-stats-table td {
+        padding-left: 1px;
+        padding-right: 1px;
+      }
+
+      .table-scroll .hitting-stats-table th:nth-child(n + 2):nth-child(-n + 8),
+      .table-scroll .hitting-stats-table td:nth-child(n + 2):nth-child(-n + 8) {
+        width: 8%;
+      }
+
+      .table-scroll .hitting-stats-table th:nth-child(n + 9),
+      .table-scroll .hitting-stats-table td:nth-child(n + 9) {
+        width: 8.5%;
       }
 
       .table-scroll .box-table thead th:first-child,
@@ -896,13 +964,15 @@
 
       .pitcher-name {
         min-width: 0;
+        font-size: 0.76rem;
         white-space: nowrap;
       }
 
       .pitcher-tag {
         display: block;
+        font-size: 0.62rem;
         margin-left: 0;
-        margin-top: 2px;
+        margin-top: 1px;
       }
 
       .decision-row {
@@ -1825,7 +1895,7 @@
         '<div class="hitters-card">' +
         '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Hitting</h3>' +
         '<div class="table-scroll">' +
-        '<table class="hitters-table">' +
+        '<table class="hitters-table hitting-stats-table">' +
         '<thead><tr><th style="text-align:left;padding-left:8px;">Hitters</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th><th>SLG</th></tr></thead>' +
         '<tbody>' + rows +
         '<tr class="team-row"><td class="hitter-name">TEAM</td><td>' + escapeHtml(hittingTotals.ab) + '</td><td>' + escapeHtml(hittingTotals.r) + '</td><td>' + escapeHtml(hittingTotals.h) + '</td><td>' + escapeHtml(hittingTotals.rbi) + '</td><td>' + escapeHtml(hittingTotals.hr) + '</td><td>' + escapeHtml(hittingTotals.bb) + '</td><td>' + escapeHtml(hittingTotals.k) + '</td><td>-</td><td>-</td><td>-</td></tr>' +
@@ -1938,7 +2008,7 @@
         '<div class="detail-section pitching-table-wrap">' +
         '<h4 class="detail-section-title">Pitchers</h4>' +
         '<div class="table-scroll">' +
-        '<table class="hitters-table">' +
+        '<table class="hitters-table pitching-stats-table">' +
         '<thead><tr><th style="text-align:left;padding-left:8px;">Pitchers</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th><th>HR</th><th>PC-ST</th><th>ERA</th></tr></thead>' +
         '<tbody>' +
         pitchingRows +
