@@ -324,6 +324,43 @@
       grid-column: 1/-1;
     }
 
+    @keyframes highlight-change {
+      0%   { background-color: #fff9c4; box-shadow: 0 0 8px #f9a825; }
+      70%  { background-color: #fff9c4; box-shadow: 0 0 8px #f9a825; }
+      100% { background-color: transparent; box-shadow: none; }
+    }
+
+    .changed {
+      animation: highlight-change 1.8s ease-out forwards;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .refresh-bar {
+      text-align: center;
+      font-size: 0.65rem;
+      color: #aaa;
+      padding: 4px 0 0;
+      letter-spacing: 0.05em;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .refresh-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ccc;
+      margin-right: 5px;
+      vertical-align: middle;
+      transition: background 0.3s;
+    }
+
+    .refresh-dot.active {
+      background: #2e7d32;
+      animation: pulse 1.5s infinite;
+    }
+
     @media (max-width: 500px) {
       .settings-bar {
         gap: 4px;
@@ -493,6 +530,11 @@
       </div>
     </div>
 
+    <div class="refresh-bar">
+      <span class="refresh-dot" id="refreshDot"></span>
+      <span id="refreshStatus">Loading...</span>
+    </div>
+
     <div id="gameGrid" class="grid">
       <div class="loader">Fetching Games...</div>
     </div>
@@ -501,6 +543,10 @@
   <script>
 
     let currentGamesData = []; // Store games globally so modal can access them
+    let previousGamesMap = {}; // Map of gamePk -> game snapshot for change detection
+    let refreshTimer = null;
+    var LIVE_REFRESH_MS = 30000;
+    var IDLE_REFRESH_MS = 120000;
 
     var teamColors = {
       "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
@@ -521,18 +567,57 @@
       const today = new Date().toISOString().split('T')[0];
       document.getElementById('dateInput').value = today;
       loadDashboard();
-      // Auto-refresh every 2 minutes
-      setInterval(function () {
-        loadDashboard(document.getElementById('dateInput').value);
-      }, 120000);
     };
 
+    function scheduleRefresh(hasLiveGames) {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      var interval = hasLiveGames ? LIVE_REFRESH_MS : IDLE_REFRESH_MS;
+      refreshTimer = setTimeout(function () {
+        silentRefresh(document.getElementById('dateInput').value);
+      }, interval);
+    }
+
+    function silentRefresh(targetDateStr) {
+      setRefreshIndicator(true);
+      google.script.run
+        .withSuccessHandler(renderDashboard)
+        .withFailureHandler(function () { setRefreshIndicator(false); scheduleRefresh(false); })
+        .getAppData("dashboard", targetDateStr || null);
+    }
+
+    function setRefreshIndicator(loading) {
+      var dot = document.getElementById('refreshDot');
+      var status = document.getElementById('refreshStatus');
+      if (loading) {
+        dot.className = 'refresh-dot active';
+        if (status) status.textContent = 'Refreshing...';
+      } else {
+        dot.className = 'refresh-dot';
+      }
+    }
+
+    function updateRefreshTimestamp(hasLiveGames) {
+      var status = document.getElementById('refreshStatus');
+      if (!status) return;
+      var now = new Date();
+      var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      var nextLabel = hasLiveGames ? 'every ' + (LIVE_REFRESH_MS / 1000) + 's' : 'in ' + (IDLE_REFRESH_MS / 60000) + 'm';
+      status.textContent = 'Updated ' + timeStr + (hasLiveGames ? ' · Live games — refreshing ' + nextLabel : ' · Next refresh ' + nextLabel);
+      document.getElementById('refreshDot').className = hasLiveGames ? 'refresh-dot active' : 'refresh-dot';
+    }
+
     function loadDashboard(targetDateStr = null) {
+      previousGamesMap = {};
       document.getElementById('gameGrid').innerHTML = '<div class="loader">Fetching Games...</div>';
-      google.script.run.withSuccessHandler(renderDashboard).getAppData("dashboard", targetDateStr);
+      setRefreshIndicator(true);
+      google.script.run
+        .withSuccessHandler(renderDashboard)
+        .withFailureHandler(function () { setRefreshIndicator(false); scheduleRefresh(false); })
+        .getAppData("dashboard", targetDateStr);
     }
 
     function renderDashboard(data) {
+      setRefreshIndicator(false);
       var teamColor = teamColors[data.myTeam] || "#0046ad";
 
       // Update the hidden date input value
@@ -551,6 +636,9 @@
       var grid = document.getElementById('gameGrid');
       if (!data.games || data.games.length === 0) {
         grid.innerHTML = '<div class="loader">No games found for today.</div>';
+        previousGamesMap = {};
+        scheduleRefresh(false);
+        updateRefreshTimestamp(false);
         return;
       }
 
@@ -598,39 +686,58 @@
         return 0;
       });
 
+      var hasLiveGames = false;
+      var newMap = {};
       var html = "";
+      currentGamesData = data.games; // Save data to global variable
+
       for (var i = 0; i < data.games.length; i++) {
         var g = data.games[i];
         var isFav = (g.fav === 0);
         var isInProgress = (g.liveText.indexOf("TOP") > -1 || g.liveText.indexOf("BOT") > -1);
         var isWarmup = (g.liveText === "WARMUP");
         var isPreview = (g.status === "Preview" || g.status === "Created");
+        var isLive = (g.status === "Live" || g.status === "In Progress" || isWarmup);
 
-        currentGamesData = data.games; // Save data to global variable
+        if (isLive) hasLiveGames = true;
+
+        // Detect what changed vs. previous render
+        var pk = g.gamePk || (g.away + '@' + g.home + ':' + i);
+        var prev = previousGamesMap[pk];
+        var awayScoreChanged  = prev && prev.awayScore  !== g.awayScore;
+        var homeScoreChanged  = prev && prev.homeScore  !== g.homeScore;
+        var inningChanged     = prev && prev.liveText   !== g.liveText;
+        var pitcherChanged    = prev && prev.currentPitcher !== g.currentPitcher;
+        var batterChanged     = prev && prev.currentBatter  !== g.currentBatter;
+        newMap[pk] = { awayScore: g.awayScore, homeScore: g.homeScore, liveText: g.liveText, currentPitcher: g.currentPitcher, currentBatter: g.currentBatter };
+
         html += '<div class="card ' + (isFav ? 'fav-card' : '') + '" onclick="showGameDetails(' + i + ')" style="cursor:pointer">';
         html += '<div class="status-line">';
-        html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + '">' + g.liveText + '</span>';
+        html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + (inningChanged ? ' changed' : '') + '">' + g.liveText + '</span>';
         if (isInProgress || isWarmup) { html += renderSituation(g); }
         html += '</div>';
-        html += renderTeamRow(g.awayId, g.away, g.awayScore, isPreview);
-        html += renderTeamRow(g.homeId, g.home, g.homeScore, isPreview);
-        html += '<div class="pitching-info">' + renderPitching(g) + '</div>';
+        html += renderTeamRow(g.awayId, g.away, g.awayScore, isPreview, awayScoreChanged);
+        html += renderTeamRow(g.homeId, g.home, g.homeScore, isPreview, homeScoreChanged);
+        html += '<div class="pitching-info">' + renderPitching(g, pitcherChanged, batterChanged) + '</div>';
         html += '<div class="card-footer"><span>TV: ' + (g.tv || "N/A") + '</span><span>' + (g.venue || "") + '</span></div>';
         html += '</div>';
       }
       grid.innerHTML = html;
+      previousGamesMap = newMap;
+      scheduleRefresh(hasLiveGames);
+      updateRefreshTimestamp(hasLiveGames);
     }
 
-    function renderPitching(g) {
+    function renderPitching(g, pitcherChanged, batterChanged) {
       if (g.status === "Preview" || g.status === "Created") {
         return '<div><span class="pitch-label">Away:</span> ' + g.awayStarter + '</div>' +
           '<div><span class="pitch-label">Home:</span> ' + g.homeStarter + '</div>';
       } else if (g.status === "Live" || g.status === "In Progress") {
-        var html = '<div><span class="pitch-label">P:</span> ' + (g.currentPitcher || "Warmup...");
+        var html = '<div><span class="pitch-label">P:</span> <span class="' + (pitcherChanged ? 'changed' : '') + '">' + (g.currentPitcher || "Warmup...") + '</span>';
         if (g.pitchCount) { html += '<span class="stat-tag">' + g.pitchCount + ' pitches; ' + g.pitchSummary + '</span>'; }
         html += '</div>';
         if (g.currentBatter) {
-          html += '<div><span class="pitch-label">B:</span> ' + g.currentBatter;
+          html += '<div><span class="pitch-label">B:</span> <span class="' + (batterChanged ? 'changed' : '') + '">' + g.currentBatter + '</span>';
           if (g.batterLine) { html += '<span class="stat-tag">' + '(' + g.batterAvg + ') ' + g.batterLine + '</span>'; }
           if (g.ballStrikeCount) { html += '<span class="stat-tag">' + g.ballStrikeCount + '</span>'; }
           html += '</div>';
@@ -657,13 +764,13 @@
         '</div>';
     }
 
-    function renderTeamRow(id, name, score, isPreview) {
+    function renderTeamRow(id, name, score, isPreview, scoreChanged) {
       return '<div class="team-line">' +
         '  <div class="team-info">' +
         '    <img class="logo" src="https://www.mlbstatic.com/team-logos/' + id + '.svg">' +
         '    <span class="team-name">' + name + '</span>' +
         '  </div>' +
-        '  <span class="score">' + (!isPreview ? score : '') + '</span>' +
+        '  <span class="score' + (scoreChanged ? ' changed' : '') + '">' + (!isPreview ? score : '') + '</span>' +
         '</div>';
     }
 

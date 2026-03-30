@@ -207,6 +207,49 @@
       grid-column: 1/-1;
     }
 
+    @keyframes highlight-change {
+      0%   { background-color: #fff9c4; box-shadow: 0 0 8px #f9a825; }
+      70%  { background-color: #fff9c4; box-shadow: 0 0 8px #f9a825; }
+      100% { background-color: transparent; box-shadow: none; }
+    }
+
+    .changed {
+      animation: highlight-change 1.8s ease-out forwards;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    .refresh-bar {
+      text-align: center;
+      font-size: 0.65rem;
+      color: #aaa;
+      padding: 4px 0 8px;
+      letter-spacing: 0.05em;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .refresh-dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ccc;
+      margin-right: 5px;
+      vertical-align: middle;
+      transition: background 0.3s;
+    }
+
+    .refresh-dot.active {
+      background: #2e7d32;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%   { opacity: 1; }
+      50%  { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
     /* Add/Update these in your <style> tag */
     .settings-bar {
       background: var(--navy);
@@ -301,6 +344,11 @@
     <div id="loading" class="loader">
       <h2 style="color: var(--navy)">Analyzing Matchup...</h2>
       <p>Summoning the AI Scout...</p>
+    </div>
+
+    <div class="refresh-bar">
+      <span class="refresh-dot" id="refreshDot"></span>
+      <span id="refreshStatus">Loading...</span>
     </div>
 
     <div id="content" class="main-layout" style="display: none;">
@@ -450,6 +498,10 @@
       }
 
       let currentViewDate = new Date();
+      let refreshTimer = null;
+      let previousGameSnapshot = null;
+      var LIVE_REFRESH_MS = 30000;
+      var IDLE_REFRESH_MS = 120000;
 
       window.onload = function () {
         // Set initial date input to today
@@ -458,13 +510,58 @@
         fetchMyTeamData();
       };
 
+      function scheduleRefresh(isLive) {
+        if (refreshTimer) clearTimeout(refreshTimer);
+        var interval = isLive ? LIVE_REFRESH_MS : IDLE_REFRESH_MS;
+        refreshTimer = setTimeout(function () {
+          silentRefresh(document.getElementById('dateInput').value);
+        }, interval);
+      }
+
+      function silentRefresh(targetDateStr) {
+        setRefreshIndicator(true);
+        google.script.run
+          .withSuccessHandler(renderPage)
+          .withFailureHandler(function () { setRefreshIndicator(false); scheduleRefresh(false); })
+          .getAppData("myteam", targetDateStr || null);
+      }
+
+      function setRefreshIndicator(loading) {
+        var dot = document.getElementById('refreshDot');
+        var status = document.getElementById('refreshStatus');
+        if (loading) {
+          dot.className = 'refresh-dot active';
+          if (status) status.textContent = 'Refreshing...';
+        } else {
+          dot.className = 'refresh-dot';
+        }
+      }
+
+      function updateRefreshTimestamp(isLive) {
+        var status = document.getElementById('refreshStatus');
+        if (!status) return;
+        var now = new Date();
+        var timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        var nextLabel = isLive ? 'every ' + (LIVE_REFRESH_MS / 1000) + 's' : 'in ' + (IDLE_REFRESH_MS / 60000) + 'm';
+        status.textContent = 'Updated ' + timeStr + (isLive ? ' · Live game — refreshing ' + nextLabel : ' · Next refresh ' + nextLabel);
+        document.getElementById('refreshDot').className = isLive ? 'refresh-dot active' : 'refresh-dot';
+      }
+
+      function makeGameSnap(game) {
+        if (!game) return null;
+        return game.awayScore + '|' + game.homeScore + '|' + game.liveText + '|' + game.status;
+      }
+
       function fetchMyTeamData(targetDateStr = null) {
+        previousGameSnapshot = null;
         document.getElementById('loading').style.display = 'block';
         document.getElementById('content').style.display = 'none';
+        setRefreshIndicator(true);
 
         google.script.run
           .withSuccessHandler(renderPage)
           .withFailureHandler(function (err) {
+            setRefreshIndicator(false);
             document.getElementById('loading').innerHTML = "<h2>Error</h2><p>" + err.message + "</p>";
           })
           .getAppData("myteam", targetDateStr);
@@ -472,6 +569,7 @@
 
       function renderPage(data) {
         if (!data) return;
+        setRefreshIndicator(false);
 
         // Update Date Display Logic
         document.getElementById('dateInput').value = data.currentDateIso;
@@ -490,15 +588,24 @@
 
         document.documentElement.style.setProperty('--navy', teamColor);
 
+        // Determine what changed vs previous render
+        var newSnap = makeGameSnap(data.teamGame);
+        var scoreChanged = previousGameSnapshot !== null && previousGameSnapshot !== newSnap;
+        previousGameSnapshot = newSnap;
+
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').style.display = 'grid';
 
-        renderMatchup(data.teamGame);
+        renderMatchup(data.teamGame, scoreChanged);
         renderAI(data.aiReport, data.aiLabel);
         // Pass favorite team name to renderLineups
         renderLineups(data.teamGame, data.myTeam);
         renderStandings(data.standings);
         renderUpcoming(data.upcoming);
+
+        var isLive = data.teamGame && (data.teamGame.status === "Live" || data.teamGame.status === "In Progress");
+        scheduleRefresh(isLive);
+        updateRefreshTimestamp(isLive);
       }
 
       // New Date Control Functions
@@ -617,7 +724,7 @@
         body.innerHTML = html;
       }
 
-      function renderMatchup(game) {
+      function renderMatchup(game, scoreChanged) {
         var container = document.getElementById('matchupContent');
         var statusSpan = document.getElementById('gameStatus');
         var sectionTitle = document.querySelector('.column-left .section-title');
@@ -638,6 +745,7 @@
 
         var awayLogoUrl = "https://www.mlbstatic.com/team-logos/" + game.awayId + ".svg";
         var homeLogoUrl = "https://www.mlbstatic.com/team-logos/" + game.homeId + ".svg";
+        var changedClass = scoreChanged ? ' changed' : '';
 
         var html = '';
 
@@ -647,9 +755,9 @@
         }
 
         html += '<div class="matchup-grid">';
-        html += '<div class="team-box"><img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.awayScore : "") + '</div></div>';
+        html += '<div class="team-box"><img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || "TBD") + '</div><div class="big-score' + changedClass + '">' + (game.status !== "Preview" ? game.awayScore : "") + '</div></div>';
         html += '<div class="vs-circle">VS</div>';
-        html += '<div class="team-box"><img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.homeScore : "") + '</div></div>';
+        html += '<div class="team-box"><img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || "TBD") + '</div><div class="big-score' + changedClass + '">' + (game.status !== "Preview" ? game.homeScore : "") + '</div></div>';
         html += '</div>';
         
         // Add broadcasting and umpire info below matchup
