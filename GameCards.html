@@ -1100,6 +1100,8 @@
     let previousGamesById = {};
     let autoRefreshEnabled = true;
     let autoRefreshTimer = null;
+    let autoRefreshCountdownTimer = null;
+    let nextAutoRefreshAt = 0;
     let refreshInFlight = false;
     const LIVE_REFRESH_MS = 30000;
 
@@ -1170,11 +1172,29 @@
       scheduleNextAutoRefresh();
     }
 
+    function startAutoRefreshCountdown() {
+      if (autoRefreshCountdownTimer) {
+        return;
+      }
+      autoRefreshCountdownTimer = setInterval(function () {
+        updateRefreshHint();
+      }, 1000);
+    }
+
+    function stopAutoRefreshCountdown() {
+      if (autoRefreshCountdownTimer) {
+        clearInterval(autoRefreshCountdownTimer);
+        autoRefreshCountdownTimer = null;
+      }
+    }
+
     function stopAutoRefresh() {
       if (autoRefreshTimer) {
         clearTimeout(autoRefreshTimer);
         autoRefreshTimer = null;
       }
+      nextAutoRefreshAt = 0;
+      stopAutoRefreshCountdown();
     }
 
     function isViewingToday() {
@@ -1204,8 +1224,13 @@
       } else if (!currentGamesData.some(gameIsLive)) {
         message = 'Manual refresh is required after games begin to start auto refresh.';
         needsAttention = true;
+      } else if (refreshInFlight) {
+        message = 'Refreshing live games...';
       } else {
-        message = 'Auto refresh is active for live games every 30 seconds.';
+        var secondsUntilRefresh = nextAutoRefreshAt
+          ? Math.max(0, Math.ceil((nextAutoRefreshAt - Date.now()) / 1000))
+          : Math.ceil(LIVE_REFRESH_MS / 1000);
+        message = 'AUTO REFRESH IS ACTIVE FOR LIVE GAMES IN ' + secondsUntilRefresh + ' SECONDS';
       }
 
       hint.classList.toggle('is-attention', needsAttention);
@@ -1220,11 +1245,17 @@
 
       var delay = getAutoRefreshDelay();
       if (!delay) {
+        nextAutoRefreshAt = 0;
+        stopAutoRefreshCountdown();
         updateRefreshHint();
         return;
       }
 
+      nextAutoRefreshAt = Date.now() + delay;
+      startAutoRefreshCountdown();
+
       autoRefreshTimer = setTimeout(function () {
+        nextAutoRefreshAt = 0;
         if (!autoRefreshEnabled || document.hidden || refreshInFlight) {
           scheduleNextAutoRefresh();
           return;
@@ -1253,7 +1284,7 @@
     }
 
     function gameIsLive(g) {
-      return g && (g.status === 'Live' || g.status === 'In Progress' || g.liveText === 'WARMUP' || (g.liveText && (g.liveText.indexOf('TOP') > -1 || g.liveText.indexOf('BOT') > -1)));
+      return g && (g.status === 'Live' || g.status === 'In Progress' || g.liveText === 'WARMUP' || (g.liveText && (g.liveText.indexOf('TOP') > -1 || g.liveText.indexOf('BOT') > -1 || g.liveText.indexOf('MID') > -1 || g.liveText.indexOf('END') > -1)));
     }
 
     function getSortedGames(games) {
@@ -1261,7 +1292,7 @@
 
       function getInningNum(liveText) {
         if (!liveText) return 0;
-        var match = liveText.match(/(TOP|BOT)\s*(\d+)/i);
+        var match = liveText.match(/(TOP|BOT|MID|END)\s*(\d+)/i);
         return match ? parseInt(match[2], 10) : 0;
       }
 

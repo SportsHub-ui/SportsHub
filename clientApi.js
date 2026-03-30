@@ -773,7 +773,14 @@
 
     if (isInProgress) {
       if (linescore && linescore.currentInning) {
-        liveText = (linescore.isTopInning ? "TOP " : "BOT ") + linescore.currentInning;
+        const inningState = linescore.inningState ? String(linescore.inningState).toLowerCase() : "";
+        if (inningState.indexOf("middle") === 0) {
+          liveText = "MID " + linescore.currentInning;
+        } else if (inningState.indexOf("end") === 0) {
+          liveText = "END " + linescore.currentInning;
+        } else {
+          liveText = (linescore.isTopInning ? "TOP " : "BOT ") + linescore.currentInning;
+        }
       } else {
         liveText = "LIVE";
       }
