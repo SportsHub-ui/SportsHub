@@ -656,14 +656,14 @@
       gameObj.awayLineup = awayBatters
         .map(function (id) {
           const p = teams.away && teams.away.players ? teams.away.players["ID" + id] : null;
-          return p ? { name: toCompactPlayerName(p.person.fullName), position: (p.position && p.position.abbreviation) || "?" } : null;
+          return p ? { id: p.person.id, name: toCompactPlayerName(p.person.fullName), position: (p.position && p.position.abbreviation) || "?" } : null;
         })
         .filter(Boolean);
 
       gameObj.homeLineup = homeBatters
         .map(function (id) {
           const p = teams.home && teams.home.players ? teams.home.players["ID" + id] : null;
-          return p ? { name: toCompactPlayerName(p.person.fullName), position: (p.position && p.position.abbreviation) || "?" } : null;
+          return p ? { id: p.person.id, name: toCompactPlayerName(p.person.fullName), position: (p.position && p.position.abbreviation) || "?" } : null;
         })
         .filter(Boolean);
 
@@ -1296,6 +1296,94 @@
     });
 
     return roster;
+  }
+
+  async function getMlbPlayerDetails(playerId) {
+    const id = Number(playerId);
+    if (!id) {
+      throw new Error("Invalid player id");
+    }
+
+    const season = new Date().getFullYear();
+    const url =
+      "https://statsapi.mlb.com/api/v1/people/" +
+      id +
+      "?hydrate=currentTeam,stats(group=[hitting,pitching],type=[season],season=" +
+      season +
+      ")";
+    const payload = await fetchJson(url);
+    const person = payload && Array.isArray(payload.people) ? payload.people[0] : null;
+    if (!person) {
+      throw new Error("Player not found");
+    }
+
+    function getSeasonStat(groupName) {
+      const stats = Array.isArray(person.stats) ? person.stats : [];
+      for (let i = 0; i < stats.length; i += 1) {
+        const item = stats[i] || {};
+        const groupDisplay = item.group && item.group.displayName ? String(item.group.displayName).toLowerCase() : "";
+        if (groupDisplay !== String(groupName).toLowerCase()) {
+          continue;
+        }
+        const split = Array.isArray(item.splits) && item.splits[0] ? item.splits[0] : null;
+        return split && split.stat ? split.stat : null;
+      }
+      return null;
+    }
+
+    function dashIfEmpty(value) {
+      return value === undefined || value === null || value === "" ? "-" : String(value);
+    }
+
+    const hitting = getSeasonStat("hitting");
+    const pitching = getSeasonStat("pitching");
+    const currentTeam = person.currentTeam && person.currentTeam.name ? person.currentTeam.name : "-";
+    const position = person.primaryPosition && person.primaryPosition.abbreviation ? person.primaryPosition.abbreviation : "-";
+    const birthParts = [person.birthCity, person.birthStateProvince, person.birthCountry].filter(Boolean);
+
+    return {
+      id: id,
+      name: person.fullName || "Unknown",
+      compactName: toCompactPlayerName(person.fullName || "Unknown"),
+      photo: "https://img.mlbstatic.com/mlb-photos/image/upload/w_240,q_auto:best/v1/people/" + id + "/headshot/67/current",
+      bio: {
+        team: currentTeam,
+        position: position,
+        age: dashIfEmpty(person.currentAge),
+        birthDate: dashIfEmpty(person.birthDate),
+        bats: person.batSide && person.batSide.code ? person.batSide.code : "-",
+        throws: person.pitchHand && person.pitchHand.code ? person.pitchHand.code : "-",
+        height: dashIfEmpty(person.height),
+        weight: dashIfEmpty(person.weight),
+        born: birthParts.length ? birthParts.join(", ") : "-",
+        mlbDebut: dashIfEmpty(person.mlbDebutDate)
+      },
+      season: {
+        year: season,
+        hitting: {
+          avg: dashIfEmpty(hitting && hitting.avg),
+          obp: dashIfEmpty(hitting && hitting.obp),
+          slg: dashIfEmpty(hitting && hitting.slg),
+          ops: dashIfEmpty(hitting && hitting.ops),
+          hr: dashIfEmpty(hitting && hitting.homeRuns),
+          rbi: dashIfEmpty(hitting && hitting.rbi),
+          hits: dashIfEmpty(hitting && hitting.hits),
+          runs: dashIfEmpty(hitting && hitting.runs),
+          sb: dashIfEmpty(hitting && hitting.stolenBases),
+          ab: dashIfEmpty(hitting && hitting.atBats)
+        },
+        pitching: {
+          era: dashIfEmpty(pitching && pitching.era),
+          wins: dashIfEmpty(pitching && pitching.wins),
+          losses: dashIfEmpty(pitching && pitching.losses),
+          saves: dashIfEmpty(pitching && pitching.saves),
+          whip: dashIfEmpty(pitching && pitching.whip),
+          ip: dashIfEmpty(pitching && pitching.inningsPitched),
+          so: dashIfEmpty(pitching && pitching.strikeOuts),
+          bb: dashIfEmpty(pitching && pitching.baseOnBalls)
+        }
+      }
+    };
   }
 
   async function getLeagueScoreboardData(leagueKey, dateIso) {
@@ -1969,6 +2057,7 @@
     getDashboardData: getDashboardData,
     getMyTeamData: getMyTeamData,
     getRosterData: getRosterData,
+    getMlbPlayerDetails: getMlbPlayerDetails,
     getLeagueScoreboardData: getLeagueScoreboardData,
     getLeagueGameDetails: getLeagueGameDetails,
     getTopNewsData: getTopNewsData,

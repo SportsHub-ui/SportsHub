@@ -436,6 +436,179 @@
       flex: 0 0 28px;
     }
 
+    .lineup-player-row.is-clickable {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .lineup-player-row.is-clickable:hover {
+      background: #f5f9ff;
+    }
+
+    .player-modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 2200;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .player-modal {
+      background: #fff;
+      width: min(760px, 100%);
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: 0 18px 36px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .player-modal-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e6eaf0;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+    }
+
+    .player-headshot {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #e1e7f0;
+      background: #f7fafc;
+    }
+
+    .player-modal-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .player-modal-title {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--navy);
+      line-height: 1.2;
+    }
+
+    .player-modal-subtitle {
+      margin: 3px 0 0;
+      color: #5d6a7c;
+      font-size: 0.85rem;
+      font-family: 'Roboto Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .player-modal-close {
+      border: none;
+      background: transparent;
+      font-size: 1.5rem;
+      line-height: 1;
+      cursor: pointer;
+      color: #6e7b8c;
+    }
+
+    .player-modal-body {
+      padding: 14px 16px 18px;
+    }
+
+    .player-bio-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .player-bio-item {
+      border: 1px solid #d8dde4;
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fcfdff;
+    }
+
+    .player-bio-label {
+      display: block;
+      color: #6a7788;
+      font-size: 0.7rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .player-bio-value {
+      color: #1d2e45;
+      font-size: 0.9rem;
+      font-family: 'Roboto Mono', monospace;
+      word-break: break-word;
+    }
+
+    .player-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .player-stats-card {
+      border: 1px solid #d8dde4;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .player-stats-card h4 {
+      margin: 0;
+      padding: 8px 10px;
+      background: #f7fafc;
+      color: #1f2f49;
+      border-bottom: 1px solid #e6eaf0;
+      font-size: 0.85rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .player-stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .player-stats-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #f0f3f6;
+    }
+
+    .player-stats-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .player-stats-table td:first-child {
+      color: #6b7280;
+      text-transform: uppercase;
+      font-size: 0.72rem;
+      letter-spacing: 0.02em;
+    }
+
+    .player-stats-table td:last-child {
+      text-align: right;
+      font-weight: 700;
+      color: #13253c;
+    }
+
     @media (max-width: 760px) {
       .roster-grid {
         grid-template-columns: 1fr;
@@ -454,6 +627,20 @@
 
       .matchup-card .starter-record-subtle {
         font-size: 0.78em;
+      }
+
+      .player-modal-header {
+        align-items: flex-start;
+      }
+
+      .player-headshot {
+        width: 62px;
+        height: 62px;
+      }
+
+      .player-bio-grid,
+      .player-stats-grid {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -560,6 +747,20 @@
           <button class="roster-modal-close" onclick="hideRosterModal()" aria-label="Close roster">&times;</button>
         </div>
         <div id="rosterModalBody" class="roster-modal-body"></div>
+      </div>
+    </div>
+
+    <div id="playerModalOverlay" class="player-modal-overlay" onclick="closePlayerModal(event)">
+      <div class="player-modal" onclick="event.stopPropagation()">
+        <div class="player-modal-header">
+          <img id="playerModalHeadshot" class="player-headshot" alt="Player headshot">
+          <div class="player-modal-title-wrap">
+            <h3 id="playerModalTitle" class="player-modal-title">Player Details</h3>
+            <div id="playerModalSubtitle" class="player-modal-subtitle"></div>
+          </div>
+          <button class="player-modal-close" onclick="hidePlayerModal()" aria-label="Close player details">&times;</button>
+        </div>
+        <div id="playerModalBody" class="player-modal-body"></div>
       </div>
     </div>
 
@@ -695,6 +896,7 @@
       var currentViewDate = new Date();
       var currentRenderedGame = null;
       var currentSport = "mlb";
+      var playerDetailCache = {};
       var jsonCache = {};
 
       window.onload = function () {
@@ -1027,13 +1229,127 @@
         var html = '';
         for (var i = 0; i < lineup.length; i++) {
           var player = lineup[i];
-          html += '<tr>';
+          var playerId = player && player.id ? Number(player.id) : 0;
+          var canOpenPlayer = currentSport === 'mlb' && !!playerId;
+          html += '<tr class="lineup-player-row' + (canOpenPlayer ? ' is-clickable' : '') + '"' +
+            (canOpenPlayer ? ' onclick="openPlayerDetail(' + playerId + ')"' : '') + '>';
           html += '<td style="font-weight:bold;">' + (i + 1) + '</td>';
           html += '<td style="font-size:0.85rem;">' + (player.name || '') + '</td>';
           html += '<td><strong>' + (player.position || '') + '</strong></td>';
           html += '</tr>';
         }
         targetBody.innerHTML = html;
+      }
+
+      function buildStatsRows(labels, values) {
+        var html = '';
+        for (var i = 0; i < labels.length; i++) {
+          html += '<tr><td>' + labels[i] + '</td><td>' + values[i] + '</td></tr>';
+        }
+        return html;
+      }
+
+      function renderPlayerDetailContent(details) {
+        if (!details) {
+          return '<div style="color:#8a2f2f;">Player details are unavailable.</div>';
+        }
+
+        var bio = details.bio || {};
+        var hitting = details.season && details.season.hitting ? details.season.hitting : {};
+        var pitching = details.season && details.season.pitching ? details.season.pitching : {};
+        var seasonLabel = details.season && details.season.year ? String(details.season.year) : 'Season';
+
+        var bioHtml = '';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Team</span><span class="player-bio-value">' + escapeHtml(bio.team || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Position</span><span class="player-bio-value">' + escapeHtml(bio.position || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Age</span><span class="player-bio-value">' + escapeHtml(bio.age || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">DOB</span><span class="player-bio-value">' + escapeHtml(bio.birthDate || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">B/T</span><span class="player-bio-value">' + escapeHtml((bio.bats || '-') + '/' + (bio.throws || '-')) + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Height / Weight</span><span class="player-bio-value">' + escapeHtml((bio.height || '-') + ' / ' + (bio.weight || '-')) + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Born</span><span class="player-bio-value">' + escapeHtml(bio.born || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">MLB Debut</span><span class="player-bio-value">' + escapeHtml(bio.mlbDebut || '-') + '</span></div>';
+
+        var hittingRows = buildStatsRows(
+          ['AVG', 'OBP', 'SLG', 'OPS', 'HR', 'RBI', 'H', 'R', 'SB', 'AB'],
+          [
+            escapeHtml(hitting.avg || '-'),
+            escapeHtml(hitting.obp || '-'),
+            escapeHtml(hitting.slg || '-'),
+            escapeHtml(hitting.ops || '-'),
+            escapeHtml(hitting.hr || '-'),
+            escapeHtml(hitting.rbi || '-'),
+            escapeHtml(hitting.hits || '-'),
+            escapeHtml(hitting.runs || '-'),
+            escapeHtml(hitting.sb || '-'),
+            escapeHtml(hitting.ab || '-')
+          ]
+        );
+
+        var pitchingRows = buildStatsRows(
+          ['ERA', 'W', 'L', 'SV', 'WHIP', 'IP', 'SO', 'BB'],
+          [
+            escapeHtml(pitching.era || '-'),
+            escapeHtml(pitching.wins || '-'),
+            escapeHtml(pitching.losses || '-'),
+            escapeHtml(pitching.saves || '-'),
+            escapeHtml(pitching.whip || '-'),
+            escapeHtml(pitching.ip || '-'),
+            escapeHtml(pitching.so || '-'),
+            escapeHtml(pitching.bb || '-')
+          ]
+        );
+
+        return (
+          '<div class="player-bio-grid">' + bioHtml + '</div>' +
+          '<div class="player-stats-grid">' +
+          '<div class="player-stats-card"><h4>' + seasonLabel + ' Hitting</h4><table class="player-stats-table"><tbody>' + hittingRows + '</tbody></table></div>' +
+          '<div class="player-stats-card"><h4>' + seasonLabel + ' Pitching</h4><table class="player-stats-table"><tbody>' + pitchingRows + '</tbody></table></div>' +
+          '</div>'
+        );
+      }
+
+      function openPlayerDetail(playerId) {
+        if (currentSport !== 'mlb' || !playerId) {
+          return;
+        }
+
+        var overlay = document.getElementById('playerModalOverlay');
+        var headshot = document.getElementById('playerModalHeadshot');
+        var title = document.getElementById('playerModalTitle');
+        var subtitle = document.getElementById('playerModalSubtitle');
+        var body = document.getElementById('playerModalBody');
+
+        overlay.style.display = 'flex';
+        title.innerText = 'Loading Player...';
+        subtitle.innerText = '';
+        headshot.src = 'https://img.mlbstatic.com/mlb-photos/image/upload/w_240,q_auto:best/v1/people/' + playerId + '/headshot/67/current';
+        body.innerHTML = '<div style="padding:8px; color:#5f6d80; font-family:Roboto Mono, monospace;">Loading player details...</div>';
+
+        var cacheKey = String(playerId);
+        var request = playerDetailCache[cacheKey]
+          ? Promise.resolve(playerDetailCache[cacheKey])
+          : MLBClient.getMlbPlayerDetails(cacheKey).then(function (details) {
+              playerDetailCache[cacheKey] = details;
+              return details;
+            });
+
+        request
+          .then(function (details) {
+            title.innerText = details.compactName || details.name || 'Player';
+            subtitle.innerText = (details.bio && details.bio.position ? details.bio.position : '-') + ' | ' + (details.bio && details.bio.team ? details.bio.team : '-');
+            body.innerHTML = renderPlayerDetailContent(details);
+          })
+          .catch(function (err) {
+            body.innerHTML = '<div style="padding:8px; color:#8a2f2f;">Failed to load player details: ' + escapeHtml(err && err.message ? err.message : err) + '</div>';
+          });
+      }
+
+      function hidePlayerModal() {
+        document.getElementById('playerModalOverlay').style.display = 'none';
+      }
+
+      function closePlayerModal(event) {
+        hidePlayerModal();
       }
 
       function renderKeyValueRows(targetBody, rows) {
