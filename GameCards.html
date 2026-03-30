@@ -557,6 +557,10 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .decision-row.two-col {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .decision-col {
       padding: 10px 12px;
       border-right: 1px solid #e6e9ee;
@@ -581,6 +585,14 @@
       line-height: 1.2;
     }
 
+    .decision-record {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.72rem;
+      color: #6d7683;
+      margin-left: 4px;
+      white-space: nowrap;
+    }
+
     .decision-player {
       display: flex;
       align-items: center;
@@ -594,7 +606,7 @@
       border-radius: 50%;
       object-fit: cover;
       border: 1px solid #d8dde4;
-      background: #f4f6f8;
+      background: #dce1e7;
       flex: 0 0 auto;
     }
 
@@ -1470,23 +1482,59 @@
     }
 
     function renderDecisionBlock(g) {
-      function renderDecisionCol(label, name, playerId) {
+      var BLANK_PIXEL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+
+      function renderDecisionCol(label, name, playerId, record) {
+        var imgSrc = playerId ? escapeHtml(getPlayerHeadshot(playerId)) : BLANK_PIXEL;
+        var recHtml = record ? '<span class="decision-record">(' + escapeHtml(record) + ')</span>' : '';
         return (
           '<div class="decision-col">' +
           '<div class="decision-label">' + label + '</div>' +
           '<div class="decision-player">' +
-          '<img class="decision-headshot" alt="" src="' + escapeHtml(getPlayerHeadshot(playerId)) + '" onerror="this.src=\'https://www.mlbstatic.com/mlb/images/players/head_shot/default.jpg\'">' +
-          '<div class="decision-name">' + escapeHtml(name || 'N/A') + '</div>' +
+          '<img class="decision-headshot" alt="" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'' + BLANK_PIXEL + '\'">' +
+          '<div class="decision-name">' + escapeHtml(name || 'TBD') + recHtml + '</div>' +
           '</div>' +
           '</div>'
         );
       }
 
+      var isPreview = (g.status === 'Preview' || g.status === 'Created');
+      var isFinal = (g.status === 'Final');
+
+      if (isPreview) {
+        // Before the game: show probable starting pitchers
+        return (
+          '<div class="decision-row two-col">' +
+          renderDecisionCol('Away SP', g.awayStarter, g.awayStarterId, g.awayStarterRecord) +
+          renderDecisionCol('Home SP', g.homeStarter, g.homeStarterId, g.homeStarterRecord) +
+          '</div>'
+        );
+      }
+
+      if (isFinal) {
+        // After the game: show W/L and Save only if one was recorded
+        var hasSave = !!(g.saveId);
+        // Find records from pitchers arrays
+        function findRecord(pitchers, id) {
+          var p = (pitchers || []).find(function(x) { return x.id == id; });
+          return p ? p.record : null;
+        }
+        return (
+          '<div class="decision-row' + (hasSave ? '' : ' two-col') + '">' +
+          renderDecisionCol('Win', g.winner, g.winnerId, findRecord(g.awayPitchers.concat(g.homePitchers), g.winnerId)) +
+          renderDecisionCol('Loss', g.loser, g.loserId, findRecord(g.awayPitchers.concat(g.homePitchers), g.loserId)) +
+          (hasSave ? renderDecisionCol('Save', g.save, g.saveId, findRecord(g.awayPitchers.concat(g.homePitchers), g.saveId)) : '') +
+          '</div>'
+        );
+      }
+
+      // Live game: show last pitcher used by each team, falling back to starter
+      var awayP = g.awayPitchers && g.awayPitchers.length > 0 ? g.awayPitchers[g.awayPitchers.length - 1] : null;
+      var homeP = g.homePitchers && g.homePitchers.length > 0 ? g.homePitchers[g.homePitchers.length - 1] : null;
       return (
-        '<div class="decision-row">' +
-        renderDecisionCol('Win', g.winner, g.winnerId) +
-        renderDecisionCol('Loss', g.loser, g.loserId) +
-        renderDecisionCol('Save', g.save, g.saveId) +
+        '<div class="decision-row two-col">' +
+        renderDecisionCol('Away P', awayP ? awayP.name : g.awayStarter, awayP ? awayP.id : g.awayStarterId, awayP ? awayP.record : g.awayStarterRecord) +
+        renderDecisionCol('Home P', homeP ? homeP.name : g.homeStarter, homeP ? homeP.id : g.homeStarterId, homeP ? homeP.record : g.homeStarterRecord) +
         '</div>'
       );
     }

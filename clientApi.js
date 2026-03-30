@@ -500,6 +500,8 @@
         return {
           id: p.person.id,
           name: p.person.fullName,
+          record: (seasonPitching.wins !== undefined && seasonPitching.losses !== undefined)
+            ? seasonPitching.wins + "-" + seasonPitching.losses : null,
           decisionTag: decisionTag,
           ip: gamePitching.inningsPitched || "0.0",
           h: gamePitching.hits || 0,
@@ -687,6 +689,16 @@
       gameObj.awayNotes = buildTeamNotes(teams.away);
       gameObj.homeNotes = buildTeamNotes(teams.home);
 
+      // Look up starter season records from boxscore player map
+      function getStarterRecord(teamData, starterId) {
+        if (!starterId || !teamData || !teamData.players) return null;
+        const p = teamData.players["ID" + starterId];
+        const sp = p && p.seasonStats && p.seasonStats.pitching;
+        return (sp && sp.wins !== undefined && sp.losses !== undefined) ? sp.wins + "-" + sp.losses : null;
+      }
+      gameObj.awayStarterRecord = getStarterRecord(teams.away, gameObj.awayStarterId);
+      gameObj.homeStarterRecord = getStarterRecord(teams.home, gameObj.homeStarterId);
+
       if (gameObj.status !== "Live") {
         return;
       }
@@ -790,7 +802,11 @@
           : "",
       homeScore: game.teams.home.score || 0,
       awayStarter: game.teams.away.probablePitcher ? game.teams.away.probablePitcher.fullName : "TBD",
+      awayStarterId: game.teams.away.probablePitcher ? game.teams.away.probablePitcher.id : null,
+      awayStarterRecord: null,
       homeStarter: game.teams.home.probablePitcher ? game.teams.home.probablePitcher.fullName : "TBD",
+      homeStarterId: game.teams.home.probablePitcher ? game.teams.home.probablePitcher.id : null,
+      homeStarterRecord: null,
       currentPitcher: null,
       currentBatter: null,
       pitchCount: null,
