@@ -52,6 +52,48 @@
       border-color: white;
     }
 
+    .refresh-btn,
+    .auto-refresh-btn {
+      background: #fff;
+      color: var(--navy);
+      border: 1px solid #cbd7e4;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .refresh-btn:hover,
+    .auto-refresh-btn:hover {
+      background: #f3f8ff;
+      border-color: var(--navy);
+    }
+
+    .auto-refresh-btn.is-off {
+      background: #fff1f1;
+      color: #7a1e1e;
+      border-color: #e6b8b8;
+    }
+
+    .flash-updated {
+      animation: valueFlash 0.8s ease;
+    }
+
+    @keyframes valueFlash {
+      0% {
+        background-color: rgba(255, 159, 28, 0.35);
+      }
+
+      100% {
+        background-color: transparent;
+      }
+    }
+
     .picker-container {
       display: flex;
       flex-direction: column;
@@ -771,11 +813,13 @@
 
   <div class="container">
     <div class="header-row">
+      <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
       <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
       </div>
+      <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
     </div>
 
     <div class="grid" id="gameGrid">
@@ -895,6 +939,11 @@
     var currentDate = new Date();
     var lastPayload = null;
     var detailRequestId = 0;
+    var previousGamesById = {};
+    var autoRefreshEnabled = true;
+    var autoRefreshTimer = null;
+    var refreshInFlight = false;
+    var AUTO_REFRESH_MS = 15000;
 
     function favoriteStorageKey() {
       return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
@@ -1030,53 +1079,221 @@
       return sorted;
     }
 
-    function renderGames(payload) {
+    function gameKey(g) {
+      return String(g && g.id ? g.id : '');
+    }
+
+    function updateAutoRefreshButton() {
+      var btn = document.getElementById('autoRefreshBtn');
+      if (!btn) {
+        return;
+      }
+      btn.classList.toggle('is-off', !autoRefreshEnabled);
+      btn.innerText = autoRefreshEnabled ? 'Auto: On' : 'Auto: Off';
+    }
+
+    function toggleAutoRefresh() {
+      autoRefreshEnabled = !autoRefreshEnabled;
+      updateAutoRefreshButton();
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      } else {
+        stopAutoRefresh();
+      }
+    }
+
+    function stopAutoRefresh() {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      autoRefreshTimer = setInterval(function () {
+        if (!autoRefreshEnabled || document.hidden || refreshInFlight) {
+          return;
+        }
+        refreshInFlight = true;
+        loadLeague({ showLoader: false, patchOnly: true })
+          .finally(function () {
+            refreshInFlight = false;
+          });
+      }, AUTO_REFRESH_MS);
+    }
+
+    function manualRefresh() {
+      if (refreshInFlight) {
+        return;
+      }
+      refreshInFlight = true;
+      loadLeague({ showLoader: false, patchOnly: true })
+        .finally(function () {
+          refreshInFlight = false;
+        });
+    }
+
+    function flashIfChanged(el, oldValue, newValue) {
+      if (!el) {
+        return;
+      }
+      var before = String(oldValue === undefined || oldValue === null ? '' : oldValue);
+      var after = String(newValue === undefined || newValue === null ? '' : newValue);
+      if (before === after) {
+        return;
+      }
+      el.classList.remove('flash-updated');
+      void el.offsetWidth;
+      el.classList.add('flash-updated');
+    }
+
+    function setTextWithFlash(el, oldValue, newValue) {
+      if (!el) {
+        return;
+      }
+      var next = String(newValue === undefined || newValue === null ? '' : newValue);
+      flashIfChanged(el, oldValue, next);
+      if (el.textContent !== next) {
+        el.textContent = next;
+      }
+    }
+
+    function buildLeagueCardHtml(g, favorite, canOpenDetail, index) {
+      var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
+      var clickableClass = canOpenDetail ? ' is-clickable' : '';
+      var clickAttr = canOpenDetail ? ' onclick="openGameDetailModal(\'' + g.id + '\')"' : '';
+
+      var html = '<article class="card ' + (isFavoriteGame ? 'fav-card' : '') + clickableClass + '" data-game-id="' + g.id + '" data-game-index="' + index + '"' + clickAttr + '>';
+      html += '<div class="card-head">';
+      html += '<span class="status-pill ' + statusClass(g.statusState) + '" data-field="statusShort">' + (g.statusShort || 'Scheduled') + '</span>';
+      if (isFavoriteGame) {
+        html += '<span class="fav-pill" data-field="favPill">My Team</span>';
+      }
+      html += '<span class="network" data-field="network">' + (g.network || 'N/A') + '</span>';
+      html += '</div>';
+
+      html += '<div class="rows">';
+      html += '<div class="team-row">';
+      html += '<div class="team-main"><img class="team-logo" src="' + (g.away.logo || '') + '" alt=""><span class="team-name">' + g.away.name + '</span><span class="team-rec" data-field="awayRecord">' + (g.away.record || '') + '</span></div>';
+      html += '<div class="score" data-field="awayScore">' + (g.away.score || '0') + '</div>';
+      html += '</div>';
+
+      html += '<div class="team-row">';
+      html += '<div class="team-main"><img class="team-logo" src="' + (g.home.logo || '') + '" alt=""><span class="team-name">' + g.home.name + '</span><span class="team-rec" data-field="homeRecord">' + (g.home.record || '') + '</span></div>';
+      html += '<div class="score" data-field="homeScore">' + (g.home.score || '0') + '</div>';
+      html += '</div>';
+      html += '</div>';
+
+      html += '<div class="card-foot"><span data-field="startTime">' + localTime + '</span><span data-field="venue">' + (g.venue || '') + '</span></div>';
+      html += '</article>';
+      return html;
+    }
+
+    function applyLeagueGameToCard(card, g, favorite, canOpenDetail, previousGame, index) {
+      var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
+      card.classList.toggle('fav-card', !!isFavoriteGame);
+      card.classList.toggle('is-clickable', !!canOpenDetail);
+      card.setAttribute('data-game-index', String(index));
+
+      if (canOpenDetail) {
+        card.setAttribute('onclick', 'openGameDetailModal(\'' + g.id + '\')');
+      } else {
+        card.removeAttribute('onclick');
+      }
+
+      var statusEl = card.querySelector('[data-field="statusShort"]');
+      if (statusEl) {
+        statusEl.className = 'status-pill ' + statusClass(g.statusState);
+      }
+      setTextWithFlash(statusEl, previousGame && previousGame.statusShort, g.statusShort || 'Scheduled');
+
+      var favPill = card.querySelector('[data-field="favPill"]');
+      if (isFavoriteGame && !favPill) {
+        var head = card.querySelector('.card-head');
+        if (head) {
+          var networkNode = card.querySelector('[data-field="network"]');
+          var pill = document.createElement('span');
+          pill.className = 'fav-pill';
+          pill.setAttribute('data-field', 'favPill');
+          pill.textContent = 'My Team';
+          head.insertBefore(pill, networkNode || null);
+        }
+      } else if (!isFavoriteGame && favPill) {
+        favPill.remove();
+      }
+
+      setTextWithFlash(card.querySelector('[data-field="network"]'), previousGame && previousGame.network, g.network || 'N/A');
+      setTextWithFlash(card.querySelector('[data-field="awayScore"]'), previousGame && previousGame.away && previousGame.away.score, g.away.score || '0');
+      setTextWithFlash(card.querySelector('[data-field="homeScore"]'), previousGame && previousGame.home && previousGame.home.score, g.home.score || '0');
+      setTextWithFlash(card.querySelector('[data-field="awayRecord"]'), previousGame && previousGame.away && previousGame.away.record, g.away.record || '');
+      setTextWithFlash(card.querySelector('[data-field="homeRecord"]'), previousGame && previousGame.home && previousGame.home.record, g.home.record || '');
+
+      var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      var prevTime = previousGame && previousGame.startTime ? new Date(previousGame.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+      setTextWithFlash(card.querySelector('[data-field="startTime"]'), prevTime, localTime);
+      setTextWithFlash(card.querySelector('[data-field="venue"]'), previousGame && previousGame.venue, g.venue || '');
+    }
+
+    function renderGames(payload, options) {
+      var opts = options || {};
       var grid = document.getElementById('gameGrid');
       var games = payload && payload.games ? sortGamesByFavorite(payload.games) : [];
       var favorite = getFavoriteLeagueTeam();
+      var canOpenDetail = currentSport === 'nba' || currentSport === 'nfl';
 
       syncTeamPicker(payload && payload.games ? payload.games : []);
 
       if (!games.length) {
         grid.innerHTML = '<div class="empty">No games found for this date.</div>';
+        previousGamesById = {};
         return;
       }
 
-      var html = '';
-      for (var i = 0; i < games.length; i++) {
-        var g = games[i];
-        var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      var previousMap = previousGamesById || {};
 
-        var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
-        var canOpenDetail = currentSport === 'nba' || currentSport === 'nfl';
-        var clickableClass = canOpenDetail ? ' is-clickable' : '';
-        var clickAttr = canOpenDetail ? ' onclick="openGameDetailModal(\'' + g.id + '\')"' : '';
-        html += '<article class="card ' + (isFavoriteGame ? 'fav-card' : '') + clickableClass + '"' + clickAttr + '>';
-        html += '<div class="card-head">';
-        html += '<span class="status-pill ' + statusClass(g.statusState) + '">' + (g.statusShort || 'Scheduled') + '</span>';
-        if (isFavoriteGame) {
-          html += '<span class="fav-pill">My Team</span>';
+      if (!opts.patchOnly || grid.children.length === 0 || grid.querySelector('.loader') || grid.querySelector('.empty')) {
+        var html = '';
+        for (var i = 0; i < games.length; i++) {
+          html += buildLeagueCardHtml(games[i], favorite, canOpenDetail, i);
         }
-        html += '<span class="network">' + (g.network || 'N/A') + '</span>';
-        html += '</div>';
+        grid.innerHTML = html;
+      } else {
+        var seen = {};
+        for (var j = 0; j < games.length; j++) {
+          var game = games[j];
+          var key = gameKey(game);
+          seen[key] = true;
+          var card = grid.querySelector('.card[data-game-id="' + key + '"]');
+          if (!card) {
+            var temp = document.createElement('div');
+            temp.innerHTML = buildLeagueCardHtml(game, favorite, canOpenDetail, j);
+            card = temp.firstElementChild;
+            var beforeNode = grid.children[j] || null;
+            grid.insertBefore(card, beforeNode);
+          } else {
+            var expectedNode = grid.children[j];
+            if (expectedNode !== card) {
+              grid.insertBefore(card, expectedNode || null);
+            }
+          }
+          applyLeagueGameToCard(card, game, favorite, canOpenDetail, previousMap[key], j);
+        }
 
-        html += '<div class="rows">';
-        html += '<div class="team-row">';
-        html += '<div class="team-main"><img class="team-logo" src="' + (g.away.logo || '') + '" alt=""><span class="team-name">' + g.away.name + '</span><span class="team-rec">' + (g.away.record || '') + '</span></div>';
-        html += '<div class="score">' + (g.away.score || '0') + '</div>';
-        html += '</div>';
-
-        html += '<div class="team-row">';
-        html += '<div class="team-main"><img class="team-logo" src="' + (g.home.logo || '') + '" alt=""><span class="team-name">' + g.home.name + '</span><span class="team-rec">' + (g.home.record || '') + '</span></div>';
-        html += '<div class="score">' + (g.home.score || '0') + '</div>';
-        html += '</div>';
-        html += '</div>';
-
-        html += '<div class="card-foot"><span>' + localTime + '</span><span>' + (g.venue || '') + '</span></div>';
-        html += '</article>';
+        var staleCards = grid.querySelectorAll('.card[data-game-id]');
+        for (var s = 0; s < staleCards.length; s++) {
+          var staleKey = staleCards[s].getAttribute('data-game-id');
+          if (!seen[staleKey]) {
+            staleCards[s].remove();
+          }
+        }
       }
 
-      grid.innerHTML = html;
+      previousGamesById = {};
+      for (var m = 0; m < games.length; m++) {
+        previousGamesById[gameKey(games[m])] = games[m];
+      }
     }
 
     function applyDetailTheme(details) {
@@ -1321,12 +1538,18 @@
       hideGameDetailModal();
     }
 
-    function loadLeague() {
-      document.getElementById('gameGrid').innerHTML = '<div class="loader">Loading games...</div>';
-      MLBClient.getLeagueScoreboardData(currentSport, toIso(currentDate))
+    function loadLeague(options) {
+      var opts = options || {};
+      var showLoader = opts.showLoader !== false;
+      var patchOnly = !!opts.patchOnly;
+      if (showLoader) {
+        document.getElementById('gameGrid').innerHTML = '<div class="loader">Loading games...</div>';
+      }
+
+      return MLBClient.getLeagueScoreboardData(currentSport, toIso(currentDate))
         .then(function (payload) {
           lastPayload = payload;
-          renderGames(payload);
+          renderGames(payload, { patchOnly: patchOnly });
         })
         .catch(function (err) {
           document.getElementById('gameGrid').innerHTML = '<div class="empty">Failed to load games: ' + (err && err.message ? err.message : err) + '</div>';
@@ -1336,7 +1559,7 @@
     function changeDate(offset) {
       currentDate.setDate(currentDate.getDate() + offset);
       updateDateDisplay();
-      loadLeague();
+      loadLeague({ showLoader: true, patchOnly: false });
     }
 
     function goToDate() {
@@ -1345,7 +1568,7 @@
         return;
       }
       previewSelectedDate();
-      loadLeague();
+      loadLeague({ showLoader: true, patchOnly: false });
     }
 
     function applyFavoriteTeamChange() {
@@ -1353,7 +1576,7 @@
       setFavoriteLeagueTeam(picker.value || '');
       setPageTheme();
       if (lastPayload) {
-        renderGames(lastPayload);
+        renderGames(lastPayload, { patchOnly: true });
       }
     }
 
@@ -1361,7 +1584,9 @@
       currentSport = parseSportFromQuery();
       setPageTheme();
       updateDateDisplay();
-      loadLeague();
+      loadLeague({ showLoader: true, patchOnly: false });
+      startAutoRefresh();
+      updateAutoRefreshButton();
     };
   </script>
 </body>

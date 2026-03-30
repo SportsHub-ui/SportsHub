@@ -84,6 +84,48 @@
       border-color: white;
     }
 
+    .refresh-btn,
+    .auto-refresh-btn {
+      background: #fff;
+      color: var(--navy);
+      border: 1px solid #cbd7e4;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .refresh-btn:hover,
+    .auto-refresh-btn:hover {
+      background: #f3f8ff;
+      border-color: var(--navy);
+    }
+
+    .auto-refresh-btn.is-off {
+      background: #fff1f1;
+      color: #7a1e1e;
+      border-color: #e6b8b8;
+    }
+
+    .flash-updated {
+      animation: valueFlash 0.8s ease;
+    }
+
+    @keyframes valueFlash {
+      0% {
+        background-color: rgba(254, 197, 36, 0.45);
+      }
+
+      100% {
+        background-color: transparent;
+      }
+    }
+
     .container {
       padding: 15px;
       max-width: 1200px;
@@ -823,12 +865,14 @@
 
   <div class="container">
     <div class="header-row">
+      <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
       <!-- Date Picker wrapped in a styled display container -->
       <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
       </div>
+      <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
     </div>
 
     <div id="gameGrid" class="grid">
@@ -840,6 +884,11 @@
   <script>
 
     let currentGamesData = []; // Store games globally so modal can access them
+    let previousGamesById = {};
+    let autoRefreshEnabled = true;
+    let autoRefreshTimer = null;
+    let refreshInFlight = false;
+    const AUTO_REFRESH_MS = 15000;
 
     var teamColors = {
       "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
@@ -858,22 +907,224 @@
 
     window.onload = function () {
       MLBClient.renderSiteNav('games', 'siteNav');
-      const today = new Date().toISOString().split('T')[0];
+      const today = toLocalIso(new Date());
       document.getElementById('dateInput').value = today;
       previewSelectedDate();
       loadDashboard();
+      startAutoRefresh();
+      updateAutoRefreshButton();
     };
 
-    function loadDashboard(targetDateStr = null) {
-      document.getElementById('gameGrid').innerHTML = '<div class="loader">Fetching Games...</div>';
-      MLBClient.getDashboardData(targetDateStr)
-        .then(renderDashboard)
+    function loadDashboard(targetDateStr = null, options) {
+      var opts = options || {};
+      var showLoader = opts.showLoader !== false;
+      var patchOnly = !!opts.patchOnly;
+      if (showLoader) {
+        document.getElementById('gameGrid').innerHTML = '<div class="loader">Fetching Games...</div>';
+      }
+
+      return MLBClient.getDashboardData(targetDateStr)
+        .then(function (payload) {
+          renderDashboard(payload, { patchOnly: patchOnly });
+        })
         .catch(function (err) {
           document.getElementById('gameGrid').innerHTML = '<div class="loader">Failed to load games: ' + (err && err.message ? err.message : err) + '</div>';
         });
     }
 
-    function renderDashboard(data) {
+    function updateAutoRefreshButton() {
+      var btn = document.getElementById('autoRefreshBtn');
+      if (!btn) {
+        return;
+      }
+      btn.classList.toggle('is-off', !autoRefreshEnabled);
+      btn.innerText = autoRefreshEnabled ? 'Auto: On' : 'Auto: Off';
+    }
+
+    function toggleAutoRefresh() {
+      autoRefreshEnabled = !autoRefreshEnabled;
+      updateAutoRefreshButton();
+      if (autoRefreshEnabled) {
+        startAutoRefresh();
+      } else {
+        stopAutoRefresh();
+      }
+    }
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+      autoRefreshTimer = setInterval(function () {
+        if (!autoRefreshEnabled || document.hidden || refreshInFlight) {
+          return;
+        }
+        refreshInFlight = true;
+        loadDashboard(toLocalIso(currentViewDate), { showLoader: false, patchOnly: true })
+          .finally(function () {
+            refreshInFlight = false;
+          });
+      }, AUTO_REFRESH_MS);
+    }
+
+    function stopAutoRefresh() {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+    }
+
+    function manualRefresh() {
+      if (refreshInFlight) {
+        return;
+      }
+      refreshInFlight = true;
+      loadDashboard(toLocalIso(currentViewDate), { showLoader: false, patchOnly: true })
+        .finally(function () {
+          refreshInFlight = false;
+        });
+    }
+
+    function gameIsLive(g) {
+      return g && (g.status === 'Live' || g.status === 'In Progress' || g.liveText === 'WARMUP' || (g.liveText && (g.liveText.indexOf('TOP') > -1 || g.liveText.indexOf('BOT') > -1)));
+    }
+
+    function getSortedGames(games) {
+      var sorted = (games || []).slice();
+
+      function getInningNum(liveText) {
+        if (!liveText) return 0;
+        var match = liveText.match(/(TOP|BOT)\s*(\d+)/i);
+        return match ? parseInt(match[2], 10) : 0;
+      }
+
+      function getStartTime(g) {
+        var match = g.liveText && g.liveText.match(/(\d{1,2}):(\d{2})/);
+        if (match) {
+          var d = new Date();
+          d.setHours(parseInt(match[1], 10));
+          d.setMinutes(parseInt(match[2], 10));
+          return d.getTime();
+        }
+        return 0;
+      }
+
+      sorted.sort(function (a, b) {
+        if (a.fav !== b.fav) return a.fav - b.fav;
+        var aActive = gameIsLive(a);
+        var bActive = gameIsLive(b);
+        if (aActive && bActive) {
+          return getInningNum(b.liveText) - getInningNum(a.liveText);
+        }
+        if (aActive) return -1;
+        if (bActive) return 1;
+        var aFinal = (a.status === 'Final');
+        var bFinal = (b.status === 'Final');
+        if (aFinal && !bFinal) return -1;
+        if (!aFinal && bFinal) return 1;
+        var aUpcoming = (a.status === 'Preview' || a.status === 'Created');
+        var bUpcoming = (b.status === 'Preview' || b.status === 'Created');
+        if (aUpcoming && bUpcoming) {
+          return getStartTime(a) - getStartTime(b);
+        }
+        if (aUpcoming) return 1;
+        if (bUpcoming) return -1;
+        return 0;
+      });
+
+      return sorted;
+    }
+
+    function flashIfChanged(el, oldValue, newValue) {
+      if (!el) {
+        return;
+      }
+      var before = String(oldValue === undefined || oldValue === null ? '' : oldValue);
+      var after = String(newValue === undefined || newValue === null ? '' : newValue);
+      if (before === after) {
+        return;
+      }
+      el.classList.remove('flash-updated');
+      void el.offsetWidth;
+      el.classList.add('flash-updated');
+    }
+
+    function setTextWithFlash(el, oldValue, newValue) {
+      if (!el) {
+        return;
+      }
+      var next = String(newValue === undefined || newValue === null ? '' : newValue);
+      flashIfChanged(el, oldValue, next);
+      if (el.textContent !== next) {
+        el.textContent = next;
+      }
+    }
+
+    function buildCardHtml(g, index) {
+      var isFav = (g.fav === 0);
+      var isInProgress = gameIsLive(g) && g.liveText !== 'WARMUP';
+      var isWarmup = (g.liveText === 'WARMUP');
+      var isPreview = (g.status === 'Preview' || g.status === 'Created');
+
+      var html = '<div class="card ' + (isFav ? 'fav-card' : '') + '" data-game-id="' + g.gameId + '" onclick="showGameDetails(' + index + ')" style="cursor:pointer">';
+      html += '<div class="status-line">';
+      html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + '" data-field="liveText">' + g.liveText + '</span>';
+      html += '  <span class="situation-host">' + ((isInProgress || isWarmup) ? renderSituation(g) : '') + '</span>';
+      html += '</div>';
+      html += renderTeamRow(g.awayId, g.away, g.awayScore, isPreview, 'away');
+      html += renderTeamRow(g.homeId, g.home, g.homeScore, isPreview, 'home');
+      html += '<div class="pitching-info" data-field="pitchingInfo">' + renderPitching(g) + '</div>';
+      html += '<div class="card-footer"><span data-field="tv">TV: ' + (g.tv || 'N/A') + '</span><span data-field="venue">' + (g.venue || '') + '</span></div>';
+      html += '</div>';
+      return html;
+    }
+
+    function applyGameToCard(card, g, index, previousGame) {
+      var isPreview = (g.status === 'Preview' || g.status === 'Created');
+      var isLiveNow = gameIsLive(g) && g.liveText !== 'WARMUP';
+      var isWarmup = (g.liveText === 'WARMUP');
+
+      card.classList.toggle('fav-card', g.fav === 0);
+      card.setAttribute('onclick', 'showGameDetails(' + index + ')');
+
+      var liveEl = card.querySelector('[data-field="liveText"]');
+      if (liveEl) {
+        liveEl.classList.toggle('live-badge', isLiveNow);
+        setTextWithFlash(liveEl, previousGame && previousGame.liveText, g.liveText);
+      }
+
+      var awayScoreEl = card.querySelector('[data-field="awayScore"]');
+      var homeScoreEl = card.querySelector('[data-field="homeScore"]');
+      var nextAwayScore = isPreview ? '' : String(g.awayScore);
+      var nextHomeScore = isPreview ? '' : String(g.homeScore);
+      setTextWithFlash(awayScoreEl, previousGame && previousGame.awayScore, nextAwayScore);
+      setTextWithFlash(homeScoreEl, previousGame && previousGame.homeScore, nextHomeScore);
+
+      var tvEl = card.querySelector('[data-field="tv"]');
+      var venueEl = card.querySelector('[data-field="venue"]');
+      setTextWithFlash(tvEl, previousGame ? ('TV: ' + (previousGame.tv || 'N/A')) : '', 'TV: ' + (g.tv || 'N/A'));
+      setTextWithFlash(venueEl, previousGame && previousGame.venue, g.venue || '');
+
+      var pitchingEl = card.querySelector('[data-field="pitchingInfo"]');
+      if (pitchingEl) {
+        var nextPitchingHtml = renderPitching(g);
+        if (pitchingEl.innerHTML !== nextPitchingHtml) {
+          pitchingEl.innerHTML = nextPitchingHtml;
+          pitchingEl.classList.remove('flash-updated');
+          void pitchingEl.offsetWidth;
+          pitchingEl.classList.add('flash-updated');
+        }
+      }
+
+      var situationHost = card.querySelector('.situation-host');
+      if (situationHost) {
+        var nextSituation = (isLiveNow || isWarmup) ? renderSituation(g) : '';
+        if (situationHost.innerHTML !== nextSituation) {
+          situationHost.innerHTML = nextSituation;
+        }
+      }
+    }
+
+    function renderDashboard(data, options) {
+      var opts = options || {};
       var teamColor = teamColors[data.myTeam] || "#0046ad";
 
       // Update the hidden date input value
@@ -892,74 +1143,57 @@
       var grid = document.getElementById('gameGrid');
       if (!data.games || data.games.length === 0) {
         grid.innerHTML = '<div class="loader">No games found for today.</div>';
+        currentGamesData = [];
+        previousGamesById = {};
         return;
       }
 
-      // Custom sort: favorite team first, then active games (desc inning), then completed, then upcoming (asc start time)
-      function getInningNum(liveText) {
-        if (!liveText) return 0;
-        var match = liveText.match(/(TOP|BOT)\s*(\d+)/i);
-        return match ? parseInt(match[2], 10) : 0;
-      }
-      function getStartTime(g) {
-        // Try to parse from liveText if it's a time, else fallback to 0
-        var match = g.liveText && g.liveText.match(/(\d{1,2}):(\d{2})/);
-        if (match) {
-          var d = new Date();
-          d.setHours(parseInt(match[1], 10));
-          d.setMinutes(parseInt(match[2], 10));
-          return d.getTime();
-        }
-        return 0;
-      }
-      data.games.sort(function (a, b) {
-        // 1. Favorite team always first
-        if (a.fav !== b.fav) return a.fav - b.fav;
-        // 2. Active games (Live/In Progress) next, sorted by inning DESC
-        var aActive = (a.status === "Live" || a.status === "In Progress");
-        var bActive = (b.status === "Live" || b.status === "In Progress");
-        if (aActive && bActive) {
-          return getInningNum(b.liveText) - getInningNum(a.liveText);
-        }
-        if (aActive) return -1;
-        if (bActive) return 1;
-        // 3. Completed games (Final)
-        var aFinal = (a.status === "Final");
-        var bFinal = (b.status === "Final");
-        if (aFinal && !bFinal) return -1;
-        if (!aFinal && bFinal) return 1;
-        // 4. Upcoming games (Preview/Created), sorted by start time ASC
-        var aUpcoming = (a.status === "Preview" || a.status === "Created");
-        var bUpcoming = (b.status === "Preview" || b.status === "Created");
-        if (aUpcoming && bUpcoming) {
-          return getStartTime(a) - getStartTime(b);
-        }
-        if (aUpcoming) return 1;
-        if (bUpcoming) return -1;
-        return 0;
-      });
+      var sortedGames = getSortedGames(data.games);
+      var previousMap = previousGamesById || {};
 
-      var html = "";
-      for (var i = 0; i < data.games.length; i++) {
-        var g = data.games[i];
-        var isFav = (g.fav === 0);
-        var isInProgress = (g.liveText.indexOf("TOP") > -1 || g.liveText.indexOf("BOT") > -1);
-        var isWarmup = (g.liveText === "WARMUP");
-        var isPreview = (g.status === "Preview" || g.status === "Created");
+      if (!opts.patchOnly || grid.children.length === 0 || grid.querySelector('.loader')) {
+        var html = '';
+        for (var i = 0; i < sortedGames.length; i++) {
+          html += buildCardHtml(sortedGames[i], i);
+        }
+        grid.innerHTML = html;
+      } else {
+        var seen = {};
+        for (var j = 0; j < sortedGames.length; j++) {
+          var game = sortedGames[j];
+          var key = String(game.gameId);
+          seen[key] = true;
+          var selector = '.card[data-game-id="' + key + '"]';
+          var card = grid.querySelector(selector);
+          if (!card) {
+            var temp = document.createElement('div');
+            temp.innerHTML = buildCardHtml(game, j);
+            card = temp.firstElementChild;
+            var beforeNode = grid.children[j] || null;
+            grid.insertBefore(card, beforeNode);
+          } else {
+            var expectedNode = grid.children[j];
+            if (expectedNode !== card) {
+              grid.insertBefore(card, expectedNode || null);
+            }
+          }
+          applyGameToCard(card, game, j, previousMap[key]);
+        }
 
-        currentGamesData = data.games; // Save data to global variable
-        html += '<div class="card ' + (isFav ? 'fav-card' : '') + '" onclick="showGameDetails(' + i + ')" style="cursor:pointer">';
-        html += '<div class="status-line">';
-        html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + '">' + g.liveText + '</span>';
-        if (isInProgress || isWarmup) { html += renderSituation(g); }
-        html += '</div>';
-        html += renderTeamRow(g.awayId, g.away, g.awayScore, isPreview);
-        html += renderTeamRow(g.homeId, g.home, g.homeScore, isPreview);
-        html += '<div class="pitching-info">' + renderPitching(g) + '</div>';
-        html += '<div class="card-footer"><span>TV: ' + (g.tv || "N/A") + '</span><span>' + (g.venue || "") + '</span></div>';
-        html += '</div>';
+        var staleCards = grid.querySelectorAll('.card[data-game-id]');
+        for (var s = 0; s < staleCards.length; s++) {
+          var staleKey = staleCards[s].getAttribute('data-game-id');
+          if (!seen[staleKey]) {
+            staleCards[s].remove();
+          }
+        }
       }
-      grid.innerHTML = html;
+
+      currentGamesData = sortedGames;
+      previousGamesById = {};
+      for (var m = 0; m < sortedGames.length; m++) {
+        previousGamesById[String(sortedGames[m].gameId)] = sortedGames[m];
+      }
     }
 
     function renderPitching(g) {
@@ -998,13 +1232,13 @@
         '</div>';
     }
 
-    function renderTeamRow(id, name, score, isPreview) {
+    function renderTeamRow(id, name, score, isPreview, slot) {
       return '<div class="team-line">' +
         '  <div class="team-info">' +
         '    <img class="logo" src="https://www.mlbstatic.com/team-logos/' + id + '.svg">' +
         '    <span class="team-name">' + name + '</span>' +
         '  </div>' +
-        '  <span class="score">' + (!isPreview ? score : '') + '</span>' +
+        '  <span class="score" data-field="' + slot + 'Score">' + (!isPreview ? score : '') + '</span>' +
         '</div>';
     }
 
@@ -1016,7 +1250,7 @@
       MLBClient.setFavoriteTeam(team);
       setTimeout(function () {
         status.innerText = "SAVED!";
-        loadDashboard();
+        loadDashboard(toLocalIso(currentViewDate), { showLoader: true, patchOnly: false });
         setTimeout(function () { status.style.visibility = 'hidden'; }, 2000);
       }, 200);
     }
@@ -1058,14 +1292,14 @@
       const dateStr = toLocalIso(currentViewDate);
       document.getElementById('dateInput').value = dateStr;
       previewSelectedDate();
-      loadDashboard(dateStr);
+      loadDashboard(dateStr, { showLoader: true, patchOnly: false });
     }
 
     function goToDate() {
       const dateStr = document.getElementById('dateInput').value;
       if (dateStr) {
         previewSelectedDate();
-        loadDashboard(dateStr);
+        loadDashboard(dateStr, { showLoader: true, patchOnly: false });
       }
     }
 
