@@ -112,6 +112,20 @@
       display: block;
     }
 
+    .team-record-subtle {
+      font-size: 0.68em;
+      color: #6b7280;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .starter-record-subtle {
+      font-size: 0.82em;
+      color: #6b7280;
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
     .vs-circle {
       background: #eee;
       width: 50px;
@@ -425,6 +439,21 @@
     @media (max-width: 760px) {
       .roster-grid {
         grid-template-columns: 1fr;
+      }
+
+      .matchup-card .team-record-subtle,
+      .matchup-card .starter-record-subtle {
+        display: block;
+        margin-left: 0;
+        margin-top: 2px;
+      }
+
+      .matchup-card .team-record-subtle {
+        font-size: 0.58em;
+      }
+
+      .matchup-card .starter-record-subtle {
+        font-size: 0.78em;
       }
     }
   </style>
@@ -870,6 +899,31 @@
         }
       }
 
+      function escapeHtml(value) {
+        return String(value === undefined || value === null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function formatTeamNameWithRecord(name, record) {
+        var teamName = escapeHtml(name || '');
+        if (!record) {
+          return teamName;
+        }
+        return teamName + '<span class="team-record-subtle">(' + escapeHtml(record) + ')</span>';
+      }
+
+      function formatStarterWithRecord(name, record) {
+        var starter = escapeHtml(name || 'TBD');
+        if (!record) {
+          return starter;
+        }
+        return starter + '<span class="starter-record-subtle">(' + escapeHtml(record) + ')</span>';
+      }
+
       function renderMlbLineups(game, myTeam) {
         var awayBody = document.getElementById('awayLineupBody');
         var homeBody = document.getElementById('homeLineupBody');
@@ -884,28 +938,36 @@
 
         var awayName = game.away || 'Away';
         var homeName = game.home || 'Home';
+        var awayRecord = game.awayRecord || '';
+        var homeRecord = game.homeRecord || '';
         var awayLineup = game.awayTeamLineup;
         var homeLineup = game.homeTeamLineup;
 
         var firstName;
+        var firstRecord;
         var firstLineup;
         var secondName;
+        var secondRecord;
         var secondLineup;
 
         if (myTeam && homeName === myTeam) {
           firstName = homeName;
+          firstRecord = homeRecord;
           firstLineup = homeLineup;
           secondName = awayName;
+          secondRecord = awayRecord;
           secondLineup = awayLineup;
         } else {
           firstName = awayName;
+          firstRecord = awayRecord;
           firstLineup = awayLineup;
           secondName = homeName;
+          secondRecord = homeRecord;
           secondLineup = homeLineup;
         }
 
-        if (awayLabel) awayLabel.innerText = (myTeam && firstName === myTeam) ? myTeam  : firstName;
-        if (homeLabel) homeLabel.innerText = (myTeam && secondName === myTeam) ? myTeam  : secondName;
+        if (awayLabel) awayLabel.innerHTML = formatTeamNameWithRecord((myTeam && firstName === myTeam) ? myTeam : firstName, firstRecord);
+        if (homeLabel) homeLabel.innerHTML = formatTeamNameWithRecord((myTeam && secondName === myTeam) ? myTeam : secondName, secondRecord);
 
         renderPlayerRows(awayBody, firstLineup, 'Lineup not available');
         renderPlayerRows(homeBody, secondLineup, 'Lineup not available');
@@ -1016,6 +1078,10 @@
         var canOpenRoster = currentSport === 'mlb' && game.awayId && game.homeId;
         var metaLabel = currentSport === 'mlb' ? 'HP Umpire' : 'Venue';
         var metaValue = currentSport === 'mlb' ? (game.umpire || 'TBD') : (game.venue || 'N/A');
+        var awayTeamLabel = formatTeamNameWithRecord(game.away, game.awayRecord || '');
+        var homeTeamLabel = formatTeamNameWithRecord(game.home, game.homeRecord || '');
+        var awayStarterLine = formatStarterWithRecord(game.awayStarter, game.awayStarterRecord || '');
+        var homeStarterLine = formatStarterWithRecord(game.homeStarter, game.homeStarterRecord || '');
 
         var html = '';
         if (game.gameDateLabel) {
@@ -1025,14 +1091,14 @@
         html += '<div class="matchup-grid">';
         html += '<div class="team-box' + (canOpenRoster ? ' is-clickable' : '') + '"' +
           (canOpenRoster ? ' onclick="openRosterForSide(\'away\')"' : '') + '>' +
-          '<img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span>' +
-          '<div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || 'TBD') + '</div>' +
+          '<img src="' + awayLogoUrl + '"><span class="team-name">' + awayTeamLabel + '</span>' +
+          '<div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + awayStarterLine + '</div>' +
           '<div class="big-score">' + (game.status !== 'Preview' ? game.awayScore : '') + '</div></div>';
         html += '<div class="vs-circle">VS</div>';
         html += '<div class="team-box' + (canOpenRoster ? ' is-clickable' : '') + '"' +
           (canOpenRoster ? ' onclick="openRosterForSide(\'home\')"' : '') + '>' +
-          '<img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span>' +
-          '<div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || 'TBD') + '</div>' +
+          '<img src="' + homeLogoUrl + '"><span class="team-name">' + homeTeamLabel + '</span>' +
+          '<div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + homeStarterLine + '</div>' +
           '<div class="big-score">' + (game.status !== 'Preview' ? game.homeScore : '') + '</div></div>';
         html += '</div>';
 
