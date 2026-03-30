@@ -1925,6 +1925,30 @@
           const scoreRaw = c && c.score !== undefined && c.score !== null ? String(c.score) : "";
           const scoreText = scoreRaw === "0" ? "E" : (scoreRaw || "-");
 
+          const roundScores = rounds.map(function (r) {
+            return r && r.displayValue !== undefined ? String(r.displayValue) : "-";
+          });
+
+          const totalStrokes = (function () {
+            var total = 0;
+            var valid = false;
+            for (var ri = 0; ri < rounds.length; ri++) {
+              var rv = rounds[ri];
+              var v = rv && rv.value != null ? Number(rv.value) : NaN;
+              if (!Number.isNaN(v) && v >= 0) { total += v; valid = true; }
+            }
+            return valid ? total : null;
+          }());
+
+          const statistics = Array.isArray(c && c.statistics) ? c.statistics : [];
+          const earnings = (function () {
+            var stat = statistics.find(function (s) {
+              var n = s && s.name ? String(s.name).toLowerCase() : "";
+              return n.indexOf("earn") >= 0;
+            });
+            return stat && stat.displayValue ? String(stat.displayValue) : "";
+          }());
+
           return {
             id: c && c.id !== undefined && c.id !== null ? String(c.id) : String(idx + 1),
             pos: c && c.order !== undefined && c.order !== null ? String(c.order) : String(idx + 1),
@@ -1933,6 +1957,9 @@
             flag: athlete && athlete.flag && athlete.flag.href ? athlete.flag.href : "",
             toPar: scoreText,
             rounds: roundText || "-",
+            roundScores: roundScores,
+            totalStrokes: totalStrokes,
+            earnings: earnings,
             roundData: rounds.map(function (round) {
               const holes = Array.isArray(round && round.linescores) ? round.linescores : [];
               return {
