@@ -217,12 +217,239 @@
       transform: translateY(0);
     }
 
+    .pga-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .pga-header {
+      background: white;
+      border-left: 5px solid #0b5d2a;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .pga-kicker {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #3f5b47;
+      font-weight: 700;
+    }
+
+    .pga-title {
+      margin: 6px 0 4px;
+      color: #113c22;
+      font-size: 1.35rem;
+    }
+
+    .pga-meta {
+      color: #5b6b60;
+      font-size: 0.88rem;
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    .pga-table-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .pga-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.85rem;
+    }
+
+    .pga-table thead {
+      background: #f1f6f2;
+    }
+
+    .pga-table th,
+    .pga-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #e7ece8;
+      text-align: left;
+    }
+
+    .pga-table th {
+      color: #46614f;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pga-table td:nth-child(1),
+    .pga-table td:nth-child(3) {
+      font-weight: 700;
+      color: #193f27;
+      width: 72px;
+    }
+
+    .pga-row {
+      cursor: pointer;
+    }
+
+    .pga-row:hover {
+      background: #f7fbf8;
+    }
+
+    .pga-player {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.96rem;
+      color: #183b26;
+    }
+
+    .pga-flag {
+      width: 18px;
+      height: 12px;
+      object-fit: cover;
+      border: 1px solid #d2dbd4;
+      border-radius: 2px;
+      background: #fff;
+    }
+
+    .pga-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 3000;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+    }
+
+    .pga-modal {
+      width: min(980px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+    }
+
+    .pga-modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #e7ece8;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
+    }
+
+    .pga-modal-title {
+      margin: 0;
+      color: #113c22;
+      font-size: 1.15rem;
+    }
+
+    .pga-modal-close {
+      border: 1px solid #d5ded8;
+      background: #fff;
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      color: #45624e;
+    }
+
+    .pga-modal-body {
+      padding: 14px 16px 18px;
+    }
+
+    .pga-round-select {
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.82rem;
+      color: #4b5f53;
+    }
+
+    .pga-round-select select {
+      border: 1px solid #cfdad3;
+      border-radius: 6px;
+      padding: 6px 9px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.86rem;
+      color: #113c22;
+    }
+
+    .pga-scorecard {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.78rem;
+    }
+
+    .pga-scorecard th,
+    .pga-scorecard td {
+      border: 1px solid #e4ebe6;
+      padding: 5px 6px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .pga-scorecard th:first-child,
+    .pga-scorecard td:first-child {
+      text-align: left;
+      font-weight: 700;
+      padding-left: 9px;
+      color: #425e4e;
+    }
+
+    .pga-scorecard thead th {
+      background: #f2f7f3;
+      color: #4d6758;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .score-birdie {
+      background: #dff3e4;
+      color: #145f2f;
+      font-weight: 700;
+    }
+
+    .score-eagle {
+      background: #c9eacb;
+      color: #0b5d2a;
+      font-weight: 700;
+    }
+
+    .score-bogey {
+      background: #fbe0df;
+      color: #8b2222;
+      font-weight: 700;
+    }
+
+    .score-double {
+      background: #f5c6c4;
+      color: #6f1111;
+      font-weight: 700;
+    }
+
   </style>
 </head>
 
 <body>
   <div id="siteNav"></div>
-  <div class="filter-bar">
+  <div class="filter-bar" id="filterBar">
     <div class="filter-container">
       <div class="sport-selectors">
         <label class="pill">
@@ -250,10 +477,22 @@
       </div>
     </div>
   </div>
+
+  <div id="pgaModalOverlay" class="pga-modal-overlay" onclick="closePgaModal(event)">
+    <div class="pga-modal" onclick="event.stopPropagation()">
+      <div class="pga-modal-head">
+        <h3 id="pgaModalTitle" class="pga-modal-title">Golfer Scorecard</h3>
+        <button class="pga-modal-close" type="button" onclick="hidePgaModal()" aria-label="Close">&times;</button>
+      </div>
+      <div id="pgaModalBody" class="pga-modal-body"></div>
+    </div>
+  </div>
+
   <script src="clientApi.js"></script>
   <script>
     let rawData = []; // Store original data for filtering
     let sportFilterFromUrl = null;
+    let pgaLeaderboardData = null;
 
     function getSportFromQuery() {
       const params = new URLSearchParams(window.location.search);
@@ -287,6 +526,16 @@
     window.onload = function () {
       sportFilterFromUrl = getSportFromQuery();
       MLBClient.renderSiteNav(sportFilterFromUrl || 'tv', 'siteNav');
+
+      if (sportFilterFromUrl === 'pga') {
+        var filterBar = document.getElementById('filterBar');
+        if (filterBar) {
+          filterBar.style.display = 'none';
+        }
+        renderPgaView();
+        return;
+      }
+
       applyQuerySportSelection();
       console.log('DEBUG: window.onload fired');
       MLBClient.getTvGuideData()
@@ -301,6 +550,242 @@
           if (grid) grid.innerHTML = '<div class="no-results"><h3>Failed to load TV Guide data.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
         });
     };
+
+    function renderPgaView() {
+      var grid = document.getElementById('guideGrid');
+      if (!grid) {
+        return;
+      }
+
+      grid.innerHTML = '<div class="loader"><h2 style="color: #0b5d2a;">Loading PGA leaderboard...</h2><p>Finding most recent completed tournament</p></div>';
+
+      MLBClient.getPgaLastTournamentLeaderboard()
+        .then(function (data) {
+          pgaLeaderboardData = data;
+          var rows = data && Array.isArray(data.leaderboard) ? data.leaderboard : [];
+          if (!rows.length) {
+            grid.innerHTML = '<div class="no-results"><h3>No recent completed PGA tournament results were found.</h3></div>';
+            return;
+          }
+
+          var html = '';
+          html += '<div class="pga-wrap">';
+          html += '  <div class="pga-header">';
+          html += '    <div class="pga-kicker">PGA Results</div>';
+          html += '    <h2 class="pga-title">Leaderboard - ' + (data.eventName || 'Latest Tournament') + '</h2>';
+          html += '    <div class="pga-meta">' + (data.eventDate || '') + (data.status ? (' | ' + data.status) : '') + '</div>';
+          html += '  </div>';
+          html += '  <div class="pga-table-card">';
+          html += '    <table class="pga-table">';
+          html += '      <thead><tr><th>Pos</th><th>Golfer</th><th>To Par</th><th>Rounds</th></tr></thead>';
+          html += '      <tbody>';
+          for (var i = 0; i < rows.length; i++) {
+            var r = rows[i];
+            html += '<tr class="pga-row" onclick="openPgaGolferModal(\'' + escapeHtml(r.id || String(i)) + '\')">';
+            html += '<td>' + (r.pos || '-') + '</td>';
+            html += '<td><div class="pga-player">' +
+              (r.flag ? '<img class="pga-flag" src="' + escapeHtml(r.flag) + '" alt="">' : '') +
+              '<span>' + escapeHtml(r.name || '-') + '</span></div></td>';
+            html += '<td>' + (r.toPar || '-') + '</td>';
+            html += '<td>' + (r.rounds || '-') + '</td>';
+            html += '</tr>';
+          }
+          html += '      </tbody>';
+          html += '    </table>';
+          html += '  </div>';
+          html += '</div>';
+
+          grid.innerHTML = html;
+        })
+        .catch(function (err) {
+          grid.innerHTML = '<div class="no-results"><h3>Failed to load PGA tournament results.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
+        });
+    }
+
+    function escapeHtml(value) {
+      return String(value === undefined || value === null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function parseRelativeToPar(text) {
+      var t = String(text || '').trim().toUpperCase();
+      if (!t || t === 'E') {
+        return 0;
+      }
+      var num = Number(t);
+      return Number.isNaN(num) ? 0 : num;
+    }
+
+    function getScoreClass(relative) {
+      if (relative <= -2) {
+        return 'score-eagle';
+      }
+      if (relative === -1) {
+        return 'score-birdie';
+      }
+      if (relative === 1) {
+        return 'score-bogey';
+      }
+      if (relative >= 2) {
+        return 'score-double';
+      }
+      return '';
+    }
+
+    function sumArray(values) {
+      var total = 0;
+      for (var i = 0; i < values.length; i++) {
+        var n = Number(values[i]);
+        if (!Number.isNaN(n)) {
+          total += n;
+        }
+      }
+      return total;
+    }
+
+    function buildScorecardTable(round) {
+      var holesRaw = round && Array.isArray(round.holes) ? round.holes.slice() : [];
+      holesRaw.sort(function (a, b) { return Number(a.hole || 0) - Number(b.hole || 0); });
+
+      var byHole = {};
+      for (var i = 0; i < holesRaw.length; i++) {
+        byHole[Number(holesRaw[i].hole)] = holesRaw[i];
+      }
+
+      var parRow = [];
+      var scoreRow = [];
+      var scoreClassRow = [];
+
+      for (var hole = 1; hole <= 18; hole++) {
+        var h = byHole[hole] || null;
+        var strokes = h && h.strokes ? Number(h.strokes) : NaN;
+        var rel = parseRelativeToPar(h && h.relativeToPar ? h.relativeToPar : '');
+        var par = Number.isNaN(strokes) ? '-' : String(strokes - rel);
+
+        parRow.push(par);
+        scoreRow.push(Number.isNaN(strokes) ? '-' : String(strokes));
+        scoreClassRow.push(getScoreClass(rel));
+      }
+
+      var parOut = sumArray(parRow.slice(0, 9));
+      var parIn = sumArray(parRow.slice(9, 18));
+      var scoreOut = sumArray(scoreRow.slice(0, 9));
+      var scoreIn = sumArray(scoreRow.slice(9, 18));
+
+      var html = '';
+      html += '<table class="pga-scorecard">';
+      html += '<thead><tr><th>Hole</th>';
+      for (var col = 1; col <= 9; col++) {
+        html += '<th>' + col + '</th>';
+      }
+      html += '<th>OUT</th>';
+      for (var col2 = 10; col2 <= 18; col2++) {
+        html += '<th>' + col2 + '</th>';
+      }
+      html += '<th>IN</th><th>TOT</th></tr></thead>';
+
+      html += '<tbody>';
+      html += '<tr><td>Par</td>';
+      for (var p = 0; p < 9; p++) {
+        html += '<td>' + parRow[p] + '</td>';
+      }
+      html += '<td>' + parOut + '</td>';
+      for (var p2 = 9; p2 < 18; p2++) {
+        html += '<td>' + parRow[p2] + '</td>';
+      }
+      html += '<td>' + parIn + '</td><td>' + (parOut + parIn) + '</td></tr>';
+
+      html += '<tr><td>Score</td>';
+      for (var s = 0; s < 9; s++) {
+        html += '<td class="' + scoreClassRow[s] + '">' + scoreRow[s] + '</td>';
+      }
+      html += '<td>' + scoreOut + '</td>';
+      for (var s2 = 9; s2 < 18; s2++) {
+        html += '<td class="' + scoreClassRow[s2] + '">' + scoreRow[s2] + '</td>';
+      }
+      html += '<td>' + scoreIn + '</td><td>' + (scoreOut + scoreIn) + '</td></tr>';
+      html += '</tbody></table>';
+
+      return html;
+    }
+
+    function renderPgaGolferModal(golfer, selectedPeriod) {
+      var overlay = document.getElementById('pgaModalOverlay');
+      var title = document.getElementById('pgaModalTitle');
+      var body = document.getElementById('pgaModalBody');
+      if (!overlay || !title || !body) {
+        return;
+      }
+
+      var rounds = Array.isArray(golfer && golfer.roundData) ? golfer.roundData.slice() : [];
+      rounds.sort(function (a, b) { return Number(a.period || 0) - Number(b.period || 0); });
+      if (!rounds.length) {
+        title.innerText = (golfer && golfer.fullName ? golfer.fullName : 'Golfer') + ' Scorecard';
+        body.innerHTML = '<div class="no-results" style="padding:20px;">No round scorecard data available.</div>';
+        overlay.style.display = 'flex';
+        return;
+      }
+
+      var activePeriod = Number(selectedPeriod || 0);
+      if (!activePeriod) {
+        activePeriod = Number(rounds[rounds.length - 1].period || 1);
+      }
+
+      var activeRound = rounds.find(function (r) {
+        return Number(r.period) === activePeriod;
+      }) || rounds[rounds.length - 1];
+
+      title.innerText = (golfer && golfer.fullName ? golfer.fullName : 'Golfer') + ' Scorecard';
+
+      var html = '';
+      html += '<div class="pga-round-select">';
+      html += '<span>Round</span>';
+      html += '<select onchange="changePgaRound(\'' + escapeHtml(golfer.id) + '\', this.value)">';
+      for (var i = 0; i < rounds.length; i++) {
+        var period = Number(rounds[i].period || (i + 1));
+        html += '<option value="' + period + '"' + (period === Number(activeRound.period) ? ' selected' : '') + '>Round ' + period + '</option>';
+      }
+      html += '</select>';
+      html += '<span>Score: ' + escapeHtml(activeRound.score || '-') + '</span>';
+      html += '</div>';
+      html += buildScorecardTable(activeRound);
+
+      body.innerHTML = html;
+      overlay.style.display = 'flex';
+    }
+
+    function openPgaGolferModal(golferId) {
+      var rows = pgaLeaderboardData && Array.isArray(pgaLeaderboardData.leaderboard) ? pgaLeaderboardData.leaderboard : [];
+      var golfer = rows.find(function (r) { return String(r.id) === String(golferId); });
+      if (!golfer) {
+        return;
+      }
+      renderPgaGolferModal(golfer);
+    }
+
+    function changePgaRound(golferId, period) {
+      var rows = pgaLeaderboardData && Array.isArray(pgaLeaderboardData.leaderboard) ? pgaLeaderboardData.leaderboard : [];
+      var golfer = rows.find(function (r) { return String(r.id) === String(golferId); });
+      if (!golfer) {
+        return;
+      }
+      renderPgaGolferModal(golfer, Number(period));
+    }
+
+    function hidePgaModal() {
+      var overlay = document.getElementById('pgaModalOverlay');
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
+    }
+
+    function closePgaModal() {
+      hidePgaModal();
+    }
 
     function applyFilters() {
       console.log('DEBUG: applyFilters called');

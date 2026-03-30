@@ -1674,6 +1674,125 @@
     return allGames;
   }
 
+  async function getPgaLastTournamentLeaderboard() {
+    const today = new Date();
+    const maxLookbackDays = 60;
+
+    for (let i = 0; i <= maxLookbackDays; i += 1) {
+      const probeDate = new Date(today.getTime());
+      probeDate.setDate(today.getDate() - i);
+      const dateKey = toIsoDate(probeDate).replace(/-/g, "");
+      const url =
+        "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=" +
+        dateKey;
+
+      let payload;
+      try {
+        payload = await fetchJson(url);
+      } catch (error) {
+        continue;
+      }
+
+      const events = Array.isArray(payload && payload.events) ? payload.events : [];
+      if (!events.length) {
+        continue;
+      }
+
+      const completed = events.find(function (event) {
+        return event && event.status && event.status.type && event.status.type.state === "post";
+      });
+
+      if (!completed || !Array.isArray(completed.competitions) || !completed.competitions.length) {
+        continue;
+      }
+
+      const comp = completed.competitions[0] || {};
+      const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+      if (!competitors.length) {
+        continue;
+      }
+
+      const leaderboard = competitors
+        .slice()
+        .sort(function (a, b) {
+          const ao = Number(a && a.order !== undefined ? a.order : 9999);
+          const bo = Number(b && b.order !== undefined ? b.order : 9999);
+          return ao - bo;
+        })
+        .map(function (c, idx) {
+          const athlete = c && c.athlete ? c.athlete : {};
+          const rounds = Array.isArray(c && c.linescores) ? c.linescores : [];
+          const roundText = rounds
+            .map(function (r) {
+              return r && r.displayValue !== undefined ? String(r.displayValue) : "-";
+            })
+            .join(" / ");
+
+          const scoreRaw = c && c.score !== undefined && c.score !== null ? String(c.score) : "";
+          const scoreText = scoreRaw === "0" ? "E" : (scoreRaw || "-");
+
+          return {
+            id: c && c.id !== undefined && c.id !== null ? String(c.id) : String(idx + 1),
+            pos: c && c.order !== undefined && c.order !== null ? String(c.order) : String(idx + 1),
+            name: athlete.displayName || athlete.shortName || "Unknown",
+            fullName: athlete.fullName || athlete.displayName || athlete.shortName || "Unknown",
+            flag: athlete && athlete.flag && athlete.flag.href ? athlete.flag.href : "",
+            toPar: scoreText,
+            rounds: roundText || "-",
+            roundData: rounds.map(function (round) {
+              const holes = Array.isArray(round && round.linescores) ? round.linescores : [];
+              return {
+                period: round && round.period !== undefined ? Number(round.period) : 0,
+                score: round && round.displayValue !== undefined ? String(round.displayValue) : "-",
+                strokes: round && round.value !== undefined && round.value !== null ? Number(round.value) : null,
+                holes: holes.map(function (hole) {
+                  const scoreType = hole && hole.scoreType && hole.scoreType.displayValue !== undefined
+                    ? String(hole.scoreType.displayValue)
+                    : "";
+                  return {
+                    hole: hole && hole.period !== undefined ? Number(hole.period) : 0,
+                    strokes: hole && hole.displayValue !== undefined ? String(hole.displayValue) : "-",
+                    relativeToPar: scoreType
+                  };
+                })
+              };
+            })
+          };
+        });
+
+      const eventDate = completed.date ? new Date(completed.date) : null;
+      const eventDateLabel = eventDate && !Number.isNaN(eventDate.getTime())
+        ? eventDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+        : "";
+
+      return {
+        eventName: completed.shortName || completed.name || "Latest PGA Tournament",
+        eventDate: eventDateLabel,
+        status: completed.status && completed.status.type && completed.status.type.description
+          ? completed.status.type.description
+          : "Final",
+        leaderboard: leaderboard
+      };
+    }
+
+    return {
+      eventName: "Latest PGA Tournament",
+      eventDate: "",
+      status: "Unavailable",
+      leaderboard: []
+    };
+  }
+
+  async function getPgaLastTournamentTop25() {
+    const data = await getPgaLastTournamentLeaderboard();
+    return {
+      eventName: data.eventName,
+      eventDate: data.eventDate,
+      status: data.status,
+      top25: Array.isArray(data.leaderboard) ? data.leaderboard.slice(0, 25) : []
+    };
+  }
+
   async function getTopNewsData(limitPerSport) {
     const limit = Number(limitPerSport) > 0 ? Number(limitPerSport) : 5;
     const leagueFeeds = [
@@ -1748,6 +1867,8 @@
     getLeagueGameDetails: getLeagueGameDetails,
     getTopNewsData: getTopNewsData,
     getTvGuideData: getTvGuideData,
+    getPgaLastTournamentLeaderboard: getPgaLastTournamentLeaderboard,
+    getPgaLastTournamentTop25: getPgaLastTournamentTop25,
     getTeamId: getTeamId,
     getPageUrl: getPageUrl,
     navigateToPage: navigateToPage,
