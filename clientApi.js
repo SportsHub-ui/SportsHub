@@ -766,14 +766,19 @@
 
   function transformMlbGame(game, teamId) {
     const linescore = game.linescore;
-    let liveText = game.status && game.status.detailedState ? game.status.detailedState : "Scheduled";
+    const detailedState = game.status && game.status.detailedState ? String(game.status.detailedState) : "Scheduled";
+    const codedState = game.status && game.status.codedGameState ? String(game.status.codedGameState) : "";
+    const isInProgress = codedState === "I" || detailedState === "In Progress";
+    let liveText = detailedState;
 
-    if (game.status && (game.status.abstractGameState === "Live" || game.status.detailedState === "In Progress")) {
+    if (isInProgress) {
       if (linescore && linescore.currentInning) {
         liveText = (linescore.isTopInning ? "TOP " : "BOT ") + linescore.currentInning;
       } else {
         liveText = "LIVE";
       }
+    } else if (detailedState.toLowerCase() === "warmup") {
+      liveText = "WARMUP";
     } else if (game.status && game.status.abstractGameState === "Preview") {
       liveText = new Date(game.gameDate).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     }
