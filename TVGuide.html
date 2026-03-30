@@ -222,6 +222,21 @@
       margin: 0 auto;
     }
 
+    .pga-layout {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 20px;
+      max-width: 1280px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .pga-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .pga-header {
       background: white;
       border-left: 5px solid #0b5d2a;
@@ -314,6 +329,94 @@
       border: 1px solid #d2dbd4;
       border-radius: 2px;
       background: #fff;
+    }
+
+    .pga-schedule-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      position: sticky;
+      top: 10px;
+    }
+
+    .pga-schedule-head {
+      background: #f1f6f2;
+      padding: 12px 16px;
+      border-bottom: 1px solid #e7ece8;
+    }
+
+    .pga-schedule-title {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #46614f;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .pga-schedule-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e7ece8;
+    }
+
+    .pga-schedule-item:last-child {
+      border-bottom: none;
+    }
+
+    .pga-schedule-item.pga-schedule-active {
+      background: #f0faf3;
+      border-left: 3px solid #0b5d2a;
+      padding-left: 13px;
+    }
+
+    .pga-schedule-name {
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      color: #183b26;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .pga-schedule-badge {
+      display: inline-block;
+      background: #0b5d2a;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .pga-schedule-date {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.75rem;
+      color: #5b6b60;
+      margin-top: 3px;
+    }
+
+    .pga-schedule-detail {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.74rem;
+      color: #6b7d72;
+      margin-top: 3px;
+    }
+
+    .pga-schedule-detail span {
+      font-weight: 700;
+      color: #3a5844;
+    }
+
+    .pga-schedule-empty {
+      padding: 20px 16px;
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.8rem;
+      color: #7a9080;
+      text-align: center;
     }
 
     .pga-modal-overlay {
@@ -557,49 +660,96 @@
         return;
       }
 
-      grid.innerHTML = '<div class="loader"><h2 style="color: #0b5d2a;">Loading PGA leaderboard...</h2><p>Finding most recent completed tournament</p></div>';
+      grid.innerHTML = '<div class="loader"><h2 style="color: #0b5d2a;">Loading PGA...</h2><p>Fetching leaderboard and upcoming schedule</p></div>';
 
-      MLBClient.getPgaLastTournamentLeaderboard()
-        .then(function (data) {
-          pgaLeaderboardData = data;
-          var rows = data && Array.isArray(data.leaderboard) ? data.leaderboard : [];
-          if (!rows.length) {
-            grid.innerHTML = '<div class="no-results"><h3>No recent completed PGA tournament results were found.</h3></div>';
-            return;
+      Promise.all([
+        MLBClient.getPgaLastTournamentLeaderboard(),
+        MLBClient.getPgaSchedule()
+      ]).then(function (results) {
+        var data = results[0];
+        var schedule = Array.isArray(results[1]) ? results[1] : [];
+        pgaLeaderboardData = data;
+
+        var rows = data && Array.isArray(data.leaderboard) ? data.leaderboard : [];
+        if (!rows.length) {
+          grid.innerHTML = '<div class="no-results"><h3>No recent completed PGA tournament results were found.</h3></div>';
+          return;
+        }
+
+        var html = '';
+        html += '<div class="pga-layout">';
+
+        // Left column: leaderboard
+        html += '<div class="pga-left">';
+        html += '  <div class="pga-header">';
+        html += '    <div class="pga-kicker">PGA Results</div>';
+        html += '    <h2 class="pga-title">Leaderboard - ' + (data.eventName || 'Latest Tournament') + '</h2>';
+        html += '    <div class="pga-meta">' + (data.eventDate || '') + (data.status ? (' | ' + data.status) : '') + '</div>';
+        html += '  </div>';
+        html += '  <div class="pga-table-card">';
+        html += '    <table class="pga-table">';
+        html += '      <thead><tr><th>Pos</th><th>Golfer</th><th>To Par</th><th>Rounds</th></tr></thead>';
+        html += '      <tbody>';
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          html += '<tr class="pga-row" onclick="openPgaGolferModal(\'' + escapeHtml(r.id || String(i)) + '\')">';
+          html += '<td>' + (r.pos || '-') + '</td>';
+          html += '<td><div class="pga-player">' +
+            (r.flag ? '<img class="pga-flag" src="' + escapeHtml(r.flag) + '" alt="">' : '') +
+            '<span>' + escapeHtml(r.name || '-') + '</span></div></td>';
+          html += '<td>' + (r.toPar || '-') + '</td>';
+          html += '<td>' + (r.rounds || '-') + '</td>';
+          html += '</tr>';
+        }
+        html += '      </tbody>';
+        html += '    </table>';
+        html += '  </div>';
+        html += '</div>';
+
+        // Right column: upcoming schedule
+        html += '<div class="pga-right">';
+        html += '  <div class="pga-schedule-card">';
+        html += '    <div class="pga-schedule-head"><h3 class="pga-schedule-title">Upcoming Schedule</h3></div>';
+        if (!schedule.length) {
+          html += '<div class="pga-schedule-empty">No upcoming tournaments found.</div>';
+        } else {
+          for (var si = 0; si < schedule.length; si++) {
+            var s = schedule[si];
+            var isActive = s.status === 'in';
+            html += '<div class="pga-schedule-item' + (isActive ? ' pga-schedule-active' : '') + '">';
+            html += '<div class="pga-schedule-name">' + escapeHtml(s.name || 'TBD');
+            if (isActive) html += '<span class="pga-schedule-badge">Live</span>';
+            html += '</div>';
+            if (s.date) {
+              html += '<div class="pga-schedule-date">' + escapeHtml(s.date) + '</div>';
+            }
+            if (s.previousWinner) {
+              html += '<div class="pga-schedule-detail">Prev. Winner: <span>' + escapeHtml(s.previousWinner) + '</span></div>';
+            }
+            if (s.purse != null) {
+              html += '<div class="pga-schedule-detail">Purse: <span>' + escapeHtml(formatPurse(s.purse)) + '</span></div>';
+            }
+            html += '</div>';
           }
+        }
+        html += '  </div>';
+        html += '</div>';
 
-          var html = '';
-          html += '<div class="pga-wrap">';
-          html += '  <div class="pga-header">';
-          html += '    <div class="pga-kicker">PGA Results</div>';
-          html += '    <h2 class="pga-title">Leaderboard - ' + (data.eventName || 'Latest Tournament') + '</h2>';
-          html += '    <div class="pga-meta">' + (data.eventDate || '') + (data.status ? (' | ' + data.status) : '') + '</div>';
-          html += '  </div>';
-          html += '  <div class="pga-table-card">';
-          html += '    <table class="pga-table">';
-          html += '      <thead><tr><th>Pos</th><th>Golfer</th><th>To Par</th><th>Rounds</th></tr></thead>';
-          html += '      <tbody>';
-          for (var i = 0; i < rows.length; i++) {
-            var r = rows[i];
-            html += '<tr class="pga-row" onclick="openPgaGolferModal(\'' + escapeHtml(r.id || String(i)) + '\')">';
-            html += '<td>' + (r.pos || '-') + '</td>';
-            html += '<td><div class="pga-player">' +
-              (r.flag ? '<img class="pga-flag" src="' + escapeHtml(r.flag) + '" alt="">' : '') +
-              '<span>' + escapeHtml(r.name || '-') + '</span></div></td>';
-            html += '<td>' + (r.toPar || '-') + '</td>';
-            html += '<td>' + (r.rounds || '-') + '</td>';
-            html += '</tr>';
-          }
-          html += '      </tbody>';
-          html += '    </table>';
-          html += '  </div>';
-          html += '</div>';
+        html += '</div>'; // end pga-layout
 
-          grid.innerHTML = html;
-        })
-        .catch(function (err) {
-          grid.innerHTML = '<div class="no-results"><h3>Failed to load PGA tournament results.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
-        });
+        grid.innerHTML = html;
+      }).catch(function (err) {
+        grid.innerHTML = '<div class="no-results"><h3>Failed to load PGA tournament results.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
+      });
+    }
+
+    function formatPurse(purse) {
+      if (purse == null) return '';
+      var n = Number(purse);
+      if (!isNaN(n) && n > 0) {
+        return '$' + n.toLocaleString();
+      }
+      return String(purse);
     }
 
     function escapeHtml(value) {

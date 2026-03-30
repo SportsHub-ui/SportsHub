@@ -1987,6 +1987,169 @@
     };
   }
 
+  async function getPgaSchedule() {
+    var today = new Date();
+    var upcoming = [];
+    var seenIds = {};
+
+    // Scan forward up to 26 weeks looking for upcoming events (at most 12)
+    for (var w = 0; w <= 26 && upcoming.length < 12; w++) {
+      var probeDate = new Date(today.getTime());
+      probeDate.setDate(today.getDate() + w * 7);
+      var dateKey = toIsoDate(probeDate).replace(/-/g, "");
+      var url =
+        "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=" +
+        dateKey;
+
+      var payload;
+      try {
+        payload = await fetchJsonCached(url, 3600000);
+      } catch (e) {
+        continue;
+      }
+
+      var evts = Array.isArray(payload && payload.events) ? payload.events : [];
+      for (var ei = 0; ei < evts.length; ei++) {
+        var evt = evts[ei];
+        if (!evt || !evt.id || seenIds[String(evt.id)]) continue;
+        seenIds[String(evt.id)] = true;
+
+        var statusState =
+          evt.status && evt.status.type ? evt.status.type.state : "";
+        if (statusState === "post") continue; // skip already completed events
+
+        var comp =
+          Array.isArray(evt.competitions) && evt.competitions.length
+            ? evt.competitions[0]
+            : {};
+
+        var purse =
+          comp.prize != null
+            ? comp.prize
+            : comp.purse != null
+            ? comp.purse
+            : null;
+
+        var venue =
+          comp.venue && comp.venue.fullName ? comp.venue.fullName : "";
+
+        var eventDate = evt.date ? new Date(evt.date) : null;
+        var dateLabel =
+          eventDate && !isNaN(eventDate.getTime())
+            ? eventDate.toLocaleDateString([], {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+              })
+            : "";
+
+        upcoming.push({
+          id: String(evt.id),
+          name: evt.shortName || evt.name || "TBD",
+          date: dateLabel,
+          dateObj: eventDate,
+          status: statusState,
+          statusDesc:
+            evt.status && evt.status.type
+              ? evt.status.type.description || "Upcoming"
+              : "Upcoming",
+          venue: venue,
+          purse: purse,
+          previousWinner: null
+        });
+      }
+    }
+
+    // Sort: in-progress first, then by date ascending
+    upcoming.sort(function (a, b) {
+      if (a.status === "in" && b.status !== "in") return -1;
+      if (b.status === "in" && a.status !== "in") return 1;
+      if (!a.dateObj) return 1;
+      if (!b.dateObj) return -1;
+      return a.dateObj - b.dateObj;
+    });
+
+    // Fetch previous year winner for each upcoming event
+    for (var i = 0; i < upcoming.length; i++) {
+      var u = upcoming[i];
+      if (!u.dateObj) continue;
+
+      var prevBase = new Date(u.dateObj.getTime());
+      prevBase.setFullYear(prevBase.getFullYear() - 1);
+
+      var offsets = [0, -7, 7, -14, 14]; // day offsets: same week, ±1 week, ±2 weeks
+      for (var oi = 0; oi < offsets.length; oi++) {
+        var checkDate = new Date(prevBase.getTime());
+        checkDate.setDate(prevBase.getDate() + offsets[oi]);
+        var checkKey = toIsoDate(checkDate).replace(/-/g, "");
+        var checkUrl =
+          "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=" +
+          checkKey;
+
+        var checkPayload;
+        try {
+          checkPayload = await fetchJsonCached(checkUrl, 3600000);
+        } catch (e) {
+          continue;
+        }
+
+        var checkEvts = Array.isArray(checkPayload && checkPayload.events)
+          ? checkPayload.events
+          : [];
+        var found = false;
+        for (var ce = 0; ce < checkEvts.length && !found; ce++) {
+          var ceEvt = checkEvts[ce];
+          if (!ceEvt) continue;
+          var ceState =
+            ceEvt.status && ceEvt.status.type
+              ? ceEvt.status.type.state
+              : "";
+          if (ceState !== "post") continue;
+
+          // Name similarity: require at least one significant word match
+          var n1 = (u.name || "").toLowerCase();
+          var n2 = ((ceEvt.shortName || ceEvt.name) || "").toLowerCase();
+          if (!n1 || !n2) continue;
+          var words = n1
+            .split(/\s+/)
+            .filter(function (w) { return w.length > 3; }); // skip short/common words
+          var matches = words.filter(function (w) {
+            return n2.indexOf(w) >= 0;
+          }).length;
+          if (matches < 1) continue;
+
+          var ceComp =
+            Array.isArray(ceEvt.competitions) && ceEvt.competitions.length
+              ? ceEvt.competitions[0]
+              : {};
+          var competitors = Array.isArray(ceComp.competitors)
+            ? ceComp.competitors
+            : [];
+          for (var wi = 0; wi < competitors.length; wi++) {
+            if (
+              competitors[wi] &&
+              String(competitors[wi].order) === "1" &&
+              competitors[wi].athlete
+            ) {
+              var wn =
+                competitors[wi].athlete.displayName ||
+                competitors[wi].athlete.shortName ||
+                "";
+              if (wn) {
+                u.previousWinner = toCompactPlayerName(wn);
+                found = true;
+                break;
+              }
+            }
+          }
+        }
+        if (u.previousWinner) break;
+      }
+    }
+
+    return upcoming;
+  }
+
   async function getTopNewsData(limitPerSport) {
     const limit = Number(limitPerSport) > 0 ? Number(limitPerSport) : 5;
     const leagueFeeds = [
@@ -2064,6 +2227,7 @@
     getTvGuideData: getTvGuideData,
     getPgaLastTournamentLeaderboard: getPgaLastTournamentLeaderboard,
     getPgaLastTournamentTop25: getPgaLastTournamentTop25,
+    getPgaSchedule: getPgaSchedule,
     getTeamId: getTeamId,
     getPageUrl: getPageUrl,
     navigateToPage: navigateToPage,
