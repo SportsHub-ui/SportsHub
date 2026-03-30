@@ -228,8 +228,14 @@
     const style = document.createElement("style");
     style.id = "mlb-site-nav-style";
     style.textContent =
+      "#siteNav{" +
+      "position:sticky;top:0;z-index:1002;background:var(--bg,#f4f7f9);" +
+      "}" +
       ".site-nav{" +
       "display:flex;justify-content:center;padding:6px 8px 2px;" +
+      "}" +
+      ".settings-bar{" +
+      "top:34px;" +
       "}" +
       ".site-nav__rail{" +
       "display:flex;flex-wrap:nowrap;gap:4px;justify-content:flex-start;align-items:center;" +
@@ -262,6 +268,7 @@
       ".site-nav__sublink:hover{background:rgba(0,70,173,0.1);border-color:rgba(0,70,173,0.18);}" +
       ".site-nav__sublink.is-active{background:var(--navy,#0046ad);color:#fff;border-color:var(--navy,#0046ad);}" +
       "@media (max-width: 600px){" +
+      ".settings-bar{top:30px;}" +
       ".site-nav{padding:5px 6px 2px;}" +
       ".site-nav__rail{border-radius:7px;padding:2px 4px;gap:2px;}" +
       ".site-nav__link{font-size:0.62rem;padding:2px 3px;}" +
