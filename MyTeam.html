@@ -904,8 +904,8 @@
           secondLineup = homeLineup;
         }
 
-        if (awayLabel) awayLabel.innerText = (myTeam && firstName === myTeam) ? myTeam + ' (You)' : firstName;
-        if (homeLabel) homeLabel.innerText = (myTeam && secondName === myTeam) ? myTeam + ' (You)' : secondName;
+        if (awayLabel) awayLabel.innerText = (myTeam && firstName === myTeam) ? myTeam  : firstName;
+        if (homeLabel) homeLabel.innerText = (myTeam && secondName === myTeam) ? myTeam  : secondName;
 
         renderPlayerRows(awayBody, firstLineup, 'Lineup not available');
         renderPlayerRows(homeBody, secondLineup, 'Lineup not available');
