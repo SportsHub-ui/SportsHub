@@ -753,6 +753,10 @@
       margin-left: 4px;
     }
 
+    .table-scroll {
+      width: 100%;
+    }
+
     .team-row td {
       background: #f7f9fb;
       font-weight: 700;
@@ -805,6 +809,57 @@
       .hitter-name {
         min-width: 120px;
         font-size: 0.86rem;
+      }
+
+      .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .table-scroll .box-table {
+        min-width: 760px;
+      }
+
+      .table-scroll .hitters-table {
+        min-width: 860px;
+      }
+
+      .table-scroll .box-table thead th:first-child,
+      .table-scroll .hitters-table thead th:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 4;
+      }
+
+      .table-scroll .box-table thead th:first-child {
+        background: #f3f6fa;
+      }
+
+      .table-scroll .hitters-table thead th:first-child {
+        background: #f2f5f9;
+      }
+
+      .table-scroll .box-table tbody td:first-child,
+      .table-scroll .hitters-table tbody td:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 3;
+        background: #fff;
+        box-shadow: 2px 0 0 #edf0f3;
+      }
+
+      .table-scroll .hitters-table .team-row td:first-child {
+        background: #f7f9fb;
+      }
+
+      .pitcher-name {
+        white-space: normal;
+      }
+
+      .pitcher-tag {
+        display: block;
+        margin-left: 0;
+        margin-top: 2px;
       }
 
       .decision-row {
@@ -1471,6 +1526,7 @@
 
       return (
         '<div class="linescore-card">' +
+        '<div class="table-scroll">' +
         '<table class="box-table">' +
         '<thead><tr><th></th>' +
         inningHead +
@@ -1486,7 +1542,7 @@
         '<td class="box-rhe box-rhe-start"><strong>' + escapeHtml(homeTotals.r) + '</strong></td>' +
         '<td class="box-rhe">' + escapeHtml(homeTotals.h) + '</td>' +
         '<td class="box-rhe">' + escapeHtml(homeTotals.e) + '</td></tr>' +
-        '</tbody></table></div>'
+        '</tbody></table></div></div>'
       );
     }
 
@@ -1689,12 +1745,14 @@
       return (
         '<div class="hitters-card">' +
         '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Hitting</h3>' +
+        '<div class="table-scroll">' +
         '<table class="hitters-table">' +
         '<thead><tr><th style="text-align:left;padding-left:8px;">Hitters</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th><th>SLG</th></tr></thead>' +
         '<tbody>' + rows +
         '<tr class="team-row"><td class="hitter-name">TEAM</td><td>' + escapeHtml(hittingTotals.ab) + '</td><td>' + escapeHtml(hittingTotals.r) + '</td><td>' + escapeHtml(hittingTotals.h) + '</td><td>' + escapeHtml(hittingTotals.rbi) + '</td><td>' + escapeHtml(hittingTotals.hr) + '</td><td>' + escapeHtml(hittingTotals.bb) + '</td><td>' + escapeHtml(hittingTotals.k) + '</td><td>-</td><td>-</td><td>-</td></tr>' +
         '</tbody>' +
         '</table>' +
+        '</div>' +
         renderNotesDivider(notes) +
         renderInfoLines(notes && notes.pitching) +
         renderInfoSection('Batting', notes && notes.batting) +
@@ -1800,6 +1858,7 @@
         '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Pitching</h3>' +
         '<div class="detail-section pitching-table-wrap">' +
         '<h4 class="detail-section-title">Pitchers</h4>' +
+        '<div class="table-scroll">' +
         '<table class="hitters-table">' +
         '<thead><tr><th style="text-align:left;padding-left:8px;">Pitchers</th><th>IP</th><th>H</th><th>R</th><th>ER</th><th>BB</th><th>K</th><th>HR</th><th>PC-ST</th><th>ERA</th></tr></thead>' +
         '<tbody>' +
@@ -1807,6 +1866,7 @@
         '<tr class="team-row"><td class="pitcher-name">TEAM</td><td>' + escapeHtml(teamTotals.ip) + '</td><td>' + escapeHtml(teamTotals.h) + '</td><td>' + escapeHtml(teamTotals.r) + '</td><td>' + escapeHtml(teamTotals.er) + '</td><td>' + escapeHtml(teamTotals.bb) + '</td><td>' + escapeHtml(teamTotals.k) + '</td><td>' + escapeHtml(teamTotals.hr) + '</td><td>' + escapeHtml(teamTotals.pcst) + '</td><td>-</td></tr>' +
         '</tbody>' +
         '</table>' +
+        '</div>' +
         '</div>' +
         '</div>'
       );
