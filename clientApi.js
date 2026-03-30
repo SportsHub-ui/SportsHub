@@ -777,9 +777,17 @@
       liveText: liveText,
       away: game.teams.away.team.name,
       awayId: game.teams.away.team.id,
+      awayRecord:
+        game.teams.away && game.teams.away.leagueRecord
+          ? String(game.teams.away.leagueRecord.wins || 0) + "-" + String(game.teams.away.leagueRecord.losses || 0)
+          : "",
       awayScore: game.teams.away.score || 0,
       home: game.teams.home.team.name,
       homeId: game.teams.home.team.id,
+      homeRecord:
+        game.teams.home && game.teams.home.leagueRecord
+          ? String(game.teams.home.leagueRecord.wins || 0) + "-" + String(game.teams.home.leagueRecord.losses || 0)
+          : "",
       homeScore: game.teams.home.score || 0,
       awayStarter: game.teams.away.probablePitcher ? game.teams.away.probablePitcher.fullName : "TBD",
       homeStarter: game.teams.home.probablePitcher ? game.teams.home.probablePitcher.fullName : "TBD",

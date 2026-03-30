@@ -330,6 +330,13 @@
       font-weight: 700;
     }
 
+    .team-rec {
+      font-family: 'Roboto Mono', monospace;
+      font-size: 0.74rem;
+      color: #6d7c90;
+      margin-left: 6px;
+    }
+
     .score {
       font-size: 1.6rem;
       font-weight: 900;
@@ -1142,8 +1149,8 @@
       html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + '" data-field="liveText">' + g.liveText + '</span>';
       html += '  <span class="situation-host">' + ((isInProgress || isWarmup) ? renderSituation(g) : '') + '</span>';
       html += '</div>';
-      html += renderTeamRow(g.awayId, g.away, g.awayScore, isPreview, 'away');
-      html += renderTeamRow(g.homeId, g.home, g.homeScore, isPreview, 'home');
+      html += renderTeamRow(g.awayId, g.away, g.awayRecord, g.awayScore, isPreview, 'away');
+      html += renderTeamRow(g.homeId, g.home, g.homeRecord, g.homeScore, isPreview, 'home');
       html += '<div class="pitching-info" data-field="pitchingInfo">' + renderPitching(g) + '</div>';
       html += '<div class="card-footer"><span data-field="tv">TV: ' + (g.tv || 'N/A') + '</span><span data-field="venue">' + (g.venue || '') + '</span></div>';
       html += '</div>';
@@ -1166,10 +1173,14 @@
 
       var awayScoreEl = card.querySelector('[data-field="awayScore"]');
       var homeScoreEl = card.querySelector('[data-field="homeScore"]');
+      var awayRecordEl = card.querySelector('[data-field="awayRecord"]');
+      var homeRecordEl = card.querySelector('[data-field="homeRecord"]');
       var nextAwayScore = isPreview ? '' : String(g.awayScore);
       var nextHomeScore = isPreview ? '' : String(g.homeScore);
       setTextWithFlash(awayScoreEl, previousGame && previousGame.awayScore, nextAwayScore);
       setTextWithFlash(homeScoreEl, previousGame && previousGame.homeScore, nextHomeScore);
+      setTextWithFlash(awayRecordEl, previousGame && previousGame.awayRecord, g.awayRecord || '');
+      setTextWithFlash(homeRecordEl, previousGame && previousGame.homeRecord, g.homeRecord || '');
 
       var tvEl = card.querySelector('[data-field="tv"]');
       var venueEl = card.querySelector('[data-field="venue"]');
@@ -1312,11 +1323,12 @@
         '</div>';
     }
 
-    function renderTeamRow(id, name, score, isPreview, slot) {
+    function renderTeamRow(id, name, record, score, isPreview, slot) {
       return '<div class="team-line">' +
         '  <div class="team-info">' +
         '    <img class="logo" src="https://www.mlbstatic.com/team-logos/' + id + '.svg">' +
         '    <span class="team-name">' + name + '</span>' +
+        '    <span class="team-rec" data-field="' + slot + 'Record">' + (record || '') + '</span>' +
         '  </div>' +
         '  <span class="score" data-field="' + slot + 'Score">' + (!isPreview ? score : '') + '</span>' +
         '</div>';
