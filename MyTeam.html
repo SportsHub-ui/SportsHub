@@ -1142,37 +1142,69 @@
         var homeName = game.home || 'Home';
         var awayRecord = game.awayRecord || '';
         var homeRecord = game.homeRecord || '';
+        var awayStarterName = game.awayStarter || '';
+        var homeStarterName = game.homeStarter || '';
+        var awayStarterId = game.awayStarterId || null;
+        var homeStarterId = game.homeStarterId || null;
         var awayLineup = game.awayTeamLineup;
         var homeLineup = game.homeTeamLineup;
 
         var firstName;
         var firstRecord;
+        var firstStarterName;
+        var firstStarterId;
         var firstLineup;
         var secondName;
         var secondRecord;
+        var secondStarterName;
+        var secondStarterId;
         var secondLineup;
 
         if (myTeam && homeName === myTeam) {
           firstName = homeName;
           firstRecord = homeRecord;
+          firstStarterName = homeStarterName;
+          firstStarterId = homeStarterId;
           firstLineup = homeLineup;
           secondName = awayName;
           secondRecord = awayRecord;
+          secondStarterName = awayStarterName;
+          secondStarterId = awayStarterId;
           secondLineup = awayLineup;
         } else {
           firstName = awayName;
           firstRecord = awayRecord;
+          firstStarterName = awayStarterName;
+          firstStarterId = awayStarterId;
           firstLineup = awayLineup;
           secondName = homeName;
           secondRecord = homeRecord;
+          secondStarterName = homeStarterName;
+          secondStarterId = homeStarterId;
           secondLineup = homeLineup;
         }
 
         if (awayLabel) awayLabel.innerHTML = formatTeamNameWithRecord((myTeam && firstName === myTeam) ? myTeam : firstName, firstRecord);
         if (homeLabel) homeLabel.innerHTML = formatTeamNameWithRecord((myTeam && secondName === myTeam) ? myTeam : secondName, secondRecord);
 
-        renderPlayerRows(awayBody, firstLineup, 'Lineup not available');
-        renderPlayerRows(homeBody, secondLineup, 'Lineup not available');
+        renderPlayerRows(awayBody, buildLineupWithStarter(firstLineup, firstStarterName, firstStarterId), 'Lineup not available');
+        renderPlayerRows(homeBody, buildLineupWithStarter(secondLineup, secondStarterName, secondStarterId), 'Lineup not available');
+      }
+
+      function buildLineupWithStarter(lineup, starterName, starterId) {
+        var rows = Array.isArray(lineup) ? lineup.slice() : [];
+        var name = String(starterName || '').trim();
+        if (!name || name.toUpperCase() === 'TBD') {
+          return rows;
+        }
+
+        rows.unshift({
+          id: starterId || null,
+          name: name,
+          position: 'P',
+          isStarter: true
+        });
+        return rows;
       }
 
       function renderLeagueSnapshot(game, myTeam) {
@@ -1227,13 +1259,15 @@
         }
 
         var html = '';
+        var lineupOrder = 1;
         for (var i = 0; i < lineup.length; i++) {
           var player = lineup[i];
           var playerId = player && player.id ? Number(player.id) : 0;
           var canOpenPlayer = currentSport === 'mlb' && !!playerId;
+          var orderLabel = player && player.isStarter ? 'SP' : String(lineupOrder++);
           html += '<tr class="lineup-player-row' + (canOpenPlayer ? ' is-clickable' : '') + '"' +
             (canOpenPlayer ? ' onclick="openPlayerDetail(' + playerId + ')"' : '') + '>';
-          html += '<td style="font-weight:bold;">' + (i + 1) + '</td>';
+          html += '<td style="font-weight:bold;">' + orderLabel + '</td>';
           html += '<td style="font-size:0.85rem;">' + (player.name || '') + '</td>';
           html += '<td><strong>' + (player.position || '') + '</strong></td>';
           html += '</tr>';
@@ -1249,6 +1283,18 @@
         return html;
       }
 
+      function formatDateMmDdYyyy(value) {
+        var text = String(value || '').trim();
+        if (!text) {
+          return '-';
+        }
+        var m = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!m) {
+          return text;
+        }
+        return m[2] + '-' + m[3] + '-' + m[1];
+      }
+
       function renderPlayerDetailContent(details) {
         if (!details) {
           return '<div style="color:#8a2f2f;">Player details are unavailable.</div>';
@@ -1258,16 +1304,20 @@
         var hitting = details.season && details.season.hitting ? details.season.hitting : {};
         var pitching = details.season && details.season.pitching ? details.season.pitching : {};
         var seasonLabel = details.season && details.season.year ? String(details.season.year) : 'Season';
+        var positionCode = String(bio.position || '').toUpperCase();
+        var isPitcher = positionCode === 'P' || positionCode === 'SP' || positionCode === 'RP';
+        var dob = formatDateMmDdYyyy(bio.birthDate);
+        var dobWithAge = dob + (bio.age && bio.age !== '-' ? ' (Age ' + bio.age + ')' : '');
+        var mlbDebut = formatDateMmDdYyyy(bio.mlbDebut);
 
         var bioHtml = '';
         bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Team</span><span class="player-bio-value">' + escapeHtml(bio.team || '-') + '</span></div>';
         bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Position</span><span class="player-bio-value">' + escapeHtml(bio.position || '-') + '</span></div>';
-        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Age</span><span class="player-bio-value">' + escapeHtml(bio.age || '-') + '</span></div>';
-        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">DOB</span><span class="player-bio-value">' + escapeHtml(bio.birthDate || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">DOB</span><span class="player-bio-value">' + escapeHtml(dobWithAge) + '</span></div>';
         bioHtml += '<div class="player-bio-item"><span class="player-bio-label">B/T</span><span class="player-bio-value">' + escapeHtml((bio.bats || '-') + '/' + (bio.throws || '-')) + '</span></div>';
         bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Height / Weight</span><span class="player-bio-value">' + escapeHtml((bio.height || '-') + ' / ' + (bio.weight || '-')) + '</span></div>';
         bioHtml += '<div class="player-bio-item"><span class="player-bio-label">Born</span><span class="player-bio-value">' + escapeHtml(bio.born || '-') + '</span></div>';
-        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">MLB Debut</span><span class="player-bio-value">' + escapeHtml(bio.mlbDebut || '-') + '</span></div>';
+        bioHtml += '<div class="player-bio-item"><span class="player-bio-label">MLB Debut</span><span class="player-bio-value">' + escapeHtml(mlbDebut) + '</span></div>';
 
         var hittingRows = buildStatsRows(
           ['AVG', 'OBP', 'SLG', 'OPS', 'HR', 'RBI', 'H', 'R', 'SB', 'AB'],
@@ -1299,11 +1349,14 @@
           ]
         );
 
+        var statsCardHtml = isPitcher
+          ? '<div class="player-stats-card"><h4>' + seasonLabel + ' Pitching</h4><table class="player-stats-table"><tbody>' + pitchingRows + '</tbody></table></div>'
+          : '<div class="player-stats-card"><h4>' + seasonLabel + ' Hitting</h4><table class="player-stats-table"><tbody>' + hittingRows + '</tbody></table></div>';
+
         return (
           '<div class="player-bio-grid">' + bioHtml + '</div>' +
           '<div class="player-stats-grid">' +
-          '<div class="player-stats-card"><h4>' + seasonLabel + ' Hitting</h4><table class="player-stats-table"><tbody>' + hittingRows + '</tbody></table></div>' +
-          '<div class="player-stats-card"><h4>' + seasonLabel + ' Pitching</h4><table class="player-stats-table"><tbody>' + pitchingRows + '</tbody></table></div>' +
+          statsCardHtml +
           '</div>'
         );
       }
