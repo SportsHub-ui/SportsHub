@@ -1477,9 +1477,11 @@
     }
 
     function renderPitching(g) {
-      if (g.status === "Preview" || g.status === "Created") {
-        return '<div><span class="pitch-label">Away:</span> ' + g.awayStarter + '</div>' +
-          '<div><span class="pitch-label">Home:</span> ' + g.homeStarter + '</div>';
+      if (g.status === "Preview" || g.status === "Created" || g.liveText === "WARMUP") {
+        var awayRec = g.awayStarterRecord ? ' <span class="stat-tag">(' + g.awayStarterRecord + ')</span>' : '';
+        var homeRec = g.homeStarterRecord ? ' <span class="stat-tag">(' + g.homeStarterRecord + ')</span>' : '';
+        return '<div><span class="pitch-label">Away:</span> ' + g.awayStarter + awayRec + '</div>' +
+          '<div><span class="pitch-label">Home:</span> ' + g.homeStarter + homeRec + '</div>';
       } else if (g.status === "Live" || g.status === "In Progress") {
         var html = '<div><span class="pitch-label">P:</span> ' + (g.currentPitcher || "Warmup...");
         if (g.pitchCount) { html += '<span class="stat-tag">' + g.pitchCount + ' pitches; ' + g.pitchSummary + '</span>'; }
@@ -1712,7 +1714,7 @@
         );
       }
 
-      var isPreview = (g.status === 'Preview' || g.status === 'Created');
+      var isPreview = (g.status === 'Preview' || g.status === 'Created' || g.liveText === 'WARMUP');
       var isFinal = (g.status === 'Final');
 
       if (isPreview) {
