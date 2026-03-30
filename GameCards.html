@@ -552,6 +552,10 @@
       flex: 0 0 auto;
     }
 
+    .box-team-name-abbr {
+      display: none;
+    }
+
     .decision-row {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -646,6 +650,13 @@
       border-collapse: collapse;
       font-size: 0.8rem;
       font-family: 'Roboto Mono', monospace;
+      table-layout: fixed;
+    }
+
+    .hitters-table thead th:first-child,
+    .hitters-table tbody td:first-child {
+      width: 26%;
+      max-width: 26%;
     }
 
     .hitters-table thead th {
@@ -674,7 +685,10 @@
       font-family: 'Oswald', sans-serif;
       font-size: 1rem;
       font-weight: 400;
-      min-width: 170px;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .hitter-name.hitter-sub {
@@ -742,8 +756,10 @@
       text-align: left !important;
       font-family: 'Oswald', sans-serif;
       font-size: 1rem;
-      min-width: 130px;
+      min-width: 0;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .pitcher-tag {
@@ -796,19 +812,45 @@
         font-size: 0.72rem;
       }
 
+      .box-table thead th,
+      .hitters-table thead th {
+        padding: 3px 1px;
+      }
+
+      .box-table tbody td,
+      .hitters-table tbody td {
+        padding: 3px 1px;
+      }
+
       .box-team-cell {
-        min-width: 120px;
-        font-size: 0.9rem;
+        min-width: 56px;
+        font-size: 0.78rem;
       }
 
       .box-team-logo {
-        width: 18px;
-        height: 18px;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+      }
+
+      .box-team-name-full {
+        display: none;
+      }
+
+      .box-team-name-abbr {
+        display: inline;
+        font-weight: 700;
       }
 
       .hitter-name {
-        min-width: 120px;
+        min-width: 0;
         font-size: 0.86rem;
+      }
+
+      .hitters-table thead th:first-child,
+      .hitters-table tbody td:first-child {
+        width: 22%;
+        max-width: 22%;
       }
 
       .table-scroll {
@@ -817,11 +859,11 @@
       }
 
       .table-scroll .box-table {
-        min-width: 760px;
+        min-width: 0;
       }
 
       .table-scroll .hitters-table {
-        min-width: 860px;
+        min-width: 760px;
       }
 
       .table-scroll .box-table thead th:first-child,
@@ -853,7 +895,8 @@
       }
 
       .pitcher-name {
-        white-space: normal;
+        min-width: 0;
+        white-space: nowrap;
       }
 
       .pitcher-tag {
@@ -1490,6 +1533,42 @@
       return 'https://www.mlbstatic.com/team-logos/' + teamId + '.svg';
     }
 
+    function getTeamAbbreviation(teamName) {
+      var map = {
+        'Arizona Diamondbacks': 'ARI',
+        'Atlanta Braves': 'ATL',
+        'Baltimore Orioles': 'BAL',
+        'Boston Red Sox': 'BOS',
+        'Chicago Cubs': 'CHC',
+        'Chicago White Sox': 'CWS',
+        'Cincinnati Reds': 'CIN',
+        'Cleveland Guardians': 'CLE',
+        'Colorado Rockies': 'COL',
+        'Detroit Tigers': 'DET',
+        'Houston Astros': 'HOU',
+        'Kansas City Royals': 'KC',
+        'Los Angeles Angels': 'LAA',
+        'Los Angeles Dodgers': 'LAD',
+        'Miami Marlins': 'MIA',
+        'Milwaukee Brewers': 'MIL',
+        'Minnesota Twins': 'MIN',
+        'New York Mets': 'NYM',
+        'New York Yankees': 'NYY',
+        'Athletics': 'ATH',
+        'Philadelphia Phillies': 'PHI',
+        'Pittsburgh Pirates': 'PIT',
+        'San Diego Padres': 'SD',
+        'San Francisco Giants': 'SF',
+        'Seattle Mariners': 'SEA',
+        'St. Louis Cardinals': 'STL',
+        'Tampa Bay Rays': 'TB',
+        'Texas Rangers': 'TEX',
+        'Toronto Blue Jays': 'TOR',
+        'Washington Nationals': 'WSH'
+      };
+      return map[teamName] || String(teamName || '').slice(0, 3).toUpperCase();
+    }
+
     function getPlayerHeadshot(playerId) {
       if (!playerId) {
         return 'https://www.mlbstatic.com/mlb/images/players/head_shot/default.jpg';
@@ -1532,12 +1611,12 @@
         inningHead +
         '<th class="box-rhe box-rhe-start">R</th><th class="box-rhe">H</th><th class="box-rhe">E</th></tr></thead>' +
         '<tbody>' +
-        '<tr><td class="box-team-cell"><div class="box-team-wrap"><img class="box-team-logo" alt="" src="' + escapeHtml(getTeamLogo(g.awayId)) + '">' + escapeHtml(g.away) + '</div></td>' +
+        '<tr><td class="box-team-cell"><div class="box-team-wrap"><img class="box-team-logo" alt="" src="' + escapeHtml(getTeamLogo(g.awayId)) + '"><span class="box-team-name-full">' + escapeHtml(g.away) + '</span><span class="box-team-name-abbr">' + escapeHtml(getTeamAbbreviation(g.away)) + '</span></div></td>' +
         awayCells +
         '<td class="box-rhe box-rhe-start"><strong>' + escapeHtml(awayTotals.r) + '</strong></td>' +
         '<td class="box-rhe">' + escapeHtml(awayTotals.h) + '</td>' +
         '<td class="box-rhe">' + escapeHtml(awayTotals.e) + '</td></tr>' +
-        '<tr><td class="box-team-cell"><div class="box-team-wrap"><img class="box-team-logo" alt="" src="' + escapeHtml(getTeamLogo(g.homeId)) + '">' + escapeHtml(g.home) + '</div></td>' +
+        '<tr><td class="box-team-cell"><div class="box-team-wrap"><img class="box-team-logo" alt="" src="' + escapeHtml(getTeamLogo(g.homeId)) + '"><span class="box-team-name-full">' + escapeHtml(g.home) + '</span><span class="box-team-name-abbr">' + escapeHtml(getTeamAbbreviation(g.home)) + '</span></div></td>' +
         homeCells +
         '<td class="box-rhe box-rhe-start"><strong>' + escapeHtml(homeTotals.r) + '</strong></td>' +
         '<td class="box-rhe">' + escapeHtml(homeTotals.h) + '</td>' +
