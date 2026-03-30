@@ -253,6 +253,25 @@
       border-color: white;
     }
 
+    .picker-container {
+      display: flex;
+      align-items: center;
+    }
+
+    #teamPicker {
+      padding: 5px 10px;
+      border-radius: 4px;
+      border: 2px solid rgba(255, 255, 255, 0.65);
+      font-family: 'Oswald', sans-serif;
+      background: rgba(255, 255, 255, 0.92);
+      color: #1f2d3c;
+      font-weight: 700;
+      min-width: 190px;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
     .header-row {
       display: flex;
       justify-content: center;
@@ -416,6 +435,9 @@
 
   <div class="settings-bar" id="dynamicHeader">
     <button class="nav-btn" onclick="changeDate(-1)">◄</button>
+    <div class="picker-container">
+      <select id="teamPicker" onchange="applyTeamChange()"></select>
+    </div>
     <h2 id="pageTitle" style="margin:0; text-transform: uppercase; font-size: 1.4rem;">My Team</h2>
     <button class="nav-btn" onclick="changeDate(1)">►</button>
   </div>
@@ -527,59 +549,201 @@
         "Texas Rangers": "#003278", "Toronto Blue Jays": "#134A8E", "Washington Nationals": "#AB0003"
       };
 
-      let currentViewDate = new Date();
-      let currentRenderedGame = null;
-
-      window.onload = function () {
-        MLBClient.renderSiteNav('myteam', 'siteNav');
-        // Set initial date input to today
-        const today = new Date().toISOString().split('T')[0];
-        document.getElementById('dateInput').value = today;
-        previewSelectedDate();
-        fetchMyTeamData();
+      var nflTeamColors = {
+        "Arizona Cardinals": "#97233F", "Atlanta Falcons": "#A71930", "Baltimore Ravens": "#241773", "Buffalo Bills": "#00338D",
+        "Carolina Panthers": "#0085CA", "Chicago Bears": "#0B162A", "Cincinnati Bengals": "#FB4F14", "Cleveland Browns": "#311D00",
+        "Dallas Cowboys": "#003594", "Denver Broncos": "#FB4F14", "Detroit Lions": "#0076B6", "Green Bay Packers": "#203731",
+        "Houston Texans": "#03202F", "Indianapolis Colts": "#002C5F", "Jacksonville Jaguars": "#006778", "Kansas City Chiefs": "#E31837",
+        "Las Vegas Raiders": "#000000", "Los Angeles Chargers": "#0080C6", "Los Angeles Rams": "#003594", "Miami Dolphins": "#008E97",
+        "Minnesota Vikings": "#4F2683", "New England Patriots": "#002244", "New Orleans Saints": "#D3BC8D", "New York Giants": "#0B2265",
+        "New York Jets": "#125740", "Philadelphia Eagles": "#004C54", "Pittsburgh Steelers": "#FFB612", "San Francisco 49ers": "#AA0000",
+        "Seattle Seahawks": "#002244", "Tampa Bay Buccaneers": "#D50A0A", "Tennessee Titans": "#0C2340", "Washington Commanders": "#5A1414"
       };
 
-      function fetchMyTeamData(targetDateStr = null) {
+      var nbaTeamColors = {
+        "Atlanta Hawks": "#E03A3E", "Boston Celtics": "#007A33", "Brooklyn Nets": "#111111", "Charlotte Hornets": "#1D1160",
+        "Chicago Bulls": "#CE1141", "Cleveland Cavaliers": "#860038", "Dallas Mavericks": "#00538C", "Denver Nuggets": "#0E2240",
+        "Detroit Pistons": "#C8102E", "Golden State Warriors": "#1D428A", "Houston Rockets": "#CE1141", "Indiana Pacers": "#002D62",
+        "LA Clippers": "#C8102E", "Los Angeles Lakers": "#552583", "Memphis Grizzlies": "#5D76A9", "Miami Heat": "#98002E",
+        "Milwaukee Bucks": "#00471B", "Minnesota Timberwolves": "#0C2340", "New Orleans Pelicans": "#0C2340", "New York Knicks": "#006BB6",
+        "Oklahoma City Thunder": "#007AC1", "Orlando Magic": "#0077C0", "Philadelphia 76ers": "#006BB6", "Phoenix Suns": "#1D1160",
+        "Portland Trail Blazers": "#E03A3E", "Sacramento Kings": "#5A2D81", "San Antonio Spurs": "#111111", "Toronto Raptors": "#CE1141",
+        "Utah Jazz": "#002B5C", "Washington Wizards": "#002B5C"
+      };
+
+      var leagueTeamLists = {
+        mlb: Object.keys(teamColors).sort(function (a, b) { return a.localeCompare(b); }),
+        nfl: [
+          "Arizona Cardinals", "Atlanta Falcons", "Baltimore Ravens", "Buffalo Bills",
+          "Carolina Panthers", "Chicago Bears", "Cincinnati Bengals", "Cleveland Browns",
+          "Dallas Cowboys", "Denver Broncos", "Detroit Lions", "Green Bay Packers",
+          "Houston Texans", "Indianapolis Colts", "Jacksonville Jaguars", "Kansas City Chiefs",
+          "Las Vegas Raiders", "Los Angeles Chargers", "Los Angeles Rams", "Miami Dolphins",
+          "Minnesota Vikings", "New England Patriots", "New Orleans Saints", "New York Giants",
+          "New York Jets", "Philadelphia Eagles", "Pittsburgh Steelers", "San Francisco 49ers",
+          "Seattle Seahawks", "Tampa Bay Buccaneers", "Tennessee Titans", "Washington Commanders"
+        ],
+        nba: [
+          "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets",
+          "Chicago Bulls", "Cleveland Cavaliers", "Dallas Mavericks", "Denver Nuggets",
+          "Detroit Pistons", "Golden State Warriors", "Houston Rockets", "Indiana Pacers",
+          "LA Clippers", "Los Angeles Lakers", "Memphis Grizzlies", "Miami Heat",
+          "Milwaukee Bucks", "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks",
+          "Oklahoma City Thunder", "Orlando Magic", "Philadelphia 76ers", "Phoenix Suns",
+          "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs", "Toronto Raptors",
+          "Utah Jazz", "Washington Wizards"
+        ]
+      };
+
+      var currentViewDate = new Date();
+      var currentRenderedGame = null;
+      var currentSport = "mlb";
+
+      window.onload = function () {
+        currentSport = parseSportFromQuery();
+        MLBClient.renderSiteNav('myteam', 'siteNav');
+        syncTeamPicker();
+
+        var today = toLocalIso(new Date());
+        document.getElementById('dateInput').value = today;
+        previewSelectedDate();
+        fetchMyTeamData(today);
+      };
+
+      function parseSportFromQuery() {
+        var params = new URLSearchParams(window.location.search);
+        var sport = String(params.get('sport') || '').toLowerCase();
+        if (sport === 'nfl' || sport === 'nba') {
+          return sport;
+        }
+        return 'mlb';
+      }
+
+      function favoriteStorageKey() {
+        return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
+      }
+
+      function getCurrentFavoriteTeam() {
+        if (currentSport === 'mlb') {
+          return MLBClient.getFavoriteTeam();
+        }
+        return localStorage.getItem(favoriteStorageKey()) || (leagueTeamLists[currentSport] && leagueTeamLists[currentSport][0]) || '';
+      }
+
+      function setCurrentFavoriteTeam(teamName) {
+        if (currentSport === 'mlb') {
+          return MLBClient.setFavoriteTeam(teamName || '');
+        }
+        if (!teamName) {
+          localStorage.removeItem(favoriteStorageKey());
+          return '';
+        }
+        localStorage.setItem(favoriteStorageKey(), teamName);
+        return teamName;
+      }
+
+      function syncTeamPicker() {
+        var picker = document.getElementById('teamPicker');
+        if (!picker) {
+          return;
+        }
+
+        var teams = leagueTeamLists[currentSport] || [];
+        var favorite = getCurrentFavoriteTeam();
+        var html = '';
+        for (var i = 0; i < teams.length; i++) {
+          var team = teams[i];
+          html += '<option value="' + team.replace(/"/g, '&quot;') + '">' + team + '</option>';
+        }
+        picker.innerHTML = html;
+        picker.value = favorite;
+      }
+
+      function applyTeamChange() {
+        var picker = document.getElementById('teamPicker');
+        if (!picker) {
+          return;
+        }
+        setCurrentFavoriteTeam(picker.value || '');
+        fetchMyTeamData(toLocalIso(currentViewDate));
+      }
+
+      function fetchMyTeamData(targetDateStr) {
         document.getElementById('loading').style.display = 'block';
         document.getElementById('content').style.display = 'none';
 
-        MLBClient.getMyTeamData(targetDateStr)
+        var loaderTitle = document.querySelector('#loading h2');
+        var loaderText = document.querySelector('#loading p');
+        if (loaderTitle) {
+          loaderTitle.innerText = currentSport === 'mlb' ? 'Analyzing Matchup...' : 'Building Team Report...';
+        }
+        if (loaderText) {
+          loaderText.innerText = currentSport === 'mlb' ? 'Summoning the AI Scout...' : 'Pulling ESPN league data...';
+        }
+
+        var request = currentSport === 'mlb'
+          ? MLBClient.getMyTeamData(targetDateStr)
+          : getLeagueMyTeamData(currentSport, targetDateStr);
+
+        request
           .then(renderPage)
           .catch(function (err) {
-            document.getElementById('loading').innerHTML = "<h2>Error</h2><p>" + (err && err.message ? err.message : err) + "</p>";
+            document.getElementById('loading').innerHTML = '<h2>Error</h2><p>' + (err && err.message ? err.message : err) + '</p>';
           });
       }
 
       function renderPage(data) {
-        if (!data) return;
+        if (!data) {
+          return;
+        }
 
-        // Update Date Display Logic
         document.getElementById('dateInput').value = data.currentDateIso;
-        const parts = data.currentDateIso.split('-');
-        currentViewDate = new Date(parts[0], parts[1] - 1, parts[2]);
-        const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        var parts = data.currentDateIso.split('-');
+        currentViewDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        var dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
         document.getElementById('dateDisplay').innerText = currentViewDate.toLocaleDateString('en-US', dateOptions);
 
-        // UI Theme Update
-        var teamColor = teamColors[data.myTeam] || "#0046ad";
+        syncTeamPicker();
+
+        var teamColor = resolveTeamColor(data.myTeam);
         var header = document.getElementById('dynamicHeader');
-        if (header) header.style.backgroundColor = teamColor;
+        if (header) {
+          header.style.backgroundColor = teamColor;
+        }
 
         var title = document.getElementById('pageTitle');
-        if (title) title.innerText = data.myTeam;
+        if (title) {
+          title.style.display = 'none';
+          title.innerText = '';
+        }
 
         document.documentElement.style.setProperty('--navy', teamColor);
 
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').style.display = 'grid';
 
-        try { renderMatchup(data.teamGame); } catch(e) { console.error('renderMatchup error', e); }
+        renderMatchup(data.teamGame);
         currentRenderedGame = data.teamGame || null;
-        try { renderAI(data.aiReport, data.aiLabel); } catch(e) { console.error('renderAI error', e); }
-        // Pass favorite team name to renderLineups
-        try { renderLineups(data.teamGame, data.myTeam); } catch(e) { console.error('renderLineups error', e); }
-        try { renderStandings(data.standings); } catch(e) { console.error('renderStandings error', e); }
-        try { renderUpcoming(data.upcoming); } catch(e) { console.error('renderUpcoming error', e); }
+        renderAI(data.aiReport, data.aiLabel);
+
+        if (currentSport === 'mlb') {
+          renderMlbLineups(data.teamGame, data.myTeam);
+        } else {
+          renderLeagueSnapshot(data.teamGame, data.myTeam);
+        }
+
+        renderStandings(data.standings);
+        renderUpcoming(data.upcoming);
+      }
+
+      function resolveTeamColor(teamName) {
+        if (currentSport === 'nfl') {
+          return nflTeamColors[teamName] || '#013369';
+        }
+        if (currentSport === 'nba') {
+          return nbaTeamColors[teamName] || '#ef420a';
+        }
+        return teamColors[teamName] || '#0046ad';
       }
 
       function openDatePicker() {
@@ -600,27 +764,26 @@
       }
 
       function previewSelectedDate() {
-        const dateStr = document.getElementById('dateInput').value;
+        var dateStr = document.getElementById('dateInput').value;
         if (!dateStr) {
           return;
         }
-        const parts = dateStr.split('-');
+        var parts = dateStr.split('-');
         currentViewDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-        const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+        var dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
         document.getElementById('dateDisplay').innerText = currentViewDate.toLocaleDateString('en-US', dateOptions);
       }
 
-      // New Date Control Functions
       function changeDate(offset) {
         currentViewDate.setDate(currentViewDate.getDate() + offset);
-        const dateStr = toLocalIso(currentViewDate);
+        var dateStr = toLocalIso(currentViewDate);
         document.getElementById('dateInput').value = dateStr;
         previewSelectedDate();
         fetchMyTeamData(dateStr);
       }
 
       function goToDate() {
-        const dateStr = document.getElementById('dateInput').value;
+        var dateStr = document.getElementById('dateInput').value;
         if (dateStr) {
           previewSelectedDate();
           fetchMyTeamData(dateStr);
@@ -630,11 +793,15 @@
       function renderAI(text, label) {
         var el = document.getElementById('aiText');
         var labelEl = document.querySelector('.ai-label');
-        if (labelEl && label) labelEl.innerText = label;
-        if (el) el.innerText = text || "Analysis currently unavailable.";
+        if (labelEl && label) {
+          labelEl.innerText = label;
+        }
+        if (el) {
+          el.innerText = text || 'Analysis currently unavailable.';
+        }
       }
 
-      function renderLineups(game, myTeam) {
+      function renderMlbLineups(game, myTeam) {
         var awayBody = document.getElementById('awayLineupBody');
         var homeBody = document.getElementById('homeLineupBody');
         var awayLabel = document.getElementById('awayLineupLabel');
@@ -651,8 +818,11 @@
         var awayLineup = game.awayTeamLineup;
         var homeLineup = game.homeTeamLineup;
 
-        // Always show favorite team first (in awayBody), other team second (in homeBody)
-        var firstName, firstLineup, secondName, secondLineup;
+        var firstName;
+        var firstLineup;
+        var secondName;
+        var secondLineup;
+
         if (myTeam && homeName === myTeam) {
           firstName = homeName;
           firstLineup = homeLineup;
@@ -665,70 +835,91 @@
           secondLineup = homeLineup;
         }
 
-        // Update labels
         if (awayLabel) awayLabel.innerText = (myTeam && firstName === myTeam) ? myTeam + ' (You)' : firstName;
         if (homeLabel) homeLabel.innerText = (myTeam && secondName === myTeam) ? myTeam + ' (You)' : secondName;
 
-        // Render first lineup (favorite team)
-        if (awayBody) {
-          awayBody.innerHTML = "";
-          if (!firstLineup || firstLineup.length === 0) {
-            awayBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">Lineup not available</td></tr>';
-          } else {
-            var html = "";
-            for (var i = 0; i < firstLineup.length; i++) {
-              var player = firstLineup[i];
-              html += '<tr>';
-              html += '  <td style="font-weight:bold;">' + (i + 1) + '</td>';
-              html += '  <td style="font-size:0.85rem;">' + player.name + '</td>';
-              html += '  <td><strong>' + player.position + '</strong></td>';
-              html += '</tr>';
-            }
-            awayBody.innerHTML = html;
-          }
-        }
-
-        // Render second lineup (other team)
-        if (homeBody) {
-          homeBody.innerHTML = "";
-          if (!secondLineup || secondLineup.length === 0) {
-            homeBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">Lineup not available</td></tr>';
-          } else {
-            var html = "";
-            for (var i = 0; i < secondLineup.length; i++) {
-              var player = secondLineup[i];
-              html += '<tr>';
-              html += '  <td style="font-weight:bold;">' + (i + 1) + '</td>';
-              html += '  <td style="font-size:0.85rem;">' + player.name + '</td>';
-              html += '  <td><strong>' + player.position + '</strong></td>';
-              html += '</tr>';
-            }
-            homeBody.innerHTML = html;
-          }
-        }
+        renderPlayerRows(awayBody, firstLineup, 'Lineup not available');
+        renderPlayerRows(homeBody, secondLineup, 'Lineup not available');
       }
 
-      function renderLineup(lineup) {
-        var body = document.getElementById('lineupBody');
-        if (!body) return;
+      function renderLeagueSnapshot(game, myTeam) {
+        var awayBody = document.getElementById('awayLineupBody');
+        var homeBody = document.getElementById('homeLineupBody');
+        var awayLabel = document.getElementById('awayLineupLabel');
+        var homeLabel = document.getElementById('homeLineupLabel');
 
-        body.innerHTML = "";
+        if (awayLabel) awayLabel.innerText = 'My Team Snapshot';
+        if (homeLabel) homeLabel.innerText = 'Opponent Snapshot';
 
-        if (!lineup || lineup.length === 0) {
-          body.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">Lineup not available.</td></tr>';
+        if (!game) {
+          if (awayBody) awayBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">No game data for this date.</td></tr>';
+          if (homeBody) homeBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">No game data for this date.</td></tr>';
           return;
         }
 
-        var html = "";
+        var isHome = game.home === myTeam;
+        var mine = isHome ? game.home : game.away;
+        var opp = isHome ? game.away : game.home;
+        var myRecord = isHome ? game.homeStarter : game.awayStarter;
+        var oppRecord = isHome ? game.awayStarter : game.homeStarter;
+        var myScore = isHome ? game.homeScore : game.awayScore;
+        var oppScore = isHome ? game.awayScore : game.homeScore;
+
+        var myRows = [
+          { key: 'TEAM', val: mine },
+          { key: 'RECORD', val: myRecord || 'N/A' },
+          { key: 'SCORE', val: game.status === 'Preview' ? '-' : (myScore || '0') },
+          { key: 'STATUS', val: game.liveText || game.status || 'Scheduled' }
+        ];
+
+        var oppRows = [
+          { key: 'TEAM', val: opp },
+          { key: 'RECORD', val: oppRecord || 'N/A' },
+          { key: 'SCORE', val: game.status === 'Preview' ? '-' : (oppScore || '0') },
+          { key: 'NETWORK', val: game.tv || 'N/A' }
+        ];
+
+        renderKeyValueRows(awayBody, myRows);
+        renderKeyValueRows(homeBody, oppRows);
+      }
+
+      function renderPlayerRows(targetBody, lineup, emptyText) {
+        if (!targetBody) {
+          return;
+        }
+        targetBody.innerHTML = '';
+        if (!lineup || lineup.length === 0) {
+          targetBody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:15px; color:#999;">' + emptyText + '</td></tr>';
+          return;
+        }
+
+        var html = '';
         for (var i = 0; i < lineup.length; i++) {
           var player = lineup[i];
           html += '<tr>';
-          html += '  <td style="font-weight:bold;">' + (i + 1) + '</td>';
-          html += '  <td>' + player.name + '</td>';
-          html += '  <td><strong>' + player.position + '</strong></td>';
+          html += '<td style="font-weight:bold;">' + (i + 1) + '</td>';
+          html += '<td style="font-size:0.85rem;">' + (player.name || '') + '</td>';
+          html += '<td><strong>' + (player.position || '') + '</strong></td>';
           html += '</tr>';
         }
-        body.innerHTML = html;
+        targetBody.innerHTML = html;
+      }
+
+      function renderKeyValueRows(targetBody, rows) {
+        if (!targetBody) {
+          return;
+        }
+        targetBody.innerHTML = '';
+
+        var html = '';
+        for (var i = 0; i < rows.length; i++) {
+          html += '<tr>';
+          html += '<td style="font-weight:700;">' + rows[i].key + '</td>';
+          html += '<td style="font-size:0.85rem;">' + rows[i].val + '</td>';
+          html += '<td></td>';
+          html += '</tr>';
+        }
+        targetBody.innerHTML = html;
       }
 
       function renderMatchup(game) {
@@ -737,39 +928,48 @@
         var sectionTitle = document.querySelector('.column-left .section-title');
 
         if (!game) {
+          sectionTitle.firstChild.textContent = 'My Team Matchup ';
+          statusSpan.innerText = 'NO GAME';
           container.innerHTML = "<div style='padding:20px; text-align:center;'><h3>No games found for this period.</h3></div>";
           return;
         }
 
-        // Update Header Text
         if (game.gameDateLabel) {
-          sectionTitle.firstChild.textContent = "Upcoming Matchup ";
-          statusSpan.innerText = "OFF DAY";
+          sectionTitle.firstChild.textContent = 'Upcoming Matchup ';
+          statusSpan.innerText = 'OFF DAY';
         } else {
-          sectionTitle.firstChild.textContent = (game.status === "Live") ? "Live Matchup " : "Today's Matchup ";
+          sectionTitle.firstChild.textContent = (game.status === 'Live') ? 'Live Matchup ' : 'Today\'s Matchup ';
           statusSpan.innerText = game.liveText;
         }
 
-        var awayLogoUrl = "https://www.mlbstatic.com/team-logos/" + game.awayId + ".svg";
-        var homeLogoUrl = "https://www.mlbstatic.com/team-logos/" + game.homeId + ".svg";
+        var awayLogoUrl = game.awayLogo || (game.awayId ? ('https://www.mlbstatic.com/team-logos/' + game.awayId + '.svg') : '');
+        var homeLogoUrl = game.homeLogo || (game.homeId ? ('https://www.mlbstatic.com/team-logos/' + game.homeId + '.svg') : '');
+        var canOpenRoster = currentSport === 'mlb' && game.awayId && game.homeId;
+        var metaLabel = currentSport === 'mlb' ? 'HP Umpire' : 'Venue';
+        var metaValue = currentSport === 'mlb' ? (game.umpire || 'TBD') : (game.venue || 'N/A');
 
         var html = '';
-
-        // Show the date label if it's an off-day and we found the next game
         if (game.gameDateLabel) {
           html += '<div style="text-align:center; margin-bottom:15px; color:var(--navy); font-weight:bold;">' + game.gameDateLabel + '</div>';
         }
 
         html += '<div class="matchup-grid">';
-        html += '<div class="team-box is-clickable" onclick="openRosterForSide(\'away\')" title="Open ' + game.away + ' roster"><img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.awayScore : "") + '</div></div>';
+        html += '<div class="team-box' + (canOpenRoster ? ' is-clickable' : '') + '"' +
+          (canOpenRoster ? ' onclick="openRosterForSide(\'away\')"' : '') + '>' +
+          '<img src="' + awayLogoUrl + '"><span class="team-name">' + game.away + '</span>' +
+          '<div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.awayStarter || 'TBD') + '</div>' +
+          '<div class="big-score">' + (game.status !== 'Preview' ? game.awayScore : '') + '</div></div>';
         html += '<div class="vs-circle">VS</div>';
-        html += '<div class="team-box is-clickable" onclick="openRosterForSide(\'home\')" title="Open ' + game.home + ' roster"><img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span><div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || "TBD") + '</div><div class="big-score">' + (game.status !== "Preview" ? game.homeScore : "") + '</div></div>';
+        html += '<div class="team-box' + (canOpenRoster ? ' is-clickable' : '') + '"' +
+          (canOpenRoster ? ' onclick="openRosterForSide(\'home\')"' : '') + '>' +
+          '<img src="' + homeLogoUrl + '"><span class="team-name">' + game.home + '</span>' +
+          '<div style="font-size:0.85rem; color:#666; margin: 8px 0;">' + (game.homeStarter || 'TBD') + '</div>' +
+          '<div class="big-score">' + (game.status !== 'Preview' ? game.homeScore : '') + '</div></div>';
         html += '</div>';
-        
-        // Add broadcasting and umpire info below matchup
+
         html += '<div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 0.9rem; color: #666; text-align: center;">';
-        html += '<div><strong>Networks:</strong> ' + (game.tv || "N/A") + '</div>';
-        html += '<div style="margin-top: 8px;"><strong>HP Umpire:</strong> ' + (game.umpire || "TBD") + '</div>';
+        html += '<div><strong>Networks:</strong> ' + (game.tv || 'N/A') + '</div>';
+        html += '<div style="margin-top: 8px;"><strong>' + metaLabel + ':</strong> ' + metaValue + '</div>';
         html += '</div>';
 
         container.innerHTML = html;
@@ -780,17 +980,15 @@
           return '';
         }
 
-        var rows = players
-          .map(function (p) {
-            return '<li><span class="roster-num">' + (p.number || '--') + '</span><span>' + (p.name || '') + '</span></li>';
-          })
-          .join('');
+        var rows = players.map(function (p) {
+          return '<li><span class="roster-num">' + (p.number || '--') + '</span><span>' + (p.name || '') + '</span></li>';
+        }).join('');
 
         return '<div class="roster-card"><h4>' + title + '</h4><ul class="roster-list">' + rows + '</ul></div>';
       }
 
       function openRosterForSide(side) {
-        if (!currentRenderedGame) {
+        if (currentSport !== 'mlb' || !currentRenderedGame) {
           return;
         }
 
@@ -819,7 +1017,6 @@
             sections += renderRosterSectionHtml('Catchers', roster.cat);
             sections += renderRosterSectionHtml('Pitchers', roster.pit);
             sections += renderRosterSectionHtml('Injured List', roster.il);
-
             body.innerHTML = '<div class="roster-grid">' + sections + '</div>';
           })
           .catch(function (err) {
@@ -837,28 +1034,26 @@
 
       function renderStandings(standings) {
         var body = document.getElementById('standingsBody');
-        if (!body) return;
+        if (!body) {
+          return;
+        }
 
-        // Clear any loading text
-        body.innerHTML = "";
+        body.innerHTML = '';
 
         if (!standings || standings.length === 0) {
           body.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:#999;">Standings currently unavailable.</td></tr>';
           return;
         }
 
-        var html = "";
+        var html = '';
         for (var i = 0; i < standings.length; i++) {
           var s = standings[i];
-          // Highlight the row if it's the favorite team
-          var rowClass = s.isMe ? 'my-team-row' : '';
-
-          html += '<tr class="' + rowClass + '">';
-          html += '  <td>' + s.name + '</td>';
-          html += '  <td>' + s.w + '</td>';
-          html += '  <td>' + s.l + '</td>';
-          html += '  <td>' + s.gb + '</td>';
-          html += '  <td>' + s.streak + '</td>';
+          html += '<tr class="' + (s.isMe ? 'my-team-row' : '') + '">';
+          html += '<td>' + (s.name || '') + '</td>';
+          html += '<td>' + (s.w || '-') + '</td>';
+          html += '<td>' + (s.l || '-') + '</td>';
+          html += '<td>' + (s.gb || '-') + '</td>';
+          html += '<td>' + (s.streak || '-') + '</td>';
           html += '</tr>';
         }
         body.innerHTML = html;
@@ -866,23 +1061,348 @@
 
       function renderUpcoming(upcoming) {
         var container = document.getElementById('upcomingList');
-        if (!container) return;
+        if (!container) {
+          return;
+        }
 
         if (!upcoming || upcoming.length === 0) {
           container.innerHTML = '<div style="padding:10px; color:#999;">No games scheduled.</div>';
           return;
         }
 
-        var html = "";
+        var html = '';
         for (var i = 0; i < upcoming.length; i++) {
           var u = upcoming[i];
           html += '<div class="upcoming-row">';
-          html += '  <span class="up-date">' + u.date + '</span>';
-          html += '  <strong style="flex-grow:1; margin-left:10px;">' + u.opponent + '</strong>';
-          html += '  <span style="color:#666;">' + u.time + '</span>';
+          html += '<span class="up-date">' + u.date + '</span>';
+          html += '<strong style="flex-grow:1; margin-left:10px;">' + u.opponent + '</strong>';
+          html += '<span style="color:#666;">' + u.time + '</span>';
           html += '</div>';
         }
         container.innerHTML = html;
+      }
+
+      async function getLeagueMyTeamData(sport, dateIso) {
+        var favorite = getCurrentFavoriteTeam();
+        var targetDate = dateIso || toLocalIso(new Date());
+        var scoreboard = await MLBClient.getLeagueScoreboardData(sport, targetDate);
+        var teamGame = findFavoriteTeamGame(scoreboard.games, favorite);
+        var gameDateLabel = '';
+
+        if (!teamGame) {
+          for (var i = 1; i <= 7; i++) {
+            var futureIso = addDaysIso(targetDate, i);
+            var futureBoard = await MLBClient.getLeagueScoreboardData(sport, futureIso);
+            var futureGame = findFavoriteTeamGame(futureBoard.games, favorite);
+            if (futureGame) {
+              teamGame = futureGame;
+              gameDateLabel = 'Next game: ' + formatDateLabel(futureIso);
+              break;
+            }
+          }
+        }
+
+        var standings = await getLeagueStandings(sport, favorite);
+        if (!standings.length) {
+          standings = buildFallbackStandings(scoreboard.games, favorite);
+        }
+
+        var upcoming = await getLeagueUpcoming(sport, favorite, targetDate);
+        var normalizedGame = teamGame ? mapLeagueGame(teamGame, gameDateLabel) : null;
+
+        return {
+          myTeam: favorite,
+          currentDateIso: targetDate,
+          teamGame: normalizedGame,
+          standings: standings,
+          upcoming: upcoming,
+          aiReport: buildLeagueInsight(sport, favorite, normalizedGame, standings, upcoming),
+          aiLabel: 'League Insight'
+        };
+      }
+
+      function findFavoriteTeamGame(games, favorite) {
+        var target = String(favorite || '').toLowerCase();
+        if (!target) {
+          return null;
+        }
+
+        for (var i = 0; i < (games || []).length; i++) {
+          var g = games[i];
+          var away = g && g.away && g.away.name ? g.away.name.toLowerCase() : '';
+          var home = g && g.home && g.home.name ? g.home.name.toLowerCase() : '';
+          if (away === target || home === target) {
+            return g;
+          }
+        }
+        return null;
+      }
+
+      function mapLeagueGame(game, gameDateLabel) {
+        var state = game.statusState || 'pre';
+        var status = state === 'in' ? 'Live' : (state === 'post' ? 'Final' : 'Preview');
+        return {
+          away: game.away.name,
+          home: game.home.name,
+          awayId: '',
+          homeId: '',
+          awayLogo: game.away.logo || '',
+          homeLogo: game.home.logo || '',
+          awayScore: game.away.score || '0',
+          homeScore: game.home.score || '0',
+          awayStarter: game.away.record || '',
+          homeStarter: game.home.record || '',
+          status: status,
+          liveText: game.statusShort || 'Scheduled',
+          tv: game.network || 'N/A',
+          venue: game.venue || '',
+          umpire: '',
+          gameDateLabel: gameDateLabel || ''
+        };
+      }
+
+      async function getLeagueStandings(sport, favorite) {
+        var endpoint = sport === 'nfl'
+          ? 'https://site.api.espn.com/apis/site/v2/sports/football/nfl/standings'
+          : 'https://site.api.espn.com/apis/site/v2/sports/basketball/nba/standings';
+
+        try {
+          var payload = await fetchJsonRaw(endpoint);
+          var entries = collectStandingsEntries(payload);
+          var seen = {};
+          var rows = [];
+
+          for (var i = 0; i < entries.length; i++) {
+            var e = entries[i] || {};
+            var team = e.team || {};
+            var name = team.displayName || team.shortDisplayName || '';
+            if (!name || seen[name]) {
+              continue;
+            }
+            seen[name] = true;
+
+            var wins = readStat(e.stats, ['wins', 'W']);
+            var losses = readStat(e.stats, ['losses', 'L']);
+            var gb = readStat(e.stats, ['gamesBehind', 'GB']);
+            var streak = readStat(e.stats, ['streak']);
+
+            rows.push({
+              name: name,
+              w: wins || '-',
+              l: losses || '-',
+              gb: gb || '-',
+              streak: streak || '-',
+              isMe: name === favorite
+            });
+          }
+
+          return trimStandingsToContext(rows, favorite);
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function collectStandingsEntries(node) {
+        var out = [];
+        function walk(value) {
+          if (!value) {
+            return;
+          }
+
+          if (Array.isArray(value)) {
+            for (var i = 0; i < value.length; i++) {
+              walk(value[i]);
+            }
+            return;
+          }
+
+          if (value.standings && Array.isArray(value.standings.entries)) {
+            out = out.concat(value.standings.entries);
+          }
+          if (Array.isArray(value.entries)) {
+            out = out.concat(value.entries);
+          }
+          if (Array.isArray(value.children)) {
+            walk(value.children);
+          }
+          if (value.groups) {
+            walk(value.groups);
+          }
+        }
+        walk(node);
+        return out;
+      }
+
+      function readStat(stats, keys) {
+        var list = Array.isArray(stats) ? stats : [];
+        for (var i = 0; i < list.length; i++) {
+          var stat = list[i] || {};
+          var name = String(stat.name || stat.abbreviation || '').toLowerCase();
+          for (var j = 0; j < keys.length; j++) {
+            if (name === String(keys[j]).toLowerCase()) {
+              return stat.displayValue !== undefined ? stat.displayValue : stat.value;
+            }
+          }
+        }
+        return '';
+      }
+
+      function trimStandingsToContext(rows, favorite) {
+        if (!rows || rows.length <= 12) {
+          return rows || [];
+        }
+        var idx = -1;
+        for (var i = 0; i < rows.length; i++) {
+          if (rows[i].name === favorite) {
+            idx = i;
+            break;
+          }
+        }
+        if (idx === -1) {
+          return rows.slice(0, 12);
+        }
+        var start = Math.max(0, idx - 5);
+        var end = Math.min(rows.length, start + 12);
+        return rows.slice(start, end);
+      }
+
+      function buildFallbackStandings(games, favorite) {
+        var rows = [];
+        var seen = {};
+
+        for (var i = 0; i < (games || []).length; i++) {
+          var g = games[i] || {};
+          var teams = [g.away, g.home];
+          for (var j = 0; j < teams.length; j++) {
+            var t = teams[j] || {};
+            if (!t.name || seen[t.name]) {
+              continue;
+            }
+            seen[t.name] = true;
+
+            var parsed = parseRecord(t.record);
+            rows.push({
+              name: t.name,
+              w: parsed.w,
+              l: parsed.l,
+              gb: '-',
+              streak: '-',
+              isMe: t.name === favorite
+            });
+          }
+        }
+
+        rows.sort(function (a, b) {
+          return Number(b.w) - Number(a.w);
+        });
+
+        return trimStandingsToContext(rows, favorite);
+      }
+
+      function parseRecord(text) {
+        var m = String(text || '').match(/(\d+)\s*-\s*(\d+)/);
+        if (!m) {
+          return { w: '-', l: '-' };
+        }
+        return { w: m[1], l: m[2] };
+      }
+
+      async function getLeagueUpcoming(sport, favorite, fromIso) {
+        var items = [];
+        var seen = {};
+        for (var i = 1; i <= 14 && items.length < 6; i++) {
+          var iso = addDaysIso(fromIso, i);
+          var board;
+          try {
+            board = await MLBClient.getLeagueScoreboardData(sport, iso);
+          } catch (e) {
+            continue;
+          }
+
+          var games = board.games || [];
+          for (var j = 0; j < games.length && items.length < 6; j++) {
+            var g = games[j];
+            if (seen[g.id]) {
+              continue;
+            }
+
+            var away = g.away && g.away.name ? g.away.name : '';
+            var home = g.home && g.home.name ? g.home.name : '';
+            if (away !== favorite && home !== favorite) {
+              continue;
+            }
+
+            var opponent = away === favorite ? ('@ ' + home) : ('vs ' + away);
+            items.push({
+              date: formatShortDay(iso),
+              opponent: opponent,
+              time: g.statusShort || 'Scheduled'
+            });
+            seen[g.id] = true;
+          }
+        }
+
+        return items;
+      }
+
+      function buildLeagueInsight(sport, favorite, game, standings, upcoming) {
+        var leagueLabel = sport.toUpperCase();
+        if (!game) {
+          return favorite + ' have no game on the selected date. Upcoming games found: ' + (upcoming.length || 0) + '. Keep an eye on recent standings movement and rest/travel spots before the next matchup.';
+        }
+
+        var meIsHome = game.home === favorite;
+        var opp = meIsHome ? game.away : game.home;
+        var myScore = meIsHome ? game.homeScore : game.awayScore;
+        var oppScore = meIsHome ? game.awayScore : game.homeScore;
+        var row = null;
+        for (var i = 0; i < standings.length; i++) {
+          if (standings[i].isMe) {
+            row = standings[i];
+            break;
+          }
+        }
+
+        var standingText = row
+          ? ('Record ' + row.w + '-' + row.l + ', streak ' + row.streak + '.')
+          : 'Standings snapshot is limited for the selected date.';
+
+        if (game.status === 'Preview') {
+          return leagueLabel + ' preview: ' + favorite + ' face ' + opp + '. ' + standingText + ' Watch for opening momentum, turnovers, and late-game execution.';
+        }
+
+        if (game.status === 'Live') {
+          return leagueLabel + ' live update: ' + favorite + ' vs ' + opp + ' is in progress (' + myScore + '-' + oppScore + '). ' + standingText + ' Focus points: pace, defensive stops, and finishing drives/possessions.';
+        }
+
+        return leagueLabel + ' recap: ' + favorite + ' vs ' + opp + ' finished ' + myScore + '-' + oppScore + '. ' + standingText + ' Next games: ' + upcoming.slice(0, 2).map(function (u) { return u.opponent + ' (' + u.date + ')'; }).join(', ') + '.';
+      }
+
+      function addDaysIso(iso, days) {
+        var p = String(iso || '').split('-');
+        var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+        d.setDate(d.getDate() + Number(days || 0));
+        return toLocalIso(d);
+      }
+
+      function formatDateLabel(iso) {
+        var p = String(iso || '').split('-');
+        var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+        return d.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' });
+      }
+
+      function formatShortDay(iso) {
+        var p = String(iso || '').split('-');
+        var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+
+      async function fetchJsonRaw(url) {
+        var res = await fetch(url);
+        if (!res.ok) {
+          throw new Error('Request failed: ' + res.status + ' ' + res.statusText);
+        }
+        return await res.json();
       }
     </script>
 </body>

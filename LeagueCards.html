@@ -766,7 +766,6 @@
         <option value="">My Team (Optional)</option>
       </select>
     </div>
-    <h2 class="header-title" id="pageTitle">League Dashboard</h2>
     <button class="nav-btn" onclick="changeDate(1)">►</button>
   </div>
 
@@ -935,7 +934,6 @@
         color = nflTeamColors[favorite];
       }
 
-      document.getElementById('pageTitle').innerText = conf.title;
       document.documentElement.style.setProperty('--navy', color);
       document.getElementById('headerBar').style.background = color;
       MLBClient.renderSiteNav(currentSport, 'siteNav');

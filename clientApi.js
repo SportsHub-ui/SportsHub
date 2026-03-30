@@ -271,12 +271,16 @@
         );
       })
       .join("");
+    const showMyTeamLink = resolvedCurrent === "mlb" || resolvedCurrent === "nfl" || resolvedCurrent === "nba";
+    const myTeamHref = (resolvedCurrent === "nfl" || resolvedCurrent === "nba")
+      ? "MyTeam.html?sport=" + resolvedCurrent
+      : getPageUrl("myteam");
     const subLinkHtml =
-      resolvedCurrent === "mlb"
+      showMyTeamLink
         ? '<a class="site-nav__sublink' +
           (currentPageKey === "myteam" ? ' is-active' : '') +
           '" href="' +
-          getPageUrl("myteam") +
+          myTeamHref +
           '">My Team</a>'
         : "";
     const navHtml =
