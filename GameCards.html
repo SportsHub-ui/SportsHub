@@ -711,6 +711,15 @@
       letter-spacing: 0.03em;
     }
 
+    .detail-section-divider {
+      border-bottom: none;
+      padding-bottom: 2px;
+    }
+
+    .detail-section-divider .detail-section-title {
+      margin-bottom: 0;
+    }
+
     .detail-list {
       margin: 0;
       padding: 0 0 8px;
@@ -1539,14 +1548,128 @@
       );
     }
 
-    function renderHittersTable(teamName, hitters, teamId) {
+    function renderHittersTable(teamName, hitters, teamId, notes) {
+      function normalizeName(value) {
+        return String(value || '')
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function stripMarkerPrefix(value) {
+        return String(value || '').replace(/^([a-z])[\-:\)]\s*/i, '').trim();
+      }
+
+      function extractLetterMappings(noteGroups) {
+        var mappings = [];
+        (noteGroups || []).forEach(function (line) {
+          var text = String(line || '').trim();
+          var markerMatch = text.match(/^([a-z]):\s*(.+)$/i);
+          if (!markerMatch) return;
+          var letter = markerMatch[1].toLowerCase();
+          var body = markerMatch[2] || '';
+          var forMatch = body.match(/\bfor\s+([^.,;]+?)\s+in\b/i);
+          mappings.push({
+            letter: letter,
+            replacedName: forMatch ? forMatch[1].trim() : ''
+          });
+        });
+        return mappings;
+      }
+
+      var allNotes = []
+        .concat((notes && notes.pitching) || [])
+        .concat((notes && notes.batting) || [])
+        .concat((notes && notes.baserunning) || [])
+        .concat((notes && notes.fielding) || []);
+      var markerMappings = extractLetterMappings(allNotes);
+
+      var workingHitters = (hitters || []).map(function (h) {
+        var copy = Object.assign({}, h);
+        copy.noteMarker = null;
+        return copy;
+      });
+
+      var slotToSubIndexes = {};
+      workingHitters.forEach(function (h, idx) {
+        if (h && h.isSubstitution && h.battingSlot) {
+          if (!slotToSubIndexes[h.battingSlot]) slotToSubIndexes[h.battingSlot] = [];
+          slotToSubIndexes[h.battingSlot].push(idx);
+        }
+      });
+
+      function findReplacedSlot(replacedName) {
+        var target = normalizeName(replacedName);
+        if (!target) return null;
+        var targetLast = target.split(' ').filter(Boolean).slice(-1)[0] || target;
+
+        var exact = workingHitters.find(function (h) {
+          if (!h || h.isSubstitution || !h.battingSlot) return false;
+          var n = normalizeName(h.name);
+          return n === target || n.indexOf(target) !== -1 || target.indexOf(n) !== -1;
+        });
+        if (exact) return exact.battingSlot;
+
+        var byLast = workingHitters.find(function (h) {
+          if (!h || h.isSubstitution || !h.battingSlot) return false;
+          var n = normalizeName(h.name);
+          return n.split(' ').filter(Boolean).slice(-1)[0] === targetLast;
+        });
+        return byLast ? byLast.battingSlot : null;
+      }
+
+      markerMappings.forEach(function (mapping) {
+        var slot = findReplacedSlot(mapping.replacedName);
+        var candidates = slot ? (slotToSubIndexes[slot] || []) : [];
+        var assigned = false;
+
+        for (var i = 0; i < candidates.length; i += 1) {
+          var idx = candidates[i];
+          if (workingHitters[idx] && !workingHitters[idx].noteMarker) {
+            workingHitters[idx].noteMarker = mapping.letter;
+            assigned = true;
+            break;
+          }
+        }
+
+        if (!assigned) {
+          for (var j = 0; j < workingHitters.length; j += 1) {
+            if (workingHitters[j] && workingHitters[j].isSubstitution && !workingHitters[j].noteMarker) {
+              workingHitters[j].noteMarker = mapping.letter;
+              break;
+            }
+          }
+        }
+      });
+
+      var hittingTotals = workingHitters.reduce(function (totals, h) {
+        totals.ab += Number(h.ab) || 0;
+        totals.r += Number(h.r) || 0;
+        totals.h += Number(h.h) || 0;
+        totals.rbi += Number(h.rbi) || 0;
+        totals.hr += Number(h.hr) || 0;
+        totals.bb += Number(h.bb) || 0;
+        totals.k += Number(h.k) || 0;
+        return totals;
+      }, { ab: 0, r: 0, h: 0, rbi: 0, hr: 0, bb: 0, k: 0 });
+
       const rows = (hitters || []).length > 0
-        ? hitters
+        ? workingHitters
           .map(function (h) {
             const isSub = !!h.isSubstitution || /^[a-z]-\s*/i.test(String(h.name || ''));
+            var displayName = String(h.name || '');
+            var existingMarker = displayName.match(/^([a-z])[\-:\)]\s*/i);
+            if (existingMarker) {
+              displayName = existingMarker[1].toLowerCase() + ': ' + displayName.slice(existingMarker[0].length);
+            } else if (h.noteMarker) {
+              displayName = h.noteMarker + ': ' + stripMarkerPrefix(displayName);
+            }
             return (
               '<tr>' +
-              '<td class="hitter-name' + (isSub ? ' hitter-sub' : '') + '">' + escapeHtml(h.name) + ' <span class="hitter-pos">' + escapeHtml(h.position || '-') + '</span></td>' +
+              '<td class="hitter-name' + (isSub ? ' hitter-sub' : '') + '">' + escapeHtml(displayName) + ' <span class="hitter-pos">' + escapeHtml(h.position || '-') + '</span></td>' +
               '<td>' + escapeHtml(h.ab) + '</td>' +
               '<td>' + escapeHtml(h.r) + '</td>' +
               '<td>' + escapeHtml(h.h) + '</td>' +
@@ -1568,8 +1691,52 @@
         '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Hitting</h3>' +
         '<table class="hitters-table">' +
         '<thead><tr><th style="text-align:left;padding-left:8px;">Hitters</th><th>AB</th><th>R</th><th>H</th><th>RBI</th><th>HR</th><th>BB</th><th>K</th><th>AVG</th><th>OBP</th><th>SLG</th></tr></thead>' +
-        '<tbody>' + rows + '</tbody>' +
-        '</table></div>'
+        '<tbody>' + rows +
+        '<tr class="team-row"><td class="hitter-name">TEAM</td><td>' + escapeHtml(hittingTotals.ab) + '</td><td>' + escapeHtml(hittingTotals.r) + '</td><td>' + escapeHtml(hittingTotals.h) + '</td><td>' + escapeHtml(hittingTotals.rbi) + '</td><td>' + escapeHtml(hittingTotals.hr) + '</td><td>' + escapeHtml(hittingTotals.bb) + '</td><td>' + escapeHtml(hittingTotals.k) + '</td><td>-</td><td>-</td><td>-</td></tr>' +
+        '</tbody>' +
+        '</table>' +
+        renderNotesDivider(notes) +
+        renderInfoLines(notes && notes.pitching) +
+        renderInfoSection('Batting', notes && notes.batting) +
+        renderInfoSection('Baserunning', notes && notes.baserunning) +
+        renderInfoSection('Fielding', notes && notes.fielding) +
+        '</div>'
+      );
+    }
+
+    function renderNotesDivider(notes) {
+      var hasNotes = !!(
+        (notes && notes.pitching && notes.pitching.length) ||
+        (notes && notes.batting && notes.batting.length) ||
+        (notes && notes.baserunning && notes.baserunning.length) ||
+        (notes && notes.fielding && notes.fielding.length)
+      );
+      if (!hasNotes) {
+        return '';
+      }
+
+      return (
+        '<div class="detail-section detail-section-divider">' +
+        '<h4 class="detail-section-title">Game Notes</h4>' +
+        '</div>'
+      );
+    }
+
+    function renderInfoLines(lines) {
+      if (!lines || lines.length === 0) {
+        return '';
+      }
+
+      return (
+        '<div class="detail-section">' +
+        '<ul class="detail-list">' +
+        lines
+          .map(function (line) {
+            return '<li>' + escapeHtml(line) + '</li>';
+          })
+          .join('') +
+        '</ul>' +
+        '</div>'
       );
     }
 
@@ -1592,13 +1759,25 @@
       );
     }
 
-    function renderPitchingTable(teamName, teamId, pitchers, totals, notes) {
+    function renderPitchingTable(teamName, teamId, pitchers, totals) {
+      function formatDecisionTag(p) {
+        if (!p || !p.decisionTag) return '';
+        if ((p.decisionTag === 'W' || p.decisionTag === 'L') && p.record) {
+          return p.decisionTag + ', ' + p.record;
+        }
+        if (p.decisionTag === 'S' && p.saves !== null && p.saves !== undefined) {
+          return 'S, ' + p.saves;
+        }
+        return p.decisionTag;
+      }
+
       const pitchingRows = (pitchers || []).length > 0
         ? pitchers
           .map(function (p) {
+            var decisionText = formatDecisionTag(p);
             return (
               '<tr>' +
-              '<td class="pitcher-name">' + escapeHtml(p.name) + (p.decisionTag ? ' <span class="pitcher-tag">(' + escapeHtml(p.decisionTag) + ')</span>' : '') + '</td>' +
+              '<td class="pitcher-name">' + escapeHtml(p.name) + (decisionText ? ' <span class="pitcher-tag">(' + escapeHtml(decisionText) + ')</span>' : '') + '</td>' +
               '<td>' + escapeHtml(p.ip) + '</td>' +
               '<td>' + escapeHtml(p.h) + '</td>' +
               '<td>' + escapeHtml(p.r) + '</td>' +
@@ -1619,9 +1798,6 @@
       return (
         '<div class="hitters-card">' +
         '<h3 class="hitters-title"><img class="hitters-title-logo" alt="" src="' + escapeHtml(getTeamLogo(teamId)) + '">' + escapeHtml(teamName) + ' Pitching</h3>' +
-        renderInfoSection('Batting', notes && notes.batting) +
-        renderInfoSection('Baserunning', notes && notes.baserunning) +
-        renderInfoSection('Fielding', notes && notes.fielding) +
         '<div class="detail-section pitching-table-wrap">' +
         '<h4 class="detail-section-title">Pitchers</h4>' +
         '<table class="hitters-table">' +
@@ -1632,7 +1808,6 @@
         '</tbody>' +
         '</table>' +
         '</div>' +
-        renderInfoSection('Pitching', notes && notes.pitching) +
         '</div>'
       );
     }
@@ -1651,12 +1826,12 @@
         renderLinescore(g) +
         renderDecisionBlock(g) +
         '<div class="hitters-grid">' +
-        renderHittersTable(g.away, g.awayHitters, g.awayId) +
-        renderHittersTable(g.home, g.homeHitters, g.homeId) +
+        renderHittersTable(g.away, g.awayHitters, g.awayId, g.awayNotes) +
+        renderHittersTable(g.home, g.homeHitters, g.homeId, g.homeNotes) +
         '</div>' +
         '<div class="extra-grid">' +
-        renderPitchingTable(g.away, g.awayId, g.awayPitchers, g.awayPitchingTotals, g.awayNotes) +
-        renderPitchingTable(g.home, g.homeId, g.homePitchers, g.homePitchingTotals, g.homeNotes) +
+        renderPitchingTable(g.away, g.awayId, g.awayPitchers, g.awayPitchingTotals) +
+        renderPitchingTable(g.home, g.homeId, g.homePitchers, g.homePitchingTotals) +
         '</div>' +
         '</div>';
 

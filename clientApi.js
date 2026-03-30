@@ -452,8 +452,10 @@
         const seasonBatting = p.seasonStats && p.seasonStats.batting ? p.seasonStats.batting : {};
 
         return {
+          id: p.person.id,
           name: p.person.fullName,
           position: p.position && p.position.abbreviation ? p.position.abbreviation : "-",
+          battingSlot: slot,
           isSubstitution: isSubstitution,
           ab: gameBatting.atBats || 0,
           r: gameBatting.runs || 0,
@@ -502,6 +504,7 @@
           name: p.person.fullName,
           record: (seasonPitching.wins !== undefined && seasonPitching.losses !== undefined)
             ? seasonPitching.wins + "-" + seasonPitching.losses : null,
+          saves: seasonPitching.saves !== undefined ? seasonPitching.saves : null,
           decisionTag: decisionTag,
           ip: gamePitching.inningsPitched || "0.0",
           h: gamePitching.hits || 0,
