@@ -179,6 +179,25 @@
     return !!(window.google && window.google.script && window.google.script.run);
   }
 
+  function getScoresPageUrl(sport) {
+    const sportKey = sport === "nfl" || sport === "nba" ? sport : "games";
+    const resolvedKey = resolveRouteKey(sportKey);
+    const route = PAGE_ROUTES[resolvedKey] || PAGE_ROUTES.mlb;
+
+    if (!isAppsScriptWebApp()) {
+      return route.staticPath;
+    }
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", route.dynamicPage);
+    if (route.sport) {
+      url.searchParams.set("sport", route.sport);
+    } else {
+      url.searchParams.delete("sport");
+    }
+    return url.toString();
+  }
+
   function getPageUrl(pageKey) {
     const resolvedKey = resolveRouteKey(pageKey);
     const route = PAGE_ROUTES[resolvedKey] || PAGE_ROUTES.mlb;
@@ -210,39 +229,44 @@
     style.id = "mlb-site-nav-style";
     style.textContent =
       ".site-nav{" +
-      "display:flex;justify-content:center;padding:16px 16px 8px;" +
+      "display:flex;justify-content:center;padding:6px 8px 2px;" +
       "}" +
       ".site-nav__rail{" +
-      "display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;" +
+      "display:flex;flex-wrap:nowrap;gap:4px;justify-content:flex-start;align-items:center;" +
       "background:rgba(0,70,173,0.08);border:1px solid rgba(0,70,173,0.14);" +
-      "padding:8px 10px;border-radius:12px;backdrop-filter:blur(6px);" +
+      "padding:2px 6px;border-radius:9px;backdrop-filter:blur(6px);" +
+      "max-width:min(1100px,100%);overflow-x:auto;overflow-y:hidden;white-space:nowrap;" +
+      "-webkit-overflow-scrolling:touch;scrollbar-width:thin;" +
       "}" +
       ".site-nav__link{" +
       "text-decoration:none;color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;" +
-      "font-size:0.82rem;letter-spacing:0.02em;text-transform:uppercase;font-weight:700;" +
-      "padding:7px 10px;border-radius:999px;border:1px solid transparent;display:inline-flex;align-items:center;gap:5px;" +
+      "font-size:0.66rem;letter-spacing:0.015em;text-transform:uppercase;font-weight:700;" +
+      "padding:2px 3px;border-radius:5px;border:1px solid transparent;display:inline-flex;align-items:center;" +
       "transition:background-color 0.2s ease,color 0.2s ease,border-color 0.2s ease,transform 0.2s ease;" +
       "}" +
       ".site-nav__link:hover{" +
-      "background:rgba(0,70,173,0.12);border-color:rgba(0,70,173,0.18);transform:translateY(-1px);" +
+      "background:rgba(0,70,173,0.12);border-color:rgba(0,70,173,0.18);" +
       "}" +
       ".site-nav__link.is-active{" +
       "background:var(--navy,#0046ad);color:#fff;border-color:var(--navy,#0046ad);" +
       "}" +
-      ".site-nav__icon{font-size:0.9rem;line-height:1;}" +
-      ".site-nav__sublink{" +
-      "margin-left:6px;text-decoration:none;color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;" +
-      "font-size:0.78rem;letter-spacing:0.02em;text-transform:uppercase;font-weight:700;" +
-      "padding:6px 10px;border-radius:999px;border:1px solid rgba(0,70,173,0.22);" +
-      "background:rgba(255,255,255,0.75);transition:all 0.2s ease;" +
+      ".site-nav__sep{" +
+      "font-family:'Roboto Mono',monospace;font-size:0.62rem;color:rgba(0,70,173,0.55);padding:0 1px;user-select:none;" +
       "}" +
-      ".site-nav__sublink:hover{background:rgba(0,70,173,0.1);}" +
+      ".site-nav__sublink{" +
+      "text-decoration:none;color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;" +
+      "font-size:0.66rem;letter-spacing:0.015em;text-transform:uppercase;font-weight:700;" +
+      "padding:2px 3px;border-radius:5px;border:1px solid transparent;" +
+      "background:transparent;transition:all 0.2s ease;" +
+      "}" +
+      ".site-nav__sublink:hover{background:rgba(0,70,173,0.1);border-color:rgba(0,70,173,0.18);}" +
       ".site-nav__sublink.is-active{background:var(--navy,#0046ad);color:#fff;border-color:var(--navy,#0046ad);}" +
       "@media (max-width: 600px){" +
-      ".site-nav{padding:12px 12px 6px;}" +
-      ".site-nav__rail{border-radius:10px;padding:8px;gap:6px;}" +
-      ".site-nav__link{font-size:0.72rem;padding:6px 8px;}" +
-      ".site-nav__sublink{font-size:0.7rem;padding:5px 8px;}" +
+      ".site-nav{padding:5px 6px 2px;}" +
+      ".site-nav__rail{border-radius:7px;padding:2px 4px;gap:2px;}" +
+      ".site-nav__link{font-size:0.62rem;padding:2px 3px;}" +
+      ".site-nav__sublink{font-size:0.62rem;padding:2px 3px;}" +
+      ".site-nav__sep{font-size:0.58rem;}" +
       "}";
 
     document.head.appendChild(style);
@@ -252,37 +276,68 @@
     ensureNavStyles();
 
     const mountNode = mountId ? document.getElementById(mountId) : null;
-    const resolvedCurrent = resolvePageKey(currentPageKey);
+    const params = new URLSearchParams(window.location.search);
+    const sportFromQuery = String(params.get("sport") || "").toLowerCase();
+    const resolvedCurrent =
+      currentPageKey === "myteam" && (sportFromQuery === "nfl" || sportFromQuery === "nba")
+        ? sportFromQuery
+        : resolvePageKey(currentPageKey);
+    const onMyTeamPage = currentPageKey === "myteam";
+    
     const linksHtml = SPORTS_NAV_ORDER
       .map(function (pageKey) {
         const route = PAGE_ROUTES[pageKey];
         const isActive = pageKey === resolvedCurrent;
+        let href = getPageUrl(pageKey);
+        
+        // When on My Team page, clicking a sport should go to that sport's My Team page
+        if (onMyTeamPage && (pageKey === "nfl" || pageKey === "nba")) {
+          href = "MyTeam.html?sport=" + pageKey;
+        } else if (onMyTeamPage && pageKey === "mlb") {
+          href = "MyTeam.html";
+        }
+        
         return (
           '<a class="site-nav__link' +
           (isActive ? ' is-active' : '') +
           '" href="' +
-          getPageUrl(pageKey) +
+          href +
           '"' +
           (isActive ? ' aria-current="page"' : '') +
           '>' +
-          '<span class="site-nav__icon">' + (route.icon || "") + '</span>' +
           route.label +
           '</a>'
         );
       })
-      .join("");
-    const showMyTeamLink = resolvedCurrent === "mlb" || resolvedCurrent === "nfl" || resolvedCurrent === "nba";
-    const myTeamHref = (resolvedCurrent === "nfl" || resolvedCurrent === "nba")
-      ? "MyTeam.html?sport=" + resolvedCurrent
-      : getPageUrl("myteam");
+      .join('<span class="site-nav__sep" aria-hidden="true">/</span>');
+    
+    // Show My Team link only on scores pages (games, nfl, nba) and on My Team page itself
+    const showMyTeamLink = currentPageKey === "games" || currentPageKey === "nfl" || currentPageKey === "nba" || currentPageKey === "myteam";
+    
+    // My Team link behavior:
+    // - When on My Team page and clicking My Team, go to scores page for that sport
+    // - When on scores page, go to My Team page
+    let myTeamHref;
+    if (onMyTeamPage) {
+      // Currently on My Team - clicking it should go to scores page
+      myTeamHref = getScoresPageUrl(resolvedCurrent);
+    } else {
+      // On scores page - clicking should go to My Team
+      myTeamHref = resolvedCurrent === "nfl" || resolvedCurrent === "nba"
+        ? "MyTeam.html?sport=" + resolvedCurrent
+        : getPageUrl("myteam");
+    }
+    
+    const myTeamIsActive = currentPageKey === "myteam";
     const subLinkHtml =
       showMyTeamLink
-        ? '<a class="site-nav__sublink' +
-          (currentPageKey === "myteam" ? ' is-active' : '') +
+        ? '<span class="site-nav__sep" aria-hidden="true">/</span><a class="site-nav__sublink' +
+          (myTeamIsActive ? ' is-active' : '') +
           '" href="' +
           myTeamHref +
           '">My Team</a>'
         : "";
+    
     const navHtml =
       '<nav class="site-nav" aria-label="Sports"><div class="site-nav__rail">' + linksHtml + subLinkHtml + '</div></nav>';
 
