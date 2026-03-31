@@ -74,7 +74,7 @@
     pga: { label: "PGA", icon: "⛳", staticPath: "TVGuide.html?sport=pga", dynamicPage: "tv", sport: "pga" },
     atp: { label: "ATP", icon: "🎾", staticPath: "TVGuide.html?sport=atp", dynamicPage: "tv", sport: "atp" },
     wta: { label: "WTA", icon: "🎾", staticPath: "TVGuide.html?sport=wta", dynamicPage: "tv", sport: "wta" },
-    news: { label: "Top News", icon: "📰", staticPath: "TopNews.html", dynamicPage: "news" },
+    news: { label: "News", icon: "📰", staticPath: "TopNews.html", dynamicPage: "news" },
     tv: { label: "TV", icon: "📺", staticPath: "TVGuide.html", dynamicPage: "tv" },
     home: { label: "Home", staticPath: "index.html", dynamicPage: "home" },
     games: { label: "Games", staticPath: "GameCards.html", dynamicPage: "games" },
