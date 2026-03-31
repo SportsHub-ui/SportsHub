@@ -42,7 +42,22 @@
     }
 
     .hero {
-      padding: 28px;
+      overflow: hidden;
+    }
+
+    .hero-banner {
+      width: 100%;
+      line-height: 0;
+    }
+
+    .hero-banner img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .hero-text {
+      padding: 22px 28px 28px;
       background: linear-gradient(135deg, var(--navy), #133f88);
       color: white;
       display: flex;
@@ -50,18 +65,7 @@
       align-items: center;
     }
 
-    .hero-icon {
-      width: clamp(104px, 20vw, 150px);
-      height: auto;
-      display: block;
-      margin: 0 auto 16px;
-      border-radius: 24px;
-      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
-      border: 2px solid rgba(255, 255, 255, 0.18);
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .hero h1 {
+    .hero-text h1 {
       margin: 0;
       letter-spacing: 0.03em;
       font-size: clamp(1.6rem, 4vw, 2.4rem);
@@ -69,7 +73,7 @@
       text-align: center;
     }
 
-    .hero p {
+    .hero-text p {
       margin: 10px 0 0;
       opacity: 0.9;
       font-size: 1rem;
@@ -97,10 +101,10 @@
 <body>
   <main class="shell">
     <section class="hero">
-      <img class="hero-icon" src="assets/icons/apple-touch-icon.png" alt="Sports Hub icon">
-      <h1>SPORTS HUB</h1>
-      <p>One stop for all of your sports data.</p>
-      <p>Ad free for your viewing pleasure.</p>
+      <div class="hero-banner">
+        <img src="assets/icons/apple-touch-icon.png" alt="Sports Hub icon">
+      </div>
+
     </section>
 
     <div id="siteNav"></div>
