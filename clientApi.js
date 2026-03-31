@@ -1580,6 +1580,69 @@
     };
   }
 
+  function extractCompetitorLeader(competitor, preferredStats, suffix) {
+    const leaders = Array.isArray(competitor && competitor.leaders) ? competitor.leaders : [];
+    const desired = Array.isArray(preferredStats) ? preferredStats.map(function (value) { return String(value || "").toLowerCase(); }) : [];
+    const match = leaders.find(function (group) {
+      const name = group && group.name ? String(group.name).toLowerCase() : "";
+      return desired.indexOf(name) !== -1;
+    }) || leaders[0];
+
+    const leader = Array.isArray(match && match.leaders) && match.leaders[0] ? match.leaders[0] : null;
+    const athlete = leader && leader.athlete ? leader.athlete : {};
+    const athleteName = athlete && (athlete.shortName || athlete.displayName || athlete.fullName)
+      ? toCompactPlayerName(athlete.shortName || athlete.displayName || athlete.fullName)
+      : "";
+    const value = leader && leader.displayValue !== undefined ? String(leader.displayValue) : "";
+    if (!athleteName && !value) {
+      return "";
+    }
+
+    return [athleteName, value ? value + (suffix ? " " + suffix : "") : ""].filter(Boolean).join(" ");
+  }
+
+  async function getNflStartingQuarterback(teamId, seasonYear) {
+    const numericTeamId = Number(teamId);
+    const numericSeason = Number(seasonYear) || new Date().getFullYear();
+    if (!numericTeamId) {
+      return "";
+    }
+
+    const depthChartUrl =
+      "https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/" +
+      numericSeason +
+      "/teams/" +
+      numericTeamId +
+      "/depthcharts";
+
+    const depthData = await fetchJsonCached(depthChartUrl, 21600000);
+    const depthCharts = Array.isArray(depthData && depthData.items) ? depthData.items : [];
+    let athleteRef = "";
+
+    for (let i = 0; i < depthCharts.length; i += 1) {
+      const positions = depthCharts[i] && depthCharts[i].positions ? depthCharts[i].positions : null;
+      const qbSlot = positions && positions.qb ? positions.qb : null;
+      const athletes = Array.isArray(qbSlot && qbSlot.athletes) ? qbSlot.athletes : [];
+      if (!athletes.length) {
+        continue;
+      }
+      const starter = athletes.find(function (entry) {
+        return Number(entry && entry.rank) === 1;
+      }) || athletes[0];
+      athleteRef = starter && starter.athlete && starter.athlete.$ref ? String(starter.athlete.$ref) : "";
+      if (athleteRef) {
+        break;
+      }
+    }
+
+    if (!athleteRef) {
+      return "";
+    }
+
+    const athleteData = await fetchJsonCached(athleteRef.replace(/^http:/, "https:"), 21600000);
+    return toCompactPlayerName(athleteData && (athleteData.displayName || athleteData.fullName || athleteData.shortName) ? athleteData.displayName || athleteData.fullName || athleteData.shortName : "");
+  }
+
   async function getLeagueScoreboardData(leagueKey, dateIso) {
     const leagueMap = {
       mlb: { label: "MLB", source: "mlb" },
@@ -1603,74 +1666,82 @@
     let games = [];
 
     if (config.source === "mlb") {
+      const myTeamId = getTeamId(getFavoriteTeam());
       const dateIsoValue = dateParam.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
       const scheduleUrl =
         "https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&startDate=" +
         dateIsoValue +
         "&endDate=" +
         dateIsoValue +
-        "&hydrate=team,broadcasts,linescore";
+        "&hydrate=team,lineups,decisions,broadcasts,probablePitcher,linescore";
       const sched = await fetchJsonCached(scheduleUrl, isTodayIso(dateIsoValue) ? 10000 : 300000);
       const rawGames = Array.isArray(sched && sched.dates && sched.dates[0] && sched.dates[0].games)
         ? sched.dates[0].games
         : [];
 
-      games = rawGames.map(function (game) {
-        const awayTeam = game && game.teams && game.teams.away ? game.teams.away : {};
-        const homeTeam = game && game.teams && game.teams.home ? game.teams.home : {};
-        const awayInfo = awayTeam.team || {};
-        const homeInfo = homeTeam.team || {};
-        const linescore = game && game.linescore ? game.linescore : {};
-        const detailedState = game && game.status && game.status.detailedState ? String(game.status.detailedState) : "Scheduled";
-        const codedState = game && game.status && game.status.codedGameState ? String(game.status.codedGameState) : "";
-        const isInProgress = codedState === "I" || detailedState === "In Progress";
-        const state = isInProgress ? "in" : (game && game.status && game.status.abstractGameState === "Final" ? "post" : "pre");
+      const transformed = rawGames.map(function (game) {
+        return transformMlbGame(game, myTeamId);
+      });
 
-        let statusShort = detailedState;
-        if (state === "pre") {
-          statusShort = formatLocalTime(game && game.gameDate ? game.gameDate : "");
-        } else if (state === "post") {
-          statusShort = detailedState || "Final";
-        } else if (isInProgress && linescore && linescore.currentInning) {
-          statusShort = (linescore.isTopInning ? "Top " : "Bot ") + String(linescore.currentInning);
-        }
+      await Promise.all(
+        transformed.map(function (gameObj, idx) {
+          return enrichLiveData(gameObj, rawGames[idx]);
+        })
+      );
 
-        const tvList = (game && Array.isArray(game.broadcasts) ? game.broadcasts : [])
-          .filter(function (b) {
-            return b && b.type === "TV";
-          })
-          .map(function (b) {
-            return b.name || b.callSign || "";
-          })
-          .filter(Boolean);
+      games = transformed.map(function (gameObj, idx) {
+        const rawGame = rawGames[idx] || {};
+        const state = (gameObj.status === "Live" || gameObj.status === "In Progress")
+          ? "in"
+          : (gameObj.status === "Final" ? "post" : "pre");
 
         return {
-          id: String(game && game.gamePk ? game.gamePk : ""),
-          name: awayInfo.name && homeInfo.name ? awayInfo.name + " at " + homeInfo.name : "Matchup",
-          startTime: game && game.gameDate ? game.gameDate : "",
-          statusShort: statusShort || "Scheduled",
+          id: String(gameObj.gameId || ""),
+          name: gameObj.away + " at " + gameObj.home,
+          startTime: rawGame && rawGame.gameDate ? rawGame.gameDate : "",
+          statusShort: gameObj.liveText || "Scheduled",
           statusState: state,
-          venue: game && game.venue && game.venue.name ? game.venue.name : "",
-          network: tvList.length ? tvList.slice(0, 2).join(", ") : "N/A",
+          venue: gameObj.venue || "",
+          network: gameObj.tv || "N/A",
+          infoLabel: "SP",
+          awayInfo: gameObj.awayStarter || "TBD",
+          homeInfo: gameObj.homeStarter || "TBD",
+          mlbStatus: gameObj.status || "Preview",
+          liveText: gameObj.liveText || "",
+          awayStarter: gameObj.awayStarter || "TBD",
+          awayStarterRecord: gameObj.awayStarterRecord || "",
+          homeStarter: gameObj.homeStarter || "TBD",
+          homeStarterRecord: gameObj.homeStarterRecord || "",
+          currentPitcher: gameObj.currentPitcher || "",
+          currentBatter: gameObj.currentBatter || "",
+          nextBatter: gameObj.nextBatter || "",
+          onDeckBatter: gameObj.onDeckBatter || "",
+          pitchCount: gameObj.pitchCount || "",
+          pitchSummary: gameObj.pitchSummary || "",
+          batterLine: gameObj.batterLine || "",
+          batterAvg: gameObj.batterAvg || "",
+          ballStrikeCount: gameObj.ballStrikeCount || "",
+          outs: Number(gameObj.outs || 0),
+          runnerOn1: !!gameObj.runnerOn1,
+          runnerOn2: !!gameObj.runnerOn2,
+          runnerOn3: !!gameObj.runnerOn3,
+          winner: gameObj.winner || "N/A",
+          loser: gameObj.loser || "N/A",
           away: {
-            name: awayInfo.name || "Away",
-            abbr: awayInfo.abbreviation || "",
-            logo: awayInfo.id ? "https://www.mlbstatic.com/team-logos/" + awayInfo.id + ".svg" : "",
-            score: awayTeam.score !== undefined ? String(awayTeam.score) : "0",
-            record:
-              awayTeam && awayTeam.leagueRecord
-                ? String(awayTeam.leagueRecord.wins || 0) + "-" + String(awayTeam.leagueRecord.losses || 0)
-                : ""
+            id: gameObj.awayId ? String(gameObj.awayId) : "",
+            name: gameObj.away || "Away",
+            abbr: "",
+            logo: gameObj.awayId ? "https://www.mlbstatic.com/team-logos/" + gameObj.awayId + ".svg" : "",
+            score: String(gameObj.awayScore !== undefined ? gameObj.awayScore : "0"),
+            record: gameObj.awayRecord || ""
           },
           home: {
-            name: homeInfo.name || "Home",
-            abbr: homeInfo.abbreviation || "",
-            logo: homeInfo.id ? "https://www.mlbstatic.com/team-logos/" + homeInfo.id + ".svg" : "",
-            score: homeTeam.score !== undefined ? String(homeTeam.score) : "0",
-            record:
-              homeTeam && homeTeam.leagueRecord
-                ? String(homeTeam.leagueRecord.wins || 0) + "-" + String(homeTeam.leagueRecord.losses || 0)
-                : ""
+            id: gameObj.homeId ? String(gameObj.homeId) : "",
+            name: gameObj.home || "Home",
+            abbr: "",
+            logo: gameObj.homeId ? "https://www.mlbstatic.com/team-logos/" + gameObj.homeId + ".svg" : "",
+            score: String(gameObj.homeScore !== undefined ? gameObj.homeScore : "0"),
+            record: gameObj.homeRecord || ""
           }
         };
       });
@@ -1692,9 +1763,12 @@
 
         let away = null;
         let home = null;
+        let awayCompetitor = null;
+        let homeCompetitor = null;
         competitors.forEach(function (c) {
           const side = c && c.homeAway;
           const normalized = {
+            id: c && c.team && c.team.id ? String(c.team.id) : "",
             name: c && c.team ? c.team.displayName || c.team.shortDisplayName || "Team" : "Team",
             abbr: c && c.team ? c.team.abbreviation || "" : "",
             logo: c && c.team && c.team.logo ? c.team.logo : "",
@@ -1707,8 +1781,10 @@
 
           if (side === "home") {
             home = normalized;
+            homeCompetitor = c;
           } else if (side === "away") {
             away = normalized;
+            awayCompetitor = c;
           }
         });
 
@@ -1726,10 +1802,51 @@
           statusState: state,
           venue: competition.venue && competition.venue.fullName ? competition.venue.fullName : "",
           network: network,
+          seasonYear: ev && ev.season && ev.season.year ? Number(ev.season.year) : new Date(ev.date || Date.now()).getFullYear(),
+          infoLabel: key === "nba" ? "LDR" : "QB",
+          awayInfo: key === "nba" ? extractCompetitorLeader(awayCompetitor, ["points"], "PTS") : "",
+          homeInfo: key === "nba" ? extractCompetitorLeader(homeCompetitor, ["points"], "PTS") : "",
+          cardInfoNote:
+            key === "nba" && !extractCompetitorLeader(awayCompetitor, ["points"], "PTS") && !extractCompetitorLeader(homeCompetitor, ["points"], "PTS")
+              ? "Scoring leaders update after tipoff."
+              : "",
           away: away || { name: "Away", abbr: "", logo: "", score: "0", record: "" },
           home: home || { name: "Home", abbr: "", logo: "", score: "0", record: "" }
         };
       });
+
+      if (key === "nfl") {
+        const starterCache = {};
+        await Promise.all(
+          games.reduce(function (calls, game) {
+            [game && game.away ? game.away : null, game && game.home ? game.home : null].forEach(function (team) {
+              const cacheKey = team && team.id ? String(team.id) + ":" + String(game && game.seasonYear ? game.seasonYear : "") : "";
+              if (!cacheKey || starterCache[cacheKey]) {
+                return;
+              }
+              starterCache[cacheKey] = true;
+              calls.push(
+                getNflStartingQuarterback(team.id, game.seasonYear)
+                  .then(function (name) {
+                    starterCache[cacheKey] = name || "";
+                  })
+                  .catch(function () {
+                    starterCache[cacheKey] = "";
+                  })
+              );
+            });
+            return calls;
+          }, [])
+        );
+
+        games.forEach(function (game) {
+          const awayKey = game && game.away && game.away.id ? String(game.away.id) + ":" + String(game.seasonYear || "") : "";
+          const homeKey = game && game.home && game.home.id ? String(game.home.id) + ":" + String(game.seasonYear || "") : "";
+          game.awayInfo = awayKey && starterCache[awayKey] ? starterCache[awayKey] : "TBD";
+          game.homeInfo = homeKey && starterCache[homeKey] ? starterCache[homeKey] : "TBD";
+          game.cardInfoNote = "";
+        });
+      }
     }
 
     return {
@@ -2022,6 +2139,7 @@
 
   async function getLeagueGameDetails(leagueKey, gameId) {
     const leagueMap = {
+      mlb: { label: "MLB" },
       nba: { sport: "basketball", league: "nba", label: "NBA" },
       nfl: { sport: "football", league: "nfl", label: "NFL" }
     };
@@ -2030,6 +2148,114 @@
     const config = leagueMap[key];
     if (!config) {
       throw new Error("Unsupported game details league: " + leagueKey);
+    }
+
+    if (key === "mlb") {
+      const url =
+        "https://statsapi.mlb.com/api/v1/schedule?gamePk=" +
+        encodeURIComponent(gameId) +
+        "&hydrate=team,broadcasts,linescore,probablePitcher,decisions";
+
+      const payload = await fetchJsonCached(url, 15000);
+      const game = payload && Array.isArray(payload.dates) && payload.dates[0] && Array.isArray(payload.dates[0].games) ? payload.dates[0].games[0] : null;
+      if (!game) {
+        throw new Error("Game details unavailable");
+      }
+
+      const awayTeam = game && game.teams && game.teams.away ? game.teams.away : {};
+      const homeTeam = game && game.teams && game.teams.home ? game.teams.home : {};
+      const awayInfo = awayTeam.team || {};
+      const homeInfo = homeTeam.team || {};
+      const linescore = game && game.linescore ? game.linescore : {};
+      const innings = Array.isArray(linescore && linescore.innings) ? linescore.innings : [];
+      const detailedState = game && game.status && game.status.detailedState ? String(game.status.detailedState) : "Scheduled";
+      const tvList = (game && Array.isArray(game.broadcasts) ? game.broadcasts : [])
+        .filter(function (entry) {
+          return entry && entry.type === "TV";
+        })
+        .map(function (entry) {
+          return entry.name || entry.callSign || "";
+        })
+        .filter(Boolean);
+
+      return {
+        leagueKey: key,
+        leagueLabel: config.label,
+        gameId: String(gameId),
+        statusDetail: detailedState === "Scheduled" ? formatLocalTime(game && game.gameDate ? game.gameDate : "") : detailedState,
+        venue: game && game.venue && game.venue.name ? game.venue.name : "",
+        city: "",
+        attendance: "",
+        broadcasts: tvList,
+        away: {
+          id: awayInfo.id ? String(awayInfo.id) : "",
+          name: awayInfo.name || "Away",
+          shortName: awayInfo.abbreviation || awayInfo.name || "Away",
+          abbr: awayInfo.abbreviation || "",
+          logo: awayInfo.id ? "https://www.mlbstatic.com/team-logos/" + awayInfo.id + ".svg" : "",
+          score: awayTeam.score !== undefined ? String(awayTeam.score) : "0",
+          record:
+            awayTeam && awayTeam.leagueRecord
+              ? String(awayTeam.leagueRecord.wins || 0) + "-" + String(awayTeam.leagueRecord.losses || 0)
+              : "",
+          teamColor: "",
+          alternateColor: "",
+          homeAway: "away",
+          winner: awayTeam && awayTeam.isWinner === true,
+          linescores: innings.map(function (inning, index) {
+            return {
+              period: index + 1,
+              value: inning && inning.away && inning.away.runs !== undefined ? inning.away.runs : "-"
+            };
+          })
+        },
+        home: {
+          id: homeInfo.id ? String(homeInfo.id) : "",
+          name: homeInfo.name || "Home",
+          shortName: homeInfo.abbreviation || homeInfo.name || "Home",
+          abbr: homeInfo.abbreviation || "",
+          logo: homeInfo.id ? "https://www.mlbstatic.com/team-logos/" + homeInfo.id + ".svg" : "",
+          score: homeTeam.score !== undefined ? String(homeTeam.score) : "0",
+          record:
+            homeTeam && homeTeam.leagueRecord
+              ? String(homeTeam.leagueRecord.wins || 0) + "-" + String(homeTeam.leagueRecord.losses || 0)
+              : "",
+          teamColor: "",
+          alternateColor: "",
+          homeAway: "home",
+          winner: homeTeam && homeTeam.isWinner === true,
+          linescores: innings.map(function (inning, index) {
+            return {
+              period: index + 1,
+              value: inning && inning.home && inning.home.runs !== undefined ? inning.home.runs : "-"
+            };
+          })
+        },
+        periodLabels: innings.map(function (_, index) { return String(index + 1); }),
+        mlbTotals: {
+          away: {
+            r: linescore && linescore.teams && linescore.teams.away && linescore.teams.away.runs !== undefined ? linescore.teams.away.runs : awayTeam.score || 0,
+            h: linescore && linescore.teams && linescore.teams.away && linescore.teams.away.hits !== undefined ? linescore.teams.away.hits : "-",
+            e: linescore && linescore.teams && linescore.teams.away && linescore.teams.away.errors !== undefined ? linescore.teams.away.errors : "-"
+          },
+          home: {
+            r: linescore && linescore.teams && linescore.teams.home && linescore.teams.home.runs !== undefined ? linescore.teams.home.runs : homeTeam.score || 0,
+            h: linescore && linescore.teams && linescore.teams.home && linescore.teams.home.hits !== undefined ? linescore.teams.home.hits : "-",
+            e: linescore && linescore.teams && linescore.teams.home && linescore.teams.home.errors !== undefined ? linescore.teams.home.errors : "-"
+          }
+        },
+        probablePitchers: {
+          away: awayTeam && awayTeam.probablePitcher && awayTeam.probablePitcher.fullName ? toCompactPlayerName(awayTeam.probablePitcher.fullName) : "TBD",
+          home: homeTeam && homeTeam.probablePitcher && homeTeam.probablePitcher.fullName ? toCompactPlayerName(homeTeam.probablePitcher.fullName) : "TBD"
+        },
+        decisions: {
+          winner: game && game.decisions && game.decisions.winner && game.decisions.winner.fullName ? toCompactPlayerName(game.decisions.winner.fullName) : "",
+          loser: game && game.decisions && game.decisions.loser && game.decisions.loser.fullName ? toCompactPlayerName(game.decisions.loser.fullName) : "",
+          save: game && game.decisions && game.decisions.save && game.decisions.save.fullName ? toCompactPlayerName(game.decisions.save.fullName) : ""
+        },
+        teamBoxes: [],
+        teamStats: []
+      };
     }
 
     const url =

@@ -299,8 +299,14 @@
       background: #fff;
       border-radius: 12px;
       border: 1px solid #d9e1ea;
+      border-left: 6px solid #cfd8e3;
       box-shadow: 0 3px 8px rgba(26, 40, 58, 0.08);
       overflow: hidden;
+      padding: 15px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      min-height: 228px;
     }
 
     .card.is-clickable {
@@ -315,35 +321,98 @@
 
     .card.fav-card {
       border-color: rgba(255, 159, 28, 0.55);
+      border-left-color: rgba(255, 159, 28, 0.9);
       box-shadow: 0 6px 14px rgba(255, 159, 28, 0.2);
     }
 
     .card.my-team-card {
       border-color: rgba(20, 122, 92, 0.5);
+      border-left-color: rgba(20, 122, 92, 0.95);
       box-shadow: 0 7px 16px rgba(20, 122, 92, 0.2);
       background: linear-gradient(180deg, rgba(234, 251, 244, 0.55) 0%, #fff 34%);
     }
 
-    .card-head {
+    .status-line {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 12px;
-      border-bottom: 1px solid #e8edf3;
-      background: #f8fbff;
       gap: 8px;
+      margin-bottom: 10px;
+      min-height: 30px;
     }
 
-    .card-head-left,
-    .card-head-right {
+    .status-main {
       display: flex;
       align-items: center;
       gap: 6px;
       min-width: 0;
     }
 
-    .card-head-right {
-      margin-left: auto;
+    .situation-host {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 4px;
+    }
+
+    .situation-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .diamond {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      transform: rotate(45deg);
+      margin-right: 6px;
+    }
+
+    .base {
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      border: 1px solid #c8d2de;
+      background: #fff;
+    }
+
+    .base.occupied {
+      background: #fec524;
+      border-color: #b8860b;
+    }
+
+    .base.b1 {
+      top: 0;
+      right: 0;
+    }
+
+    .base.b2 {
+      top: 0;
+      left: 0;
+    }
+
+    .base.b3 {
+      bottom: 0;
+      left: 0;
+    }
+
+    .outs-container {
+      display: inline-flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .out-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      border: 1px solid #b8c4d2;
+      background: #eef2f7;
+    }
+
+    .out-dot.filled {
+      background: #c2362e;
+      border-color: #c2362e;
     }
 
     .status-pill {
@@ -365,16 +434,6 @@
     .status-pill.final {
       background: #e3f2e7;
       color: #23613d;
-    }
-
-    .network {
-      font-family: 'Roboto Mono', monospace;
-      font-size: 0.72rem;
-      color: #5f6e82;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 130px;
     }
 
     .league-pill {
@@ -412,68 +471,115 @@
       color: #a56900;
     }
 
-    .rows {
-      padding: 10px 12px;
-    }
-
-    .team-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
+    .league-team-line {
+      display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px;
-      padding: 8px 0;
-      border-bottom: 1px solid #eef2f7;
+      gap: 12px;
+      margin: 8px 0;
     }
 
-    .team-row:last-child {
-      border-bottom: none;
-    }
-
-    .team-main {
+    .league-team-info {
       display: flex;
       align-items: center;
       gap: 8px;
       min-width: 0;
+      flex: 1;
     }
 
-    .team-logo {
-      width: 24px;
-      height: 24px;
+    .league-team-logo {
+      width: 28px;
+      height: 28px;
       object-fit: contain;
       flex: 0 0 auto;
     }
 
-    .team-name {
-      font-size: 1rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .league-team-name {
+      font-size: 1.08rem;
+      font-weight: 700;
+      min-width: 0;
     }
 
-    .team-rec {
+    .league-team-rec {
       font-family: 'Roboto Mono', monospace;
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       color: #6d7c90;
       margin-left: 4px;
     }
 
-    .score {
+    .league-score {
       font-family: 'Roboto Mono', monospace;
-      font-size: 1.45rem;
+      font-size: 1.6rem;
       color: #0e355d;
-      font-weight: 700;
+      font-weight: 900;
       min-width: 34px;
       text-align: right;
     }
 
+    .sport-info {
+      margin-top: 6px;
+      min-height: 48px;
+      display: grid;
+      align-content: start;
+      gap: 4px;
+    }
+
+    .sport-info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: #555;
+      line-height: 1.35;
+    }
+
+    .sport-info-row.is-note {
+      color: #697587;
+    }
+
+    .sport-info-label {
+      font-weight: 900;
+      color: #999;
+      text-transform: uppercase;
+      font-size: 0.62rem;
+      min-width: 28px;
+      flex: 0 0 auto;
+    }
+
+    .sport-info-text {
+      min-width: 0;
+    }
+
+    .pitch-label {
+      font-weight: 900;
+      color: #8896a8;
+      text-transform: uppercase;
+      font-size: 0.62rem;
+      margin-right: 4px;
+    }
+
+    .stat-tag {
+      background: #f0f3f7;
+      color: #66768a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-size: 0.65rem;
+      margin-left: 5px;
+      font-family: 'Roboto Mono', monospace;
+      white-space: nowrap;
+    }
+
     .card-foot {
       border-top: 1px solid #eef2f7;
-      padding: 8px 12px;
-      font-size: 0.78rem;
-      color: #63758b;
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: 0.65rem;
+      color: #7c8a9b;
       display: flex;
       justify-content: space-between;
       gap: 8px;
+      font-weight: 700;
+      text-transform: uppercase;
     }
 
     .loader,
@@ -927,6 +1033,25 @@
         gap: 6px;
       }
 
+      .league-team-line {
+        align-items: flex-start;
+      }
+
+      .league-team-info {
+        align-items: flex-start;
+      }
+
+      .league-team-name {
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+
+      .league-score {
+        align-self: flex-start;
+        line-height: 1;
+        padding-top: 2px;
+      }
+
       .header-title {
         font-size: 0.9rem;
       }
@@ -1344,6 +1469,102 @@
       return '';
     }
 
+    function isMlbActiveGame(g) {
+      return !!(g && String(g.leagueKey || '').toLowerCase() === 'mlb' && (g.mlbStatus === 'Live' || g.mlbStatus === 'In Progress' || g.liveText === 'WARMUP'));
+    }
+
+    function renderMlbSituation(g) {
+      var outDots = '';
+      for (var i = 1; i <= 2; i++) {
+        var filled = (i <= Number(g && g.outs ? g.outs : 0)) ? 'filled' : '';
+        outDots += '<div class="out-dot ' + filled + '"></div>';
+      }
+
+      return '<div class="situation-container">' +
+        '<div class="diamond">' +
+        '<div class="base b1 ' + (g && g.runnerOn1 ? 'occupied' : '') + '"></div>' +
+        '<div class="base b2 ' + (g && g.runnerOn2 ? 'occupied' : '') + '"></div>' +
+        '<div class="base b3 ' + (g && g.runnerOn3 ? 'occupied' : '') + '"></div>' +
+        '</div>' +
+        '<div class="outs-container">' + outDots + '</div>' +
+        '</div>';
+    }
+
+    function renderMlbPitchingRows(g) {
+      if (!g) {
+        return '<div class="sport-info-row is-note"><span class="sport-info-text">&nbsp;</span></div>';
+      }
+
+      if (g.mlbStatus === 'Preview' || g.mlbStatus === 'Created' || g.liveText === 'WARMUP') {
+        var awayRec = g.awayStarterRecord ? ' <span class="stat-tag">(' + g.awayStarterRecord + ')</span>' : '';
+        var homeRec = g.homeStarterRecord ? ' <span class="stat-tag">(' + g.homeStarterRecord + ')</span>' : '';
+        return '<div class="sport-info-row"><span class="pitch-label">Away:</span><span class="sport-info-text">' + (g.awayStarter || 'TBD') + awayRec + '</span></div>' +
+          '<div class="sport-info-row"><span class="pitch-label">Home:</span><span class="sport-info-text">' + (g.homeStarter || 'TBD') + homeRec + '</span></div>';
+      }
+
+      if (g.mlbStatus === 'Live' || g.mlbStatus === 'In Progress') {
+        var html = '<div class="sport-info-row"><span class="pitch-label">P:</span><span class="sport-info-text">' + (g.currentPitcher || 'Warmup...');
+        if (g.pitchCount) {
+          html += '<span class="stat-tag">' + g.pitchCount + ' pitches; ' + (g.pitchSummary || '') + '</span>';
+        }
+        html += '</span></div>';
+
+        if (g.currentBatter) {
+          html += '<div class="sport-info-row"><span class="pitch-label">B:</span><span class="sport-info-text">' + g.currentBatter;
+          if (g.batterLine) {
+            html += '<span class="stat-tag">(' + (g.batterAvg || '.000') + ') ' + g.batterLine + '</span>';
+          }
+          if (g.ballStrikeCount) {
+            html += '<span class="stat-tag">' + g.ballStrikeCount + '</span>';
+          }
+          html += '</span></div>';
+          if (g.onDeckBatter) {
+            html += '<div class="sport-info-row"><span class="pitch-label">OD:</span><span class="sport-info-text">' + g.onDeckBatter + '</span></div>';
+          }
+        } else {
+          if (g.nextBatter) {
+            html += '<div class="sport-info-row"><span class="pitch-label">N:</span><span class="sport-info-text">' + g.nextBatter + '</span></div>';
+          }
+          if (g.onDeckBatter) {
+            html += '<div class="sport-info-row"><span class="pitch-label">OD:</span><span class="sport-info-text">' + g.onDeckBatter + '</span></div>';
+          }
+        }
+
+        return html;
+      }
+
+      return '<div class="sport-info-row"><span class="pitch-label">W:</span><span class="sport-info-text">' + (g.winner || 'N/A') + '</span></div>' +
+        '<div class="sport-info-row"><span class="pitch-label">L:</span><span class="sport-info-text">' + (g.loser || 'N/A') + '</span></div>';
+    }
+
+    function buildSportInfoRowsHtml(g) {
+      if (g && String(g.leagueKey || '').toLowerCase() === 'mlb') {
+        return renderMlbPitchingRows(g);
+      }
+
+      var rows = [];
+      var label = g && g.infoLabel ? String(g.infoLabel) : 'INFO';
+
+      if (g && g.awayInfo) {
+        rows.push('<div class="sport-info-row"><span class="sport-info-label">' + label + '</span><span class="sport-info-text">' + g.awayInfo + '</span></div>');
+      }
+      if (g && g.homeInfo) {
+        rows.push('<div class="sport-info-row"><span class="sport-info-label">' + label + '</span><span class="sport-info-text">' + g.homeInfo + '</span></div>');
+      }
+      if (!rows.length && g && g.cardInfoNote) {
+        rows.push('<div class="sport-info-row is-note"><span class="sport-info-text">' + g.cardInfoNote + '</span></div>');
+      }
+      if (!rows.length) {
+        rows.push('<div class="sport-info-row is-note"><span class="sport-info-text">&nbsp;</span></div>');
+      }
+
+      return rows.join('');
+    }
+
+    function buildSportInfoHtml(g) {
+      return '<div class="sport-info" data-field="sportInfo">' + buildSportInfoRowsHtml(g) + '</div>';
+    }
+
     function syncTeamPicker(games) {
       if (!supportsTeamPickerSport()) {
         return;
@@ -1458,8 +1679,7 @@
     }
 
     function canOpenDetailsForGame(g) {
-      var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
-      return sport === 'nfl' || sport === 'nba';
+      return !!(g && g.id);
     }
 
     function updateAutoRefreshButton() {
@@ -1605,7 +1825,6 @@
     }
 
     function buildLeagueCardHtml(g, favoriteContext, index) {
-      var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       var isTeamFavoriteGame = isFavoriteTeamGame(g, favoriteContext);
       var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
       var isFavoriteGame = isFavoriteGameById(sport, g.id);
@@ -1623,32 +1842,27 @@
       cardClasses += clickableClass;
 
       var html = '<article class="' + cardClasses + '" data-game-id="' + gameKey(g) + '" data-game-index="' + index + '"' + clickAttr + '>';
-      html += '<div class="card-head">';
-      html += '<div class="card-head-left">';
+      html += '<div class="status-line">';
+      html += '<div class="status-main">';
       html += '<span class="status-pill ' + statusClass(g.statusState) + '" data-field="statusShort">' + (g.statusShort || 'Scheduled') + '</span>';
-      if (currentSport === 'all') {
-        html += '<span class="league-pill" data-field="leagueLabel">' + (g.leagueLabel || sport.toUpperCase()) + '</span>';
-      }
+      html += '<span class="situation-host">' + (isMlbActiveGame(g) ? renderMlbSituation(g) : '') + '</span>';
       html += '</div>';
-      html += '<div class="card-head-right">';
       html += '<button class="game-fav-btn ' + (isFavoriteGame ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + String(g.id) + '\',\'' + sport + '\')">' + (isFavoriteGame ? '★' : '☆') + '</button>';
-      html += '<span class="network" data-field="network">' + (g.network || 'N/A') + '</span>';
-      html += '</div>';
       html += '</div>';
 
-      html += '<div class="rows">';
-      html += '<div class="team-row">';
-      html += '<div class="team-main"><img class="team-logo" src="' + (g.away.logo || '') + '" alt=""><span class="team-name">' + g.away.name + '</span><span class="team-rec" data-field="awayRecord">' + (g.away.record || '') + '</span></div>';
-      html += '<div class="score" data-field="awayScore">' + (g.away.score || '0') + '</div>';
+      html += '<div class="league-team-line">';
+      html += '<div class="league-team-info"><img class="league-team-logo" src="' + (g.away.logo || '') + '" alt=""><span class="league-team-name">' + g.away.name + '</span><span class="league-team-rec" data-field="awayRecord">' + (g.away.record || '') + '</span></div>';
+      html += '<div class="league-score" data-field="awayScore">' + (g.away.score || '0') + '</div>';
       html += '</div>';
 
-      html += '<div class="team-row">';
-      html += '<div class="team-main"><img class="team-logo" src="' + (g.home.logo || '') + '" alt=""><span class="team-name">' + g.home.name + '</span><span class="team-rec" data-field="homeRecord">' + (g.home.record || '') + '</span></div>';
-      html += '<div class="score" data-field="homeScore">' + (g.home.score || '0') + '</div>';
-      html += '</div>';
+      html += '<div class="league-team-line">';
+      html += '<div class="league-team-info"><img class="league-team-logo" src="' + (g.home.logo || '') + '" alt=""><span class="league-team-name">' + g.home.name + '</span><span class="league-team-rec" data-field="homeRecord">' + (g.home.record || '') + '</span></div>';
+      html += '<div class="league-score" data-field="homeScore">' + (g.home.score || '0') + '</div>';
       html += '</div>';
 
-      html += '<div class="card-foot"><span data-field="startTime">' + localTime + '</span><span data-field="venue">' + (g.venue || '') + '</span></div>';
+      html += buildSportInfoHtml(g);
+
+      html += '<div class="card-foot"><span data-field="network">TV: ' + (g.network || 'N/A') + '</span><span data-field="venue">' + (g.venue || '') + '</span></div>';
       html += '</article>';
       return html;
     }
@@ -1681,16 +1895,29 @@
         gameFavBtn.textContent = isFavoriteGame ? '★' : '☆';
       }
 
-      setTextWithFlash(card.querySelector('[data-field="network"]'), previousGame && previousGame.network, g.network || 'N/A');
+      setTextWithFlash(card.querySelector('[data-field="network"]'), previousGame ? ('TV: ' + (previousGame.network || 'N/A')) : '', 'TV: ' + (g.network || 'N/A'));
       setTextWithFlash(card.querySelector('[data-field="awayScore"]'), previousGame && previousGame.away && previousGame.away.score, g.away.score || '0');
       setTextWithFlash(card.querySelector('[data-field="homeScore"]'), previousGame && previousGame.home && previousGame.home.score, g.home.score || '0');
       setTextWithFlash(card.querySelector('[data-field="awayRecord"]'), previousGame && previousGame.away && previousGame.away.record, g.away.record || '');
       setTextWithFlash(card.querySelector('[data-field="homeRecord"]'), previousGame && previousGame.home && previousGame.home.record, g.home.record || '');
 
-      var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      var prevTime = previousGame && previousGame.startTime ? new Date(previousGame.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
-      setTextWithFlash(card.querySelector('[data-field="startTime"]'), prevTime, localTime);
       setTextWithFlash(card.querySelector('[data-field="venue"]'), previousGame && previousGame.venue, g.venue || '');
+
+      var situationHost = card.querySelector('.situation-host');
+      if (situationHost) {
+        var nextSituation = isMlbActiveGame(g) ? renderMlbSituation(g) : '';
+        if (situationHost.innerHTML !== nextSituation) {
+          situationHost.innerHTML = nextSituation;
+        }
+      }
+
+      var sportInfoHost = card.querySelector('[data-field="sportInfo"]');
+      if (sportInfoHost) {
+        var nextSportInfo = buildSportInfoRowsHtml(g);
+        if (sportInfoHost.innerHTML !== nextSportInfo) {
+          sportInfoHost.innerHTML = nextSportInfo;
+        }
+      }
     }
 
     function renderGames(payload, options) {
@@ -1994,7 +2221,85 @@
         '</tbody></table></section>';
     }
 
+    function renderMlbLinescore(details) {
+      var awayPeriods = details.away.linescores || [];
+      var homePeriods = details.home.linescores || [];
+      var labels = details.periodLabels || [];
+      var periodCount = Math.max(awayPeriods.length, homePeriods.length, labels.length);
+      var headers = '';
+      var awayCells = '';
+      var homeCells = '';
+
+      for (var i = 0; i < periodCount; i++) {
+        headers += '<th>' + (labels[i] || String(i + 1)) + '</th>';
+        awayCells += '<td>' + (awayPeriods[i] ? awayPeriods[i].value : '-') + '</td>';
+        homeCells += '<td>' + (homePeriods[i] ? homePeriods[i].value : '-') + '</td>';
+      }
+
+      var awayTotals = details.mlbTotals && details.mlbTotals.away ? details.mlbTotals.away : { r: '-', h: '-', e: '-' };
+      var homeTotals = details.mlbTotals && details.mlbTotals.home ? details.mlbTotals.home : { r: '-', h: '-', e: '-' };
+
+      return '<section class="detail-team-stats"><h4>Linescore</h4><table class="detail-team-compare"><thead><tr><th></th>' + headers + '<th>R</th><th>H</th><th>E</th></tr></thead><tbody>' +
+        '<tr><td>' + details.away.abbr + '</td>' + awayCells + '<td><strong>' + awayTotals.r + '</strong></td><td>' + awayTotals.h + '</td><td>' + awayTotals.e + '</td></tr>' +
+        '<tr><td>' + details.home.abbr + '</td>' + homeCells + '<td><strong>' + homeTotals.r + '</strong></td><td>' + homeTotals.h + '</td><td>' + homeTotals.e + '</td></tr>' +
+        '</tbody></table></section>';
+    }
+
+    function renderMlbInfoPanels(details) {
+      var sections = [];
+      if (details.probablePitchers && (details.probablePitchers.away || details.probablePitchers.home)) {
+        sections.push('<article class="detail-info-card"><h4>Probable Starters</h4><ul class="detail-list">' +
+          '<li>' + details.away.abbr + ': ' + (details.probablePitchers.away || 'TBD') + '</li>' +
+          '<li>' + details.home.abbr + ': ' + (details.probablePitchers.home || 'TBD') + '</li>' +
+          '</ul></article>');
+      }
+
+      if (details.decisions && (details.decisions.winner || details.decisions.loser || details.decisions.save)) {
+        var decisionItems = [];
+        if (details.decisions.winner) {
+          decisionItems.push('<li>W: ' + details.decisions.winner + '</li>');
+        }
+        if (details.decisions.loser) {
+          decisionItems.push('<li>L: ' + details.decisions.loser + '</li>');
+        }
+        if (details.decisions.save) {
+          decisionItems.push('<li>S: ' + details.decisions.save + '</li>');
+        }
+        sections.push('<article class="detail-info-card"><h4>Decisions</h4><ul class="detail-list">' + decisionItems.join('') + '</ul></article>');
+      }
+
+      if (!sections.length) {
+        return '';
+      }
+
+      return '<section class="detail-info-grid">' + sections.join('') + '</section>';
+    }
+
+    function renderMlbGameDetails(details) {
+      var body = document.getElementById('detailModalBody');
+      var title = document.getElementById('detailModalTitle');
+      title.innerText = details.away.name + ' at ' + details.home.name;
+      applyDetailTheme(details);
+
+      body.innerHTML =
+        '<section class="nba-summary">' +
+        '<div class="nba-summary-top">' +
+        '<div class="nba-side"><img class="nba-logo" src="' + (details.away.logo || '') + '" alt=""><div class="nba-team-meta"><div class="nba-team-name">' + details.away.name + '</div><div class="nba-team-record">' + (details.away.record || '') + '</div></div></div>' +
+        '<div class="nba-score-block"><div class="nba-status">' + (details.leagueLabel || '') + ' | ' + (details.statusDetail || '') + '</div><div class="nba-scoreline"><strong>' + details.away.score + '</strong><span>-</span><strong>' + details.home.score + '</strong></div></div>' +
+        '<div class="nba-side is-home"><div class="nba-team-meta"><div class="nba-team-name">' + details.home.name + '</div><div class="nba-team-record">' + (details.home.record || '') + '</div></div><img class="nba-logo" src="' + (details.home.logo || '') + '" alt=""></div>' +
+        '</div>' +
+        '</section>' +
+        renderMetaCards(details) +
+        renderMlbInfoPanels(details) +
+        renderMlbLinescore(details);
+    }
+
     function renderLeagueGameDetails(details) {
+      if (details && details.leagueKey === 'mlb') {
+        renderMlbGameDetails(details);
+        return;
+      }
+
       var body = document.getElementById('detailModalBody');
       var title = document.getElementById('detailModalTitle');
       title.innerText = details.away.name + ' at ' + details.home.name;
@@ -2020,7 +2325,16 @@
 
     function openGameDetailModal(gameId, sportKey) {
       var detailsSport = String(sportKey || currentSport || '').toLowerCase();
-      if (detailsSport !== 'nba' && detailsSport !== 'nfl') {
+      if (detailsSport !== 'nba' && detailsSport !== 'nfl' && detailsSport !== 'mlb') {
+        return;
+      }
+
+      if (detailsSport === 'mlb' && currentSport === 'all') {
+        var dateIso = document.getElementById('dateInput') && document.getElementById('dateInput').value
+          ? document.getElementById('dateInput').value
+          : toIso(currentDate);
+        var returnTo = window.location.pathname + window.location.search;
+        window.location.href = 'GameCards.html?date=' + encodeURIComponent(dateIso) + '&gameId=' + encodeURIComponent(String(gameId || '')) + '&returnTo=' + encodeURIComponent(returnTo) + '&nav=all';
         return;
       }
 

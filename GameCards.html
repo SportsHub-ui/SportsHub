@@ -1110,13 +1110,13 @@
   <!-- Game Detail Modal -->
   <div id="gameModal" class="modal-overlay" onclick="closeModal(event)">
     <div class="modal-content" onclick="event.stopPropagation()">
-      <span class="close-modal-btn" onclick="document.getElementById('gameModal').style.display='none'">&times;</span>
+      <span class="close-modal-btn" onclick="closeModal(event)">&times;</span>
       <div id="modalBody">
         <!-- Content injected by JavaScript -->
       </div>
       <button
         style="width:100%; margin-top:20px; padding:10px; background:var(--navy); color:white; border:none; border-radius:4px; cursor:pointer; font-family:'Oswald';"
-        onclick="document.getElementById('gameModal').style.display='none'">CLOSE</button>
+        onclick="closeModal(event)">CLOSE</button>
     </div>
   </div>
 
@@ -1277,14 +1277,76 @@
     };
 
     let currentViewDate = new Date();
+    let pendingOpenGameId = '';
+    let returnToUrl = '';
+    let forcedNavKey = '';
+
+    function getInitialViewFromQuery() {
+      var dateValue = '';
+      var gameIdValue = '';
+      var returnToValue = '';
+      var navValue = '';
+      try {
+        if (typeof URLSearchParams !== 'undefined') {
+          var params = new URLSearchParams(window.location.search || '');
+          dateValue = params.get('date') || '';
+          gameIdValue = params.get('gameId') || params.get('game') || '';
+          returnToValue = params.get('returnTo') || '';
+          navValue = params.get('nav') || '';
+        }
+      } catch (err) {
+        dateValue = '';
+        gameIdValue = '';
+        returnToValue = '';
+        navValue = '';
+      }
+
+      if (!dateValue || !/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+        dateValue = toLocalIso(new Date());
+      }
+
+      return {
+        date: dateValue,
+        gameId: String(gameIdValue || '').trim(),
+        returnTo: String(returnToValue || '').trim(),
+        nav: String(navValue || '').trim().toLowerCase()
+      };
+    }
+
+    function tryOpenRequestedGameModal() {
+      if (!pendingOpenGameId || !Array.isArray(currentGamesData) || !currentGamesData.length) {
+        return;
+      }
+
+      for (var i = 0; i < currentGamesData.length; i++) {
+        if (String(currentGamesData[i] && currentGamesData[i].gameId || '') === pendingOpenGameId) {
+          showGameDetails(i);
+          pendingOpenGameId = '';
+          return;
+        }
+      }
+    }
 
     window.onload = function () {
-      MLBClient.renderSiteNav('games', 'siteNav');
-      const today = toLocalIso(new Date());
-      document.getElementById('dateInput').value = today;
+      var initial = getInitialViewFromQuery();
+      pendingOpenGameId = initial.gameId;
+      returnToUrl = initial.returnTo;
+      forcedNavKey = initial.nav;
+
+      var navKey = 'games';
+      if (forcedNavKey === 'all') {
+        navKey = 'all';
+      } else if (returnToUrl && /sport=all/i.test(returnToUrl)) {
+        navKey = 'all';
+      }
+      MLBClient.renderSiteNav(navKey, 'siteNav');
+
+      document.getElementById('dateInput').value = initial.date;
       syncTeamPickerLabel();
       previewSelectedDate();
-      loadDashboard();
+      loadDashboard(initial.date).then(function () {
+        tryOpenRequestedGameModal();
+      });
       startAutoRefresh();
       updateAutoRefreshButton();
     };
@@ -2274,7 +2336,17 @@
 
     // Close modal when clicking outside the box
     function closeModal(event) {
-      document.getElementById('gameModal').style.display = 'none';
+      var modal = document.getElementById('gameModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+      if (returnToUrl) {
+        window.location.href = returnToUrl;
+        return;
+      }
+      if (forcedNavKey === 'all') {
+        window.location.href = 'LeagueCards.html?sport=all';
+      }
     }
   </script>
 </body>
