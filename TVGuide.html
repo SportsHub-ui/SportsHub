@@ -824,7 +824,7 @@
                 html += '      <li class="pga-upcoming-item">';
                 html += '        <div class="pga-upcoming-name">' + escapeHtml(t.name || 'PGA Tournament') + '</div>';
                 html += '        <div class="pga-upcoming-meta">' + escapeHtml(t.date || 'TBD') + ' | ' + escapeHtml(t.status || 'Scheduled') + '</div>';
-                html += '        <div class="pga-upcoming-meta">' + escapeHtml(t.venue || 'TBD Venue') + (t.location ? (' - ' + escapeHtml(t.location)) : '') + '</div>';
+                html += '        <div class="pga-upcoming-meta">Network: ' + escapeHtml(t.network || 'TBD') + '</div>';
                 html += '      </li>';
               }
               html += '    </ul>';
@@ -855,7 +855,7 @@
           html += '  <div class="pga-header">';
           html += '    <div class="pga-kicker">PGA Results</div>';
           html += '    <h2 class="pga-title">Leaderboard - ' + (data.eventName || 'Latest Tournament') + '</h2>';
-          html += '    <div class="pga-meta">' + (data.eventDate || '') + (data.status ? (' | ' + data.status) : '') + '</div>';
+          html += '    <div class="pga-meta">' + (data.eventDate || '') + (data.status ? (' | ' + data.status) : '') + (data.broadcast ? (' | Network: ' + escapeHtml(data.broadcast)) : '') + '</div>';
           html += '  </div>';
           html += '  <div class="pga-table-card">';
           html += '    <table class="pga-table">';

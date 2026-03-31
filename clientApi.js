@@ -1901,6 +1901,41 @@
       }
 
       const comp = completed.competitions[0] || {};
+      const broadcastCandidates = [];
+      const normalizedBroadcasts = normalizeBroadcasts(comp.broadcasts);
+      for (let bi = 0; bi < normalizedBroadcasts.length; bi += 1) {
+        if (normalizedBroadcasts[bi]) {
+          broadcastCandidates.push(normalizedBroadcasts[bi]);
+        }
+      }
+      if (comp && comp.broadcast) {
+        broadcastCandidates.push(String(comp.broadcast));
+      }
+      if (Array.isArray(comp && comp.geoBroadcasts)) {
+        comp.geoBroadcasts.forEach(function (gb) {
+          const mediaName = gb && gb.media ? gb.media.shortName || gb.media.name || "" : "";
+          if (mediaName) {
+            broadcastCandidates.push(String(mediaName));
+          }
+        });
+      }
+      const seenBroadcasts = {};
+      const broadcastNetwork = broadcastCandidates
+        .join(",")
+        .split(/[\/,]+/)
+        .map(function (part) { return String(part || "").trim(); })
+        .filter(function (part) {
+          if (!part) {
+            return false;
+          }
+          const key = part.toLowerCase();
+          if (seenBroadcasts[key]) {
+            return false;
+          }
+          seenBroadcasts[key] = true;
+          return true;
+        })
+        .join(", ");
       const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
       if (!competitors.length) {
         continue;
@@ -2023,6 +2058,7 @@
         status: completed.status && completed.status.type && completed.status.type.description
           ? completed.status.type.description
           : "Final",
+        broadcast: broadcastNetwork || "TBD",
         leaderboard: leaderboard
       };
     }
@@ -2031,6 +2067,7 @@
       eventName: "Latest PGA Tournament",
       eventDate: "",
       status: "Unavailable",
+      broadcast: "TBD",
       leaderboard: []
     };
   }
@@ -2047,16 +2084,29 @@
 
   async function getPgaUpcomingTournaments(limitCount) {
     const limit = Number(limitCount) > 0 ? Number(limitCount) : 8;
-    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+
+    const start = new Date();
+    const end = new Date(start.getTime());
+    end.setDate(start.getDate() + 180);
+    const startKey = toIsoDate(start).replace(/-/g, "");
+    const endKey = toIsoDate(end).replace(/-/g, "");
+    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=" + startKey + "-" + endKey;
     const payload = await fetchJsonCached(url, 600000);
     const events = Array.isArray(payload && payload.events) ? payload.events : [];
     const now = Date.now();
 
+    const uniqueById = {};
     const upcoming = events
       .filter(function (event) {
+        const id = event && event.id ? String(event.id) : "";
+        if (!id || uniqueById[id]) {
+          return false;
+        }
+        uniqueById[id] = true;
+
         const state = event && event.status && event.status.type ? String(event.status.type.state || "") : "";
         const eventTime = event && event.date ? new Date(event.date).getTime() : 0;
-        return state === "pre" && eventTime >= now - 86400000;
+        return (state === "pre" || state === "created") && eventTime >= now - 86400000;
       })
       .sort(function (a, b) {
         const ta = a && a.date ? new Date(a.date).getTime() : 0;
@@ -2066,11 +2116,42 @@
       .slice(0, limit)
       .map(function (event) {
         const comp = event && Array.isArray(event.competitions) && event.competitions[0] ? event.competitions[0] : {};
-        const venue = comp && comp.venue && comp.venue.fullName ? comp.venue.fullName : (event && event.venue && event.venue.fullName ? event.venue.fullName : "TBD Venue");
-        const city = comp && comp.venue && comp.venue.address && comp.venue.address.city ? comp.venue.address.city : "";
-        const state = comp && comp.venue && comp.venue.address && comp.venue.address.state ? comp.venue.address.state : "";
-        const country = comp && comp.venue && comp.venue.address && comp.venue.address.country ? comp.venue.address.country : "";
-        const location = [city, state, country].filter(Boolean).join(", ");
+        const broadcastCandidates = [];
+        const normalizedBroadcasts = normalizeBroadcasts(comp.broadcasts);
+        for (let bi = 0; bi < normalizedBroadcasts.length; bi += 1) {
+          if (normalizedBroadcasts[bi]) {
+            broadcastCandidates.push(normalizedBroadcasts[bi]);
+          }
+        }
+        if (comp && comp.broadcast) {
+          broadcastCandidates.push(String(comp.broadcast));
+        }
+        if (Array.isArray(comp && comp.geoBroadcasts)) {
+          comp.geoBroadcasts.forEach(function (gb) {
+            const mediaName = gb && gb.media ? gb.media.shortName || gb.media.name || "" : "";
+            if (mediaName) {
+              broadcastCandidates.push(String(mediaName));
+            }
+          });
+        }
+        const seenBroadcasts = {};
+        const broadcastNetwork = broadcastCandidates
+          .join(",")
+          .split(/[\/,]+/)
+          .map(function (part) { return String(part || "").trim(); })
+          .filter(function (part) {
+            if (!part) {
+              return false;
+            }
+            const key = part.toLowerCase();
+            if (seenBroadcasts[key]) {
+              return false;
+            }
+            seenBroadcasts[key] = true;
+            return true;
+          })
+          .join(", ");
+        const eventName = event && (event.shortName || event.name) ? String(event.shortName || event.name) : "PGA Tournament";
         const start = event && event.date ? new Date(event.date) : null;
         const dateLabel = start && !Number.isNaN(start.getTime())
           ? start.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })
@@ -2078,11 +2159,10 @@
 
         return {
           id: event && event.id ? String(event.id) : "",
-          name: event && (event.shortName || event.name) ? String(event.shortName || event.name) : "PGA Tournament",
+          name: eventName,
           date: dateLabel,
           status: event && event.status && event.status.type && event.status.type.description ? String(event.status.type.description) : "Scheduled",
-          venue: venue,
-          location: location
+          network: broadcastNetwork || "TBD"
         };
       });
 
