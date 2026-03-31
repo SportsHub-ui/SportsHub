@@ -1942,11 +1942,42 @@
 
           const statistics = Array.isArray(c && c.statistics) ? c.statistics : [];
           const earnings = (function () {
+            function normalizeMoney(value) {
+              if (value === undefined || value === null || value === "") {
+                return "";
+              }
+              var text = String(value).trim();
+              if (!text) {
+                return "";
+              }
+              if (text.indexOf("$") >= 0) {
+                return text;
+              }
+              var num = Number(text.replace(/,/g, ""));
+              if (!Number.isNaN(num) && num > 0) {
+                return "$" + Math.round(num).toLocaleString("en-US");
+              }
+              return text;
+            }
+
             var stat = statistics.find(function (s) {
-              var n = s && s.name ? String(s.name).toLowerCase() : "";
-              return n.indexOf("earn") >= 0;
+              var label = [s && s.name, s && s.displayName, s && s.shortDisplayName, s && s.abbreviation]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+              var display = s && s.displayValue ? String(s.displayValue) : "";
+              return /earn|prize|money|purse|winnings|pay/.test(label) || display.indexOf("$") >= 0;
             });
-            return stat && stat.displayValue ? String(stat.displayValue) : "";
+
+            if (stat) {
+              return normalizeMoney(stat.displayValue || stat.value);
+            }
+
+            if (c && c.earnings !== undefined && c.earnings !== null && c.earnings !== "") {
+              return normalizeMoney(c.earnings);
+            }
+
+            return "";
           }());
 
           return {
