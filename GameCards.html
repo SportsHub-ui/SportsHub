@@ -44,18 +44,67 @@
       position: relative;
     }
 
+    .picker-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% - 24px);
+      text-align: center;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #333;
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 2;
+    }
+
+    .picker-container::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      top: 2px;
+      bottom: 2px;
+      width: 22px;
+      background: #ffffff;
+      border-radius: 0 3px 3px 0;
+      pointer-events: none;
+    }
+
     #teamPicker {
-      padding: 5px 10px;
+      height: 34px;
+      padding: 0 12px;
       border-radius: 4px;
       border: 2px solid var(--gold);
       font-family: 'Oswald', sans-serif;
-      background: white;
+      background: #ffffff !important;
+      background-image: none !important;
       color: #333;
       font-weight: bold;
       min-width: 170px;
       font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      color: transparent;
+      text-shadow: 0 0 0 transparent;
+      box-sizing: border-box;
+    }
+
+    #teamPicker option {
+      color: #111;
+      text-shadow: none;
+    }
+
+    #teamPicker::-ms-expand {
+      display: none;
     }
 
     #saveStatus {
@@ -67,21 +116,25 @@
     }
 
     .nav-btn {
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 5px 10px;
+      background: #173f77;
+      color: #fff;
+      border: 1px solid #102d56;
+      width: 42px;
+      height: 34px;
       border-radius: 4px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 1.1rem;
+      font-weight: 700;
+      font-size: 1rem;
       line-height: 1;
-      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
     .nav-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: white;
+      background: #245ca6;
+      border-color: #173f77;
     }
 
     .refresh-btn,
@@ -90,13 +143,19 @@
       color: var(--navy);
       border: 1px solid #cbd7e4;
       border-radius: 4px;
-      padding: 4px 10px;
+      min-width: 96px;
+      height: 34px;
+      padding: 0 12px;
       font-family: 'Oswald', sans-serif;
       font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
       transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
 
@@ -219,6 +278,37 @@
       align-items: center;
       margin-bottom: 10px;
       min-height: 30px;
+      gap: 8px;
+    }
+
+    .situation-host {
+      display: inline-flex;
+      align-items: center;
+      margin-left: auto;
+      min-width: 0;
+    }
+
+    .game-fav-btn {
+      border: 1px solid #d2dce7;
+      background: #fff;
+      color: #7f8b9b;
+      border-radius: 999px;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    .game-fav-btn.is-on {
+      border-color: #f2c15e;
+      background: #fff3dc;
+      color: #a56900;
     }
 
     .inning-badge {
@@ -402,6 +492,10 @@
 
       #teamPicker {
         min-width: 130px;
+        font-size: 0.72rem;
+      }
+
+      .picker-label {
         font-size: 0.72rem;
       }
 
@@ -1027,8 +1121,7 @@
   </div>
 
   <div class="settings-bar" id="settingsBar">
-    <button class="nav-btn" onclick="changeDate(-1)">◄</button>
-
+    <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
     <div class="picker-container">
       <select id="teamPicker" onchange="updateFavTeam()">
         <option value="" disabled selected>-- Select Your Team --</option>
@@ -1075,22 +1168,22 @@
           <option value="San Francisco Giants">San Francisco Giants</option>
         </optgroup>
       </select>
+      <span id="teamPickerLabel" class="picker-label">-- Select Your Team --</span>
       <span id="saveStatus">SAVING...</span>
     </div>
-
-    <button class="nav-btn" onclick="changeDate(1)">►</button>
+    <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
   </div>
 
   <div class="container">
     <div class="header-row">
-      <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
+      <button class="nav-btn" onclick="changeDate(-1)">◄</button>
       <!-- Date Picker wrapped in a styled display container -->
       <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
       </div>
-      <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
+      <button class="nav-btn" onclick="changeDate(1)">►</button>
     </div>
     <div id="refreshHint" class="refresh-hint"></div>
 
@@ -1110,6 +1203,65 @@
     let nextAutoRefreshAt = 0;
     let refreshInFlight = false;
     const LIVE_REFRESH_MS = 30000;
+    const FAVORITE_GAMES_KEY = 'MY_FAV_GAMES_MLB';
+
+    function readFavoriteGameMap() {
+      var raw = localStorage.getItem(FAVORITE_GAMES_KEY);
+      if (!raw) {
+        return {};
+      }
+      try {
+        var parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+          return {};
+        }
+        var map = {};
+        parsed.forEach(function (id) {
+          var key = String(id || '').trim();
+          if (key) {
+            map[key] = true;
+          }
+        });
+        return map;
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function writeFavoriteGameMap(map) {
+      var ids = Object.keys(map || {}).filter(function (id) { return !!map[id]; });
+      localStorage.setItem(FAVORITE_GAMES_KEY, JSON.stringify(ids));
+    }
+
+    function isFavoriteGame(gameId) {
+      var key = String(gameId || '').trim();
+      if (!key) {
+        return false;
+      }
+      var map = readFavoriteGameMap();
+      return !!map[key];
+    }
+
+    function toggleGameFavorite(gameId) {
+      var key = String(gameId || '').trim();
+      if (!key) {
+        return;
+      }
+      var map = readFavoriteGameMap();
+      map[key] = !map[key];
+      if (!map[key]) {
+        delete map[key];
+      }
+      writeFavoriteGameMap(map);
+
+      if (currentGamesData && currentGamesData.length) {
+        renderDashboard({
+          myTeam: document.getElementById('teamPicker').value,
+          currentDateIso: toLocalIso(currentViewDate),
+          games: currentGamesData
+        }, { patchOnly: false });
+      }
+    }
 
     var teamColors = {
       "Arizona Diamondbacks": "#A71930", "Atlanta Braves": "#CE1141", "Baltimore Orioles": "#DF4601",
@@ -1130,11 +1282,26 @@
       MLBClient.renderSiteNav('games', 'siteNav');
       const today = toLocalIso(new Date());
       document.getElementById('dateInput').value = today;
+      syncTeamPickerLabel();
       previewSelectedDate();
       loadDashboard();
       startAutoRefresh();
       updateAutoRefreshButton();
     };
+
+    function syncTeamPickerLabel() {
+      var picker = document.getElementById('teamPicker');
+      var label = document.getElementById('teamPickerLabel');
+      if (!picker || !label) {
+        return;
+      }
+
+      var text = '-- Select Your Team --';
+      if (picker.selectedIndex >= 0 && picker.options[picker.selectedIndex]) {
+        text = picker.options[picker.selectedIndex].text || text;
+      }
+      label.textContent = text;
+    }
 
     function loadDashboard(targetDateStr = null, options) {
       var opts = options || {};
@@ -1365,7 +1532,7 @@
     }
 
     function buildCardHtml(g, index) {
-      var isFav = (g.fav === 0);
+      var isFav = (g.fav === 0) || isFavoriteGame(g.gameId);
       var isInProgress = gameIsLive(g) && g.liveText !== 'WARMUP';
       var isWarmup = (g.liveText === 'WARMUP');
       var isPreview = (g.status === 'Preview' || g.status === 'Created');
@@ -1374,6 +1541,7 @@
       html += '<div class="status-line">';
       html += '  <span class="inning-badge ' + (isInProgress ? 'live-badge' : '') + '" data-field="liveText">' + g.liveText + '</span>';
       html += '  <span class="situation-host">' + ((isInProgress || isWarmup) ? renderSituation(g) : '') + '</span>';
+      html += '  <button class="game-fav-btn ' + (isFav ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + g.gameId + '\')">' + (isFav ? '★' : '☆') + '</button>';
       html += '</div>';
       html += renderTeamRow(g.awayId, g.away, g.awayRecord, g.awayScore, isPreview, 'away');
       html += renderTeamRow(g.homeId, g.home, g.homeRecord, g.homeScore, isPreview, 'home');
@@ -1384,11 +1552,12 @@
     }
 
     function applyGameToCard(card, g, index, previousGame) {
+      var isFav = (g.fav === 0) || isFavoriteGame(g.gameId);
       var isPreview = (g.status === 'Preview' || g.status === 'Created');
       var isLiveNow = gameIsLive(g) && g.liveText !== 'WARMUP';
       var isWarmup = (g.liveText === 'WARMUP');
 
-      card.classList.toggle('fav-card', g.fav === 0);
+      card.classList.toggle('fav-card', isFav);
       card.setAttribute('onclick', 'showGameDetails(' + index + ')');
 
       var liveEl = card.querySelector('[data-field="liveText"]');
@@ -1431,6 +1600,12 @@
           situationHost.innerHTML = nextSituation;
         }
       }
+
+      var gameFavBtn = card.querySelector('[data-field="gameFavBtn"]');
+      if (gameFavBtn) {
+        gameFavBtn.classList.toggle('is-on', isFav);
+        gameFavBtn.textContent = isFav ? '★' : '☆';
+      }
     }
 
     function renderDashboard(data, options) {
@@ -1449,6 +1624,7 @@
       document.getElementById('settingsBar').style.backgroundColor = teamColor;
       document.documentElement.style.setProperty('--navy', teamColor);
       document.getElementById('teamPicker').value = data.myTeam;
+      syncTeamPickerLabel();
 
       var grid = document.getElementById('gameGrid');
       if (!data.games || data.games.length === 0) {
@@ -1574,6 +1750,7 @@
 
     function updateFavTeam() {
       var team = document.getElementById('teamPicker').value;
+      syncTeamPickerLabel();
       var status = document.getElementById('saveStatus');
       status.style.visibility = 'visible';
       status.innerText = "SAVING...";

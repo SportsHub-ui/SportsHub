@@ -35,21 +35,25 @@
     }
 
     .nav-btn {
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 5px 10px;
+      background: #173f77;
+      color: #fff;
+      border: 1px solid #102d56;
+      width: 42px;
+      height: 34px;
       border-radius: 4px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 1.1rem;
+      font-weight: 700;
+      font-size: 1rem;
       line-height: 1;
-      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
     .nav-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: white;
+      background: #245ca6;
+      border-color: #173f77;
     }
 
     .refresh-btn,
@@ -58,13 +62,19 @@
       color: var(--navy);
       border: 1px solid #cbd7e4;
       border-radius: 4px;
-      padding: 4px 10px;
+      min-width: 96px;
+      height: 34px;
+      padding: 0 12px;
       font-family: 'Oswald', sans-serif;
       font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
       transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
 
@@ -101,18 +111,85 @@
       position: relative;
     }
 
+    .picker-label {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: calc(100% - 24px);
+      text-align: center;
+      font-family: 'Oswald', sans-serif;
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      color: #333;
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 2;
+    }
+
+    .picker-container::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      top: 2px;
+      bottom: 2px;
+      width: 22px;
+      background: #ffffff;
+      border-radius: 0 3px 3px 0;
+      pointer-events: none;
+    }
+
     #teamPicker {
-      padding: 5px 10px;
+      height: 34px;
+      padding: 0 12px;
       border-radius: 4px;
       border: 2px solid var(--accent);
       font-family: 'Oswald', sans-serif;
-      background: white;
+      background: #ffffff !important;
+      background-image: none !important;
       color: #333;
       font-weight: bold;
       min-width: 170px;
       font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      color: transparent;
+      text-shadow: 0 0 0 transparent;
+      box-sizing: border-box;
+    }
+
+    #teamPicker option {
+      color: #111;
+      text-shadow: none;
+    }
+
+    #teamPicker::-ms-expand {
+      display: none;
+    }
+
+    .favorites-legend {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-width: 170px;
+      height: 34px;
+      padding: 0 12px;
+      border-radius: 4px;
+      border: 2px solid var(--accent);
+      background: #fff;
+      color: #333;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      box-sizing: border-box;
     }
 
     .header-title {
@@ -191,6 +268,33 @@
       gap: 14px;
     }
 
+    .league-section {
+      grid-column: 1 / -1;
+      display: block;
+    }
+
+    .league-section-head {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 2px 0 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: #15345d;
+      background: #e8eff7;
+      border: 1px solid #cfdced;
+    }
+
+    .league-section-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+    }
+
     .card {
       background: #fff;
       border-radius: 12px;
@@ -214,6 +318,12 @@
       box-shadow: 0 6px 14px rgba(255, 159, 28, 0.2);
     }
 
+    .card.my-team-card {
+      border-color: rgba(20, 122, 92, 0.5);
+      box-shadow: 0 7px 16px rgba(20, 122, 92, 0.2);
+      background: linear-gradient(180deg, rgba(234, 251, 244, 0.55) 0%, #fff 34%);
+    }
+
     .card-head {
       display: flex;
       justify-content: space-between;
@@ -221,6 +331,19 @@
       padding: 10px 12px;
       border-bottom: 1px solid #e8edf3;
       background: #f8fbff;
+      gap: 8px;
+    }
+
+    .card-head-left,
+    .card-head-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .card-head-right {
+      margin-left: auto;
     }
 
     .status-pill {
@@ -248,6 +371,45 @@
       font-family: 'Roboto Mono', monospace;
       font-size: 0.72rem;
       color: #5f6e82;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+    }
+
+    .league-pill {
+      font-size: 0.62rem;
+      background: #eef3fa;
+      color: #35506f;
+      border: 1px solid #d5dfeb;
+      padding: 2px 6px;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .game-fav-btn {
+      border: 1px solid #d2dce7;
+      background: #fff;
+      color: #7f8b9b;
+      border-radius: 999px;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      font-size: 0.9rem;
+      cursor: pointer;
+      padding: 0;
+      flex: 0 0 auto;
+    }
+
+    .game-fav-btn.is-on {
+      border-color: #f2c15e;
+      background: #fff3dc;
+      color: #a56900;
     }
 
     .fav-pill {
@@ -787,6 +949,15 @@
         font-size: 0.72rem;
       }
 
+      .picker-label {
+        font-size: 0.72rem;
+      }
+
+      .favorites-legend {
+        min-width: 130px;
+        font-size: 0.72rem;
+      }
+
       #dateDisplay {
         font-size: 0.82rem;
       }
@@ -817,24 +988,26 @@
 <body>
   <div id="siteNav"></div>
   <div class="settings-bar" id="headerBar">
-    <button class="nav-btn" onclick="changeDate(-1)">◄</button>
-    <div class="picker-container">
+    <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
+    <div class="picker-container" id="teamPickerHost">
       <select id="teamPicker" onchange="applyFavoriteTeamChange()">
         <option value="">My Team (Optional)</option>
       </select>
+      <span id="teamPickerLabel" class="picker-label">My Team (Optional)</span>
     </div>
-    <button class="nav-btn" onclick="changeDate(1)">►</button>
+    <div id="favoritesLegend" class="favorites-legend">★ = Favorites</div>
+    <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
   </div>
 
   <div class="container">
     <div class="header-row">
-      <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
+      <button class="nav-btn" onclick="changeDate(-1)">◄</button>
       <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
       </div>
-      <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
+      <button class="nav-btn" onclick="changeDate(1)">►</button>
     </div>
     <div id="refreshHint" class="refresh-hint"></div>
 
@@ -856,6 +1029,8 @@
   <script src="clientApi.js"></script>
   <script>
     var sportConfig = {
+      all: { title: 'Favorite Games', color: '#0a356f' },
+      mlb: { title: 'MLB Scoreboard', color: '#0046ad' },
       nfl: { title: 'NFL Scoreboard', color: '#013369' },
       nba: { title: 'NBA Scoreboard', color: '#ef420a' }
     };
@@ -880,7 +1055,8 @@
         'Oklahoma City Thunder', 'Orlando Magic', 'Philadelphia 76ers', 'Phoenix Suns',
         'Portland Trail Blazers', 'Sacramento Kings', 'San Antonio Spurs', 'Toronto Raptors',
         'Utah Jazz', 'Washington Wizards'
-      ]
+      ],
+      mlb: []
     };
 
     var nbaTeamColors = {
@@ -961,21 +1137,151 @@
     var refreshInFlight = false;
     var LIVE_REFRESH_MS = 30000;
 
+    function supportsTeamPickerSport() {
+      return currentSport === 'mlb' || currentSport === 'nfl' || currentSport === 'nba';
+    }
+
     function favoriteStorageKey() {
+      if (!supportsTeamPickerSport()) {
+        return '';
+      }
       return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
     }
 
     function getFavoriteLeagueTeam() {
-      return localStorage.getItem(favoriteStorageKey()) || '';
+      var key = favoriteStorageKey();
+      if (!key) {
+        return '';
+      }
+      return localStorage.getItem(key) || '';
+    }
+
+    function getFavoriteTeamMapForAll() {
+      var mlbTeam = localStorage.getItem('MY_FAV_MLB_TEAM') || localStorage.getItem('MY_FAV_TEAM') || '';
+      return {
+        mlb: mlbTeam,
+        nfl: localStorage.getItem('MY_FAV_NFL_TEAM') || '',
+        nba: localStorage.getItem('MY_FAV_NBA_TEAM') || ''
+      };
+    }
+
+    function getFavoriteContext() {
+      if (currentSport === 'all') {
+        return {
+          mode: 'all',
+          teams: getFavoriteTeamMapForAll()
+        };
+      }
+
+      return {
+        mode: 'single',
+        team: getFavoriteLeagueTeam()
+      };
+    }
+
+    function isFavoriteTeamGame(g, favoriteContext) {
+      var awayName = g && g.away && g.away.name ? String(g.away.name) : '';
+      var homeName = g && g.home && g.home.name ? String(g.home.name) : '';
+
+      if (!favoriteContext) {
+        return false;
+      }
+
+      if (favoriteContext.mode === 'all') {
+        var sport = String(g && g.leagueKey ? g.leagueKey : '').toLowerCase();
+        var team = favoriteContext.teams && favoriteContext.teams[sport] ? String(favoriteContext.teams[sport]) : '';
+        return !!team && (awayName === team || homeName === team);
+      }
+
+      var favoriteTeam = favoriteContext.team ? String(favoriteContext.team) : '';
+      return !!favoriteTeam && (awayName === favoriteTeam || homeName === favoriteTeam);
+    }
+
+    function gamePriorityBucket(g, favoriteContext) {
+      if (isFavoriteTeamGame(g, favoriteContext)) {
+        return 0;
+      }
+
+      var state = String(g && g.statusState ? g.statusState : '').toLowerCase();
+      if (state === 'in') {
+        return 1;
+      }
+      if (state === 'pre') {
+        return 2;
+      }
+      return 3;
     }
 
     function setFavoriteLeagueTeam(teamName) {
-      if (!teamName) {
-        localStorage.removeItem(favoriteStorageKey());
+      var key = favoriteStorageKey();
+      if (!key) {
         return '';
       }
-      localStorage.setItem(favoriteStorageKey(), teamName);
+      if (!teamName) {
+        localStorage.removeItem(key);
+        return '';
+      }
+      localStorage.setItem(key, teamName);
       return teamName;
+    }
+
+    function gameFavoriteStorageKey(sportKey) {
+      return 'MY_FAV_GAMES_' + String(sportKey || '').toUpperCase();
+    }
+
+    function readFavoriteGameIdMap(sportKey) {
+      var raw = localStorage.getItem(gameFavoriteStorageKey(sportKey));
+      if (!raw) {
+        return {};
+      }
+      try {
+        var parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) {
+          return {};
+        }
+        var map = {};
+        parsed.forEach(function (id) {
+          var key = String(id || '').trim();
+          if (key) {
+            map[key] = true;
+          }
+        });
+        return map;
+      } catch (err) {
+        return {};
+      }
+    }
+
+    function writeFavoriteGameIdMap(sportKey, map) {
+      var ids = Object.keys(map || {}).filter(function (id) { return !!map[id]; });
+      localStorage.setItem(gameFavoriteStorageKey(sportKey), JSON.stringify(ids));
+    }
+
+    function isFavoriteGameById(sportKey, gameId) {
+      var key = String(gameId || '').trim();
+      if (!key) {
+        return false;
+      }
+      var map = readFavoriteGameIdMap(sportKey);
+      return !!map[key];
+    }
+
+    function toggleGameFavorite(gameId, sportKey) {
+      var sport = String(sportKey || '').toLowerCase();
+      var id = String(gameId || '').trim();
+      if (!sport || !id) {
+        return;
+      }
+      var map = readFavoriteGameIdMap(sport);
+      map[id] = !map[id];
+      if (!map[id]) {
+        delete map[id];
+      }
+      writeFavoriteGameIdMap(sport, map);
+
+      if (lastPayload) {
+        renderGames(lastPayload, { patchOnly: false });
+      }
     }
 
     function toIso(date) {
@@ -1002,6 +1308,16 @@
       document.documentElement.style.setProperty('--navy', color);
       document.getElementById('headerBar').style.background = color;
       MLBClient.renderSiteNav(currentSport, 'siteNav');
+
+      var pickerHost = document.getElementById('teamPickerHost');
+      var favoritesLegend = document.getElementById('favoritesLegend');
+      var showPicker = supportsTeamPickerSport();
+      if (pickerHost) {
+        pickerHost.style.display = showPicker ? 'flex' : 'none';
+      }
+      if (favoritesLegend) {
+        favoritesLegend.style.display = showPicker ? 'none' : 'inline-flex';
+      }
     }
 
     function updateDateDisplay() {
@@ -1042,6 +1358,9 @@
     }
 
     function syncTeamPicker(games) {
+      if (!supportsTeamPickerSport()) {
+        return;
+      }
       var picker = document.getElementById('teamPicker');
       var currentFavorite = getFavoriteLeagueTeam();
       var teams = [];
@@ -1079,14 +1398,47 @@
       });
       picker.innerHTML = html;
       picker.value = currentFavorite;
+      syncTeamPickerLabel();
+    }
+
+    function syncTeamPickerLabel() {
+      var picker = document.getElementById('teamPicker');
+      var label = document.getElementById('teamPickerLabel');
+      if (!picker || !label) {
+        return;
+      }
+
+      var text = 'My Team (Optional)';
+      if (picker.selectedIndex >= 0 && picker.options[picker.selectedIndex]) {
+        text = picker.options[picker.selectedIndex].text || text;
+      }
+      label.textContent = text;
     }
 
     function sortGamesByFavorite(games) {
-      var favorite = getFavoriteLeagueTeam();
+      var favoriteContext = getFavoriteContext();
+
+      if (currentSport === 'all') {
+        return (games || []).slice().sort(function (a, b) {
+          var aBucket = gamePriorityBucket(a, favoriteContext);
+          var bBucket = gamePriorityBucket(b, favoriteContext);
+          if (aBucket !== bBucket) {
+            return aBucket - bBucket;
+          }
+
+          var at = new Date(a.startTime).getTime();
+          var bt = new Date(b.startTime).getTime();
+          if (at !== bt) {
+            return at - bt;
+          }
+          return String(a.leagueKey || '').localeCompare(String(b.leagueKey || ''));
+        });
+      }
+
       var sorted = (games || []).slice();
       sorted.sort(function (a, b) {
-        var aFav = favorite && (a.away.name === favorite || a.home.name === favorite) ? 0 : 1;
-        var bFav = favorite && (b.away.name === favorite || b.home.name === favorite) ? 0 : 1;
+        var aFav = isFavoriteTeamGame(a, favoriteContext) ? 0 : 1;
+        var bFav = isFavoriteTeamGame(b, favoriteContext) ? 0 : 1;
         if (aFav !== bFav) {
           return aFav - bFav;
         }
@@ -1095,8 +1447,32 @@
       return sorted;
     }
 
+    function sortLeagueSectionGames(games, favoriteContext) {
+      return (games || []).slice().sort(function (a, b) {
+        var aBucket = gamePriorityBucket(a, favoriteContext);
+        var bBucket = gamePriorityBucket(b, favoriteContext);
+        if (aBucket !== bBucket) {
+          return aBucket - bBucket;
+        }
+
+        var at = new Date(a.startTime).getTime();
+        var bt = new Date(b.startTime).getTime();
+        if (at !== bt) {
+          return at - bt;
+        }
+        return String(a.id || '').localeCompare(String(b.id || ''));
+      });
+    }
+
     function gameKey(g) {
-      return String(g && g.id ? g.id : '');
+      var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
+      var id = String(g && g.id ? g.id : '');
+      return sport + ':' + id;
+    }
+
+    function canOpenDetailsForGame(g) {
+      var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
+      return sport === 'nfl' || sport === 'nba';
     }
 
     function updateAutoRefreshButton() {
@@ -1241,19 +1617,39 @@
       }
     }
 
-    function buildLeagueCardHtml(g, favorite, canOpenDetail, index) {
+    function buildLeagueCardHtml(g, favoriteContext, index) {
       var localTime = new Date(g.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-      var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
+      var isTeamFavoriteGame = isFavoriteTeamGame(g, favoriteContext);
+      var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
+      var isFavoriteGame = isFavoriteGameById(sport, g.id);
+      var canOpenDetail = canOpenDetailsForGame(g);
       var clickableClass = canOpenDetail ? ' is-clickable' : '';
-      var clickAttr = canOpenDetail ? ' onclick="openGameDetailModal(\'' + g.id + '\')"' : '';
+      var clickAttr = canOpenDetail ? ' onclick="openGameDetailModal(\'' + g.id + '\',\'' + sport + '\')"' : '';
 
-      var html = '<article class="card ' + (isFavoriteGame ? 'fav-card' : '') + clickableClass + '" data-game-id="' + g.id + '" data-game-index="' + index + '"' + clickAttr + '>';
+      var cardClasses = 'card';
+      if (isFavoriteGame || isTeamFavoriteGame) {
+        cardClasses += ' fav-card';
+      }
+      if (isTeamFavoriteGame) {
+        cardClasses += ' my-team-card';
+      }
+      cardClasses += clickableClass;
+
+      var html = '<article class="' + cardClasses + '" data-game-id="' + gameKey(g) + '" data-game-index="' + index + '"' + clickAttr + '>';
       html += '<div class="card-head">';
+      html += '<div class="card-head-left">';
       html += '<span class="status-pill ' + statusClass(g.statusState) + '" data-field="statusShort">' + (g.statusShort || 'Scheduled') + '</span>';
-      if (isFavoriteGame) {
+      if (currentSport === 'all') {
+        html += '<span class="league-pill" data-field="leagueLabel">' + (g.leagueLabel || sport.toUpperCase()) + '</span>';
+      }
+      if (isTeamFavoriteGame) {
         html += '<span class="fav-pill" data-field="favPill">My Team</span>';
       }
+      html += '</div>';
+      html += '<div class="card-head-right">';
+      html += '<button class="game-fav-btn ' + (isFavoriteGame ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + String(g.id) + '\',\'' + sport + '\')">' + (isFavoriteGame ? '★' : '☆') + '</button>';
       html += '<span class="network" data-field="network">' + (g.network || 'N/A') + '</span>';
+      html += '</div>';
       html += '</div>';
 
       html += '<div class="rows">';
@@ -1273,14 +1669,18 @@
       return html;
     }
 
-    function applyLeagueGameToCard(card, g, favorite, canOpenDetail, previousGame, index) {
-      var isFavoriteGame = favorite && (g.away.name === favorite || g.home.name === favorite);
-      card.classList.toggle('fav-card', !!isFavoriteGame);
+    function applyLeagueGameToCard(card, g, favoriteContext, previousGame, index) {
+      var isTeamFavoriteGame = isFavoriteTeamGame(g, favoriteContext);
+      var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
+      var isFavoriteGame = isFavoriteGameById(sport, g.id);
+      var canOpenDetail = canOpenDetailsForGame(g);
+      card.classList.toggle('fav-card', !!(isFavoriteGame || isTeamFavoriteGame));
+      card.classList.toggle('my-team-card', !!isTeamFavoriteGame);
       card.classList.toggle('is-clickable', !!canOpenDetail);
       card.setAttribute('data-game-index', String(index));
 
       if (canOpenDetail) {
-        card.setAttribute('onclick', 'openGameDetailModal(\'' + g.id + '\')');
+        card.setAttribute('onclick', 'openGameDetailModal(\'' + g.id + '\',\'' + sport + '\')');
       } else {
         card.removeAttribute('onclick');
       }
@@ -1292,18 +1692,23 @@
       setTextWithFlash(statusEl, previousGame && previousGame.statusShort, g.statusShort || 'Scheduled');
 
       var favPill = card.querySelector('[data-field="favPill"]');
-      if (isFavoriteGame && !favPill) {
-        var head = card.querySelector('.card-head');
+      if (isTeamFavoriteGame && !favPill) {
+        var head = card.querySelector('.card-head-left');
         if (head) {
-          var networkNode = card.querySelector('[data-field="network"]');
           var pill = document.createElement('span');
           pill.className = 'fav-pill';
           pill.setAttribute('data-field', 'favPill');
           pill.textContent = 'My Team';
-          head.insertBefore(pill, networkNode || null);
+          head.appendChild(pill);
         }
-      } else if (!isFavoriteGame && favPill) {
+      } else if (!isTeamFavoriteGame && favPill) {
         favPill.remove();
+      }
+
+      var gameFavBtn = card.querySelector('[data-field="gameFavBtn"]');
+      if (gameFavBtn) {
+        gameFavBtn.classList.toggle('is-on', !!isFavoriteGame);
+        gameFavBtn.textContent = isFavoriteGame ? '★' : '☆';
       }
 
       setTextWithFlash(card.querySelector('[data-field="network"]'), previousGame && previousGame.network, g.network || 'N/A');
@@ -1321,16 +1726,67 @@
     function renderGames(payload, options) {
       var opts = options || {};
       var grid = document.getElementById('gameGrid');
-      var games = payload && payload.games ? sortGamesByFavorite(payload.games) : [];
-      var favorite = getFavoriteLeagueTeam();
-      var canOpenDetail = currentSport === 'nba' || currentSport === 'nfl';
+      var rawGames = payload && payload.games ? payload.games : [];
+      var games = sortGamesByFavorite(rawGames);
+      var favoriteContext = getFavoriteContext();
 
       syncTeamPicker(payload && payload.games ? payload.games : []);
 
       if (!games.length) {
-        grid.innerHTML = '<div class="empty">No games found for this date.</div>';
+        grid.innerHTML = currentSport === 'all'
+          ? '<div class="empty">No favorite games found for this date. Star games in MLB, NFL, or NBA to see them here.</div>'
+          : '<div class="empty">No games found for this date.</div>';
         previousGamesById = {};
         updateRefreshHint();
+        return;
+      }
+
+      if (currentSport === 'all') {
+        var leagueOrder = ['mlb', 'nfl', 'nba'];
+        var grouped = {
+          mlb: [],
+          nfl: [],
+          nba: []
+        };
+
+        for (var gi = 0; gi < games.length; gi++) {
+          var gItem = games[gi];
+          var gLeague = String(gItem && gItem.leagueKey ? gItem.leagueKey : '').toLowerCase();
+          if (grouped[gLeague]) {
+            grouped[gLeague].push(gItem);
+          }
+        }
+
+        var htmlAll = '';
+        var allIndex = 0;
+        for (var lo = 0; lo < leagueOrder.length; lo++) {
+          var leagueKey = leagueOrder[lo];
+          var leagueGames = sortLeagueSectionGames(grouped[leagueKey], favoriteContext);
+          if (!leagueGames.length) {
+            continue;
+          }
+
+          var leagueLabel = String((leagueGames[0] && leagueGames[0].leagueLabel) || leagueKey.toUpperCase());
+          htmlAll += '<section class="league-section" data-league="' + leagueKey + '">';
+          htmlAll += '<div class="league-section-head">' + leagueLabel + '</div>';
+          htmlAll += '<div class="league-section-grid">';
+          for (var ai = 0; ai < leagueGames.length; ai++) {
+            htmlAll += buildLeagueCardHtml(leagueGames[ai], favoriteContext, allIndex);
+            allIndex += 1;
+          }
+          htmlAll += '</div>';
+          htmlAll += '</section>';
+        }
+
+        grid.innerHTML = htmlAll;
+        previousGamesById = {};
+        for (var pg = 0; pg < games.length; pg++) {
+          previousGamesById[gameKey(games[pg])] = games[pg];
+        }
+        updateRefreshHint();
+        if (autoRefreshEnabled) {
+          startAutoRefresh();
+        }
         return;
       }
 
@@ -1339,7 +1795,7 @@
       if (!opts.patchOnly || grid.children.length === 0 || grid.querySelector('.loader') || grid.querySelector('.empty')) {
         var html = '';
         for (var i = 0; i < games.length; i++) {
-          html += buildLeagueCardHtml(games[i], favorite, canOpenDetail, i);
+          html += buildLeagueCardHtml(games[i], favoriteContext, i);
         }
         grid.innerHTML = html;
       } else {
@@ -1351,7 +1807,7 @@
           var card = grid.querySelector('.card[data-game-id="' + key + '"]');
           if (!card) {
             var temp = document.createElement('div');
-            temp.innerHTML = buildLeagueCardHtml(game, favorite, canOpenDetail, j);
+            temp.innerHTML = buildLeagueCardHtml(game, favoriteContext, j);
             card = temp.firstElementChild;
             var beforeNode = grid.children[j] || null;
             grid.insertBefore(card, beforeNode);
@@ -1361,7 +1817,7 @@
               grid.insertBefore(card, expectedNode || null);
             }
           }
-          applyLeagueGameToCard(card, game, favorite, canOpenDetail, previousMap[key], j);
+          applyLeagueGameToCard(card, game, favoriteContext, previousMap[key], j);
         }
 
         var staleCards = grid.querySelectorAll('.card[data-game-id]');
@@ -1592,8 +2048,9 @@
         '</div>';
     }
 
-    function openGameDetailModal(gameId) {
-      if (currentSport !== 'nba' && currentSport !== 'nfl') {
+    function openGameDetailModal(gameId, sportKey) {
+      var detailsSport = String(sportKey || currentSport || '').toLowerCase();
+      if (detailsSport !== 'nba' && detailsSport !== 'nfl') {
         return;
       }
 
@@ -1603,7 +2060,7 @@
       document.getElementById('detailModalBody').innerHTML = '<div class="loader">Loading game details...</div>';
       document.getElementById('detailModalOverlay').style.display = 'flex';
 
-      MLBClient.getLeagueGameDetails(currentSport, gameId)
+      MLBClient.getLeagueGameDetails(detailsSport, gameId)
         .then(function (details) {
           if (detailRequestId !== requestId) {
             return;
@@ -1635,8 +2092,46 @@
         document.getElementById('gameGrid').innerHTML = '<div class="loader">Loading games...</div>';
       }
 
+      if (currentSport === 'all') {
+        var targetDate = toIso(currentDate);
+        return Promise.all([
+          MLBClient.getLeagueScoreboardData('mlb', targetDate),
+          MLBClient.getLeagueScoreboardData('nfl', targetDate),
+          MLBClient.getLeagueScoreboardData('nba', targetDate)
+        ])
+          .then(function (payloads) {
+            var combined = [];
+            payloads.forEach(function (payload) {
+              var sport = String(payload && payload.leagueKey ? payload.leagueKey : '').toLowerCase();
+              (payload && payload.games ? payload.games : []).forEach(function (game) {
+                game.leagueKey = sport;
+                game.leagueLabel = payload.leagueLabel || sport.toUpperCase();
+                if (isFavoriteGameById(sport, game.id)) {
+                  combined.push(game);
+                }
+              });
+            });
+
+            lastPayload = {
+              leagueKey: 'all',
+              leagueLabel: 'All Favorites',
+              currentDateIso: targetDate,
+              games: combined
+            };
+            renderGames(lastPayload, { patchOnly: patchOnly });
+          })
+          .catch(function (err) {
+            document.getElementById('gameGrid').innerHTML = '<div class="empty">Failed to load games: ' + (err && err.message ? err.message : err) + '</div>';
+          });
+      }
+
       return MLBClient.getLeagueScoreboardData(currentSport, toIso(currentDate))
         .then(function (payload) {
+          var sport = String(payload && payload.leagueKey ? payload.leagueKey : currentSport).toLowerCase();
+          (payload && payload.games ? payload.games : []).forEach(function (game) {
+            game.leagueKey = sport;
+            game.leagueLabel = payload.leagueLabel || sport.toUpperCase();
+          });
           lastPayload = payload;
           renderGames(payload, { patchOnly: patchOnly });
         })
@@ -1669,6 +2164,7 @@
     function applyFavoriteTeamChange() {
       var picker = document.getElementById('teamPicker');
       setFavoriteLeagueTeam(picker.value || '');
+      syncTeamPickerLabel();
       setPageTheme();
       if (lastPayload) {
         renderGames(lastPayload, { patchOnly: true });
@@ -1678,6 +2174,7 @@
     window.onload = function () {
       currentSport = parseSportFromQuery();
       setPageTheme();
+      syncTeamPickerLabel();
       updateDateDisplay();
       loadLeague({ showLoader: true, patchOnly: false });
       startAutoRefresh();

@@ -68,6 +68,7 @@
   const FAVORITE_KEY = "MY_FAV_TEAM";
   const DEFAULT_TEAM = "Milwaukee Brewers";
   const PAGE_ROUTES = {
+    all: { label: "All", staticPath: "LeagueCards.html?sport=all", dynamicPage: "tv", sport: "all" },
     mlb: { label: "MLB", icon: "⚾", staticPath: "GameCards.html", dynamicPage: "games" },
     nfl: { label: "NFL", icon: "🏈", staticPath: "LeagueCards.html?sport=nfl", dynamicPage: "tv", sport: "nfl" },
     nba: { label: "NBA", icon: "🏀", staticPath: "LeagueCards.html?sport=nba", dynamicPage: "tv", sport: "nba" },
@@ -80,7 +81,7 @@
     games: { label: "Games", staticPath: "GameCards.html", dynamicPage: "games" },
     myteam: { label: "My Team", staticPath: "MyTeam.html", dynamicPage: "myteam" }
   };
-  const SPORTS_NAV_ORDER = ["mlb", "nfl", "nba", "pga", "atp", "wta", "news", "tv"];
+  const SPORTS_NAV_ORDER = ["all", "mlb", "nfl", "nba", "pga", "atp", "wta", "news", "tv"];
   const JSON_CACHE = new Map();
 
   function resolvePageKey(pageKey) {
@@ -1581,6 +1582,7 @@
 
   async function getLeagueScoreboardData(leagueKey, dateIso) {
     const leagueMap = {
+      mlb: { label: "MLB", source: "mlb" },
       nfl: { sport: "football", league: "nfl", label: "NFL" },
       nba: { sport: "basketball", league: "nba", label: "NBA" }
     };
@@ -1598,61 +1600,137 @@
       dateParam = toIsoDate(new Date()).replace(/-/g, "");
     }
 
-    const url =
-      "https://site.api.espn.com/apis/site/v2/sports/" +
-      config.sport +
-      "/" +
-      config.league +
-      "/scoreboard?dates=" +
-      dateParam;
+    let games = [];
 
-    const data = await fetchJsonCached(url, isTodayIso(dateParam.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")) ? 10000 : 300000);
-    const events = data.events || [];
+    if (config.source === "mlb") {
+      const dateIsoValue = dateParam.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3");
+      const scheduleUrl =
+        "https://statsapi.mlb.com/api/v1/schedule/games/?sportId=1&startDate=" +
+        dateIsoValue +
+        "&endDate=" +
+        dateIsoValue +
+        "&hydrate=team,broadcasts,linescore";
+      const sched = await fetchJsonCached(scheduleUrl, isTodayIso(dateIsoValue) ? 10000 : 300000);
+      const rawGames = Array.isArray(sched && sched.dates && sched.dates[0] && sched.dates[0].games)
+        ? sched.dates[0].games
+        : [];
 
-    const games = events.map(function (ev) {
-      const competition = ev.competitions && ev.competitions[0] ? ev.competitions[0] : {};
-      const competitors = Array.isArray(competition.competitors) ? competition.competitors : [];
+      games = rawGames.map(function (game) {
+        const awayTeam = game && game.teams && game.teams.away ? game.teams.away : {};
+        const homeTeam = game && game.teams && game.teams.home ? game.teams.home : {};
+        const awayInfo = awayTeam.team || {};
+        const homeInfo = homeTeam.team || {};
+        const linescore = game && game.linescore ? game.linescore : {};
+        const detailedState = game && game.status && game.status.detailedState ? String(game.status.detailedState) : "Scheduled";
+        const codedState = game && game.status && game.status.codedGameState ? String(game.status.codedGameState) : "";
+        const isInProgress = codedState === "I" || detailedState === "In Progress";
+        const state = isInProgress ? "in" : (game && game.status && game.status.abstractGameState === "Final" ? "post" : "pre");
 
-      let away = null;
-      let home = null;
-      competitors.forEach(function (c) {
-        const side = c && c.homeAway;
-        const normalized = {
-          name: c && c.team ? c.team.displayName || c.team.shortDisplayName || "Team" : "Team",
-          abbr: c && c.team ? c.team.abbreviation || "" : "",
-          logo: c && c.team && c.team.logo ? c.team.logo : "",
-          score: c && c.score !== undefined ? c.score : "0",
-          record:
-            c && Array.isArray(c.records) && c.records[0] && c.records[0].summary
-              ? c.records[0].summary
-              : ""
-        };
-
-        if (side === "home") {
-          home = normalized;
-        } else if (side === "away") {
-          away = normalized;
+        let statusShort = detailedState;
+        if (state === "pre") {
+          statusShort = formatLocalTime(game && game.gameDate ? game.gameDate : "");
+        } else if (state === "post") {
+          statusShort = detailedState || "Final";
+        } else if (isInProgress && linescore && linescore.currentInning) {
+          statusShort = (linescore.isTopInning ? "Top " : "Bot ") + String(linescore.currentInning);
         }
+
+        const tvList = (game && Array.isArray(game.broadcasts) ? game.broadcasts : [])
+          .filter(function (b) {
+            return b && b.type === "TV";
+          })
+          .map(function (b) {
+            return b.name || b.callSign || "";
+          })
+          .filter(Boolean);
+
+        return {
+          id: String(game && game.gamePk ? game.gamePk : ""),
+          name: awayInfo.name && homeInfo.name ? awayInfo.name + " at " + homeInfo.name : "Matchup",
+          startTime: game && game.gameDate ? game.gameDate : "",
+          statusShort: statusShort || "Scheduled",
+          statusState: state,
+          venue: game && game.venue && game.venue.name ? game.venue.name : "",
+          network: tvList.length ? tvList.slice(0, 2).join(", ") : "N/A",
+          away: {
+            name: awayInfo.name || "Away",
+            abbr: awayInfo.abbreviation || "",
+            logo: awayInfo.id ? "https://www.mlbstatic.com/team-logos/" + awayInfo.id + ".svg" : "",
+            score: awayTeam.score !== undefined ? String(awayTeam.score) : "0",
+            record:
+              awayTeam && awayTeam.leagueRecord
+                ? String(awayTeam.leagueRecord.wins || 0) + "-" + String(awayTeam.leagueRecord.losses || 0)
+                : ""
+          },
+          home: {
+            name: homeInfo.name || "Home",
+            abbr: homeInfo.abbreviation || "",
+            logo: homeInfo.id ? "https://www.mlbstatic.com/team-logos/" + homeInfo.id + ".svg" : "",
+            score: homeTeam.score !== undefined ? String(homeTeam.score) : "0",
+            record:
+              homeTeam && homeTeam.leagueRecord
+                ? String(homeTeam.leagueRecord.wins || 0) + "-" + String(homeTeam.leagueRecord.losses || 0)
+                : ""
+          }
+        };
       });
+    } else {
+      const url =
+        "https://site.api.espn.com/apis/site/v2/sports/" +
+        config.sport +
+        "/" +
+        config.league +
+        "/scoreboard?dates=" +
+        dateParam;
 
-      const broadcasts = Array.isArray(competition.broadcasts) ? competition.broadcasts : [];
-      const network = broadcasts.length > 0 && broadcasts[0].names ? broadcasts[0].names.join(", ") : "N/A";
+      const data = await fetchJsonCached(url, isTodayIso(dateParam.replace(/(\d{4})(\d{2})(\d{2})/, "$1-$2-$3")) ? 10000 : 300000);
+      const events = data.events || [];
 
-      const statusType = ev.status && ev.status.type ? ev.status.type : {};
-      const state = statusType.state || "pre";
+      games = events.map(function (ev) {
+        const competition = ev.competitions && ev.competitions[0] ? ev.competitions[0] : {};
+        const competitors = Array.isArray(competition.competitors) ? competition.competitors : [];
 
-      return {
-        id: ev.id,
-        name: ev.shortName || "Matchup",
-        startTime: ev.date,
-        statusShort: formatLeagueStatusText(statusType, ev.date),
-        statusState: state,
-        venue: competition.venue && competition.venue.fullName ? competition.venue.fullName : "",
-        network: network,
-        away: away || { name: "Away", abbr: "", logo: "", score: "0", record: "" },
-        home: home || { name: "Home", abbr: "", logo: "", score: "0", record: "" }
-      };
-    });
+        let away = null;
+        let home = null;
+        competitors.forEach(function (c) {
+          const side = c && c.homeAway;
+          const normalized = {
+            name: c && c.team ? c.team.displayName || c.team.shortDisplayName || "Team" : "Team",
+            abbr: c && c.team ? c.team.abbreviation || "" : "",
+            logo: c && c.team && c.team.logo ? c.team.logo : "",
+            score: c && c.score !== undefined ? c.score : "0",
+            record:
+              c && Array.isArray(c.records) && c.records[0] && c.records[0].summary
+                ? c.records[0].summary
+                : ""
+          };
+
+          if (side === "home") {
+            home = normalized;
+          } else if (side === "away") {
+            away = normalized;
+          }
+        });
+
+        const broadcasts = Array.isArray(competition.broadcasts) ? competition.broadcasts : [];
+        const network = broadcasts.length > 0 && broadcasts[0].names ? broadcasts[0].names.join(", ") : "N/A";
+
+        const statusType = ev.status && ev.status.type ? ev.status.type : {};
+        const state = statusType.state || "pre";
+
+        return {
+          id: ev.id,
+          name: ev.shortName || "Matchup",
+          startTime: ev.date,
+          statusShort: formatLeagueStatusText(statusType, ev.date),
+          statusState: state,
+          venue: competition.venue && competition.venue.fullName ? competition.venue.fullName : "",
+          network: network,
+          away: away || { name: "Away", abbr: "", logo: "", score: "0", record: "" },
+          home: home || { name: "Home", abbr: "", logo: "", score: "0", record: "" }
+        };
+      });
+    }
 
     return {
       leagueKey: key,

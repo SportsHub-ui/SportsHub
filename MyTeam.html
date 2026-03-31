@@ -282,29 +282,113 @@
     }
 
     .nav-btn {
-      background: rgba(255, 255, 255, 0.15);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 5px 15px;
+      background: #173f77;
+      color: #fff;
+      border: 1px solid #102d56;
+      width: 42px;
+      height: 34px;
       border-radius: 4px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 1.1rem;
-      transition: all 0.2s;
+      font-weight: 700;
+      font-size: 1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
     }
 
     .nav-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      border-color: white;
+      background: #245ca6;
+      border-color: #173f77;
+    }
+
+    .refresh-btn,
+    .auto-refresh-btn {
+      background: #fff;
+      color: var(--navy);
+      border: 1px solid #cbd7e4;
+      border-radius: 4px;
+      min-width: 96px;
+      height: 34px;
+      padding: 0 12px;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .refresh-btn:hover,
+    .auto-refresh-btn:hover {
+      background: #f3f8ff;
+      border-color: var(--navy);
+    }
+
+    .auto-refresh-btn.is-off {
+      background: #fff1f1;
+      color: #7a1e1e;
+      border-color: #e6b8b8;
     }
 
     .picker-container {
       display: flex;
       align-items: center;
+      position: relative;
+    }
+
+    .picker-label {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      text-align: center;
+      color: #1f2d3c;
+      font-weight: 700;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 1;
+    }
+
+    .picker-container::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      bottom: 2px;
+      width: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 3px 0 0 3px;
+      pointer-events: none;
+    }
+
+    .picker-container::after {
+      content: "";
+      position: absolute;
+      right: 2px;
+      top: 2px;
+      bottom: 2px;
+      width: 22px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 0 3px 3px 0;
+      pointer-events: none;
     }
 
     #teamPicker {
-      padding: 5px 10px;
+      height: 34px;
+      padding: 0 24px;
       border-radius: 4px;
       border: 2px solid rgba(255, 255, 255, 0.65);
       font-family: 'Oswald', sans-serif;
@@ -319,9 +403,12 @@
       text-align: center;
       text-align-last: center;
       -moz-text-align-last: center;
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      box-sizing: border-box;
+      color: transparent;
+      text-shadow: 0 0 0 transparent;
     }
 
     #teamPicker::-ms-expand {
@@ -332,6 +419,7 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      gap: 10px;
       border-bottom: 3px solid var(--navy);
       margin-bottom: 20px;
       padding-bottom: 8px;
@@ -652,10 +740,6 @@
     }
 
     @media (max-width: 760px) {
-      .picker-container {
-        position: relative;
-      }
-
       #teamPicker {
         min-width: 190px;
         text-align: center;
@@ -665,23 +749,12 @@
         -webkit-appearance: none !important;
         -moz-appearance: none !important;
         background-image: none !important;
-        padding-right: 10px;
-      }
-
-      .picker-container::after {
-        content: "";
-        position: absolute;
-        right: 2px;
-        top: 2px;
-        bottom: 2px;
-        width: 24px;
-        background: rgba(255, 255, 255, 0.92);
-        border-radius: 0 3px 3px 0;
-        pointer-events: none;
+        padding: 0 24px;
       }
 
       #teamPicker option {
         text-align: center;
+        color: #1f2d3c;
       }
 
       .roster-grid {
@@ -724,22 +797,25 @@
   <div id="siteNav"></div>
 
   <div class="settings-bar" id="dynamicHeader">
-    <button class="nav-btn" onclick="changeDate(-1)">◄</button>
+    <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
     <div class="picker-container">
       <select id="teamPicker" onchange="applyTeamChange()"></select>
+      <span id="teamPickerLabel" class="picker-label"></span>
     </div>
     <h2 id="pageTitle" style="margin:0; text-transform: uppercase; font-size: 1.4rem; display: none;">My Team</h2>
-    <button class="nav-btn" onclick="changeDate(1)">►</button>
+    <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
   </div>
 
   <div class="container" style="max-width: 1100px; margin: auto; padding: 0 20px;">
     <!-- Date Selector Row -->
     <div class="header-row">
+      <button class="nav-btn" onclick="changeDate(-1)">◄</button>
       <div class="date-wrapper" onclick="openDatePicker()">
         <span id="dateDisplay">Loading Date...</span>
         <input type="date" id="dateInput" onchange="goToDate()">
         <span style="font-size: 0.8rem;">📅</span>
       </div>
+      <button class="nav-btn" onclick="changeDate(1)">►</button>
     </div>
 
 
@@ -972,6 +1048,9 @@
       var currentSport = "mlb";
       var playerDetailCache = {};
       var jsonCache = {};
+      var autoRefreshEnabled = true;
+      var autoRefreshTimer = null;
+      var AUTO_REFRESH_MS = 60000;
 
       window.onload = function () {
         currentSport = parseSportFromQuery();
@@ -982,7 +1061,52 @@
         document.getElementById('dateInput').value = today;
         previewSelectedDate();
         fetchMyTeamData(today);
+        startAutoRefresh();
+        updateAutoRefreshButton();
       };
+
+      function updateAutoRefreshButton() {
+        var btn = document.getElementById('autoRefreshBtn');
+        if (!btn) {
+          return;
+        }
+        btn.classList.toggle('is-off', !autoRefreshEnabled);
+        btn.innerText = autoRefreshEnabled ? 'Auto: On' : 'Auto: Off';
+      }
+
+      function startAutoRefresh() {
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
+          autoRefreshTimer = null;
+        }
+        if (!autoRefreshEnabled) {
+          return;
+        }
+        autoRefreshTimer = setInterval(function () {
+          fetchMyTeamData(toLocalIso(currentViewDate));
+        }, AUTO_REFRESH_MS);
+      }
+
+      function stopAutoRefresh() {
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
+          autoRefreshTimer = null;
+        }
+      }
+
+      function toggleAutoRefresh() {
+        autoRefreshEnabled = !autoRefreshEnabled;
+        updateAutoRefreshButton();
+        if (autoRefreshEnabled) {
+          startAutoRefresh();
+        } else {
+          stopAutoRefresh();
+        }
+      }
+
+      function manualRefresh() {
+        fetchMyTeamData(toLocalIso(currentViewDate));
+      }
 
       function parseSportFromQuery() {
         var params = new URLSearchParams(window.location.search);
@@ -1031,6 +1155,17 @@
         }
         picker.innerHTML = html;
         picker.value = favorite;
+        syncTeamPickerLabel();
+      }
+
+      function syncTeamPickerLabel() {
+        var picker = document.getElementById('teamPicker');
+        var label = document.getElementById('teamPickerLabel');
+        if (!picker || !label) {
+          return;
+        }
+        var option = picker.options && picker.selectedIndex >= 0 ? picker.options[picker.selectedIndex] : null;
+        label.textContent = option && option.text ? option.text : (picker.value || '');
       }
 
       function applyTeamChange() {
@@ -1038,6 +1173,7 @@
         if (!picker) {
           return;
         }
+        syncTeamPickerLabel();
         setCurrentFavoriteTeam(picker.value || '');
         fetchMyTeamData(toLocalIso(currentViewDate));
       }
