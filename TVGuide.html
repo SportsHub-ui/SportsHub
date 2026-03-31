@@ -217,6 +217,66 @@
       transform: translateY(0);
     }
 
+    .pga-submenu-bar {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #ffffff;
+      border-bottom: 1px solid #dfe7df;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      margin-bottom: 12px;
+    }
+
+    .pga-submenu-link {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #b8cbbb;
+      background: #f4faf5;
+      color: #154226;
+      text-decoration: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.84rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .pga-submenu-link:hover {
+      background: #e9f4eb;
+      border-color: #7ea586;
+    }
+
+    .pga-submenu-link.is-active {
+      background: #0b5d2a;
+      border-color: #0b5d2a;
+      color: #fff;
+    }
+
+    .pga-picker-card {
+      max-width: 760px;
+      margin: 24px auto;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      border-left: 5px solid #0b5d2a;
+      padding: 18px 20px;
+      text-align: center;
+    }
+
+    .pga-picker-card h3 {
+      margin: 0 0 8px;
+      color: #0f3d21;
+    }
+
+    .pga-picker-card p {
+      margin: 0;
+      color: #4b5f52;
+      font-size: 0.92rem;
+    }
+
     .pga-wrap {
       max-width: 1100px;
       margin: 0 auto;
@@ -324,6 +384,53 @@
       text-align: right;
       min-width: 110px;
       color: #1a5c35;
+    }
+
+    .pga-upcoming-card {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      margin-top: 16px;
+      overflow: hidden;
+    }
+
+    .pga-upcoming-head {
+      background: #f1f6f2;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #3d5a47;
+      border-bottom: 1px solid #e1e8e3;
+    }
+
+    .pga-upcoming-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .pga-upcoming-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid #edf2ee;
+    }
+
+    .pga-upcoming-item:last-child {
+      border-bottom: none;
+    }
+
+    .pga-upcoming-name {
+      color: #143a24;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .pga-upcoming-meta {
+      margin-top: 4px;
+      color: #5f7066;
+      font-size: 0.8rem;
+      font-family: 'Roboto Mono', monospace;
     }
 
     .pga-row {
@@ -529,6 +636,10 @@
 
 <body>
   <div id="siteNav"></div>
+  <div id="pgaSubmenuBar" class="pga-submenu-bar">
+    <a id="pgaSubmenuLeaderboard" class="pga-submenu-link" href="TVGuide.html?sport=pga&view=leaderboard">Leaderboard</a>
+    <a id="pgaSubmenuTournaments" class="pga-submenu-link" href="TVGuide.html?sport=pga&view=tournaments">Tournaments</a>
+  </div>
   <div class="filter-bar" id="filterBar">
     <div class="filter-container">
       <div class="sport-selectors">
@@ -572,12 +683,50 @@
   <script>
     let rawData = []; // Store original data for filtering
     let sportFilterFromUrl = null;
+    let pgaViewFromUrl = null;
     let pgaLeaderboardData = null;
 
     function getSportFromQuery() {
       const params = new URLSearchParams(window.location.search);
       const sport = (params.get('sport') || '').toLowerCase();
       return sport || null;
+    }
+
+    function getPgaViewFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const view = (params.get('view') || '').toLowerCase();
+      if (view === 'leaderboard' || view === 'tournaments') {
+        return view;
+      }
+      return null;
+    }
+
+    function getPgaUrlForView(view) {
+      var v = String(view || '').toLowerCase();
+      if (v !== 'leaderboard' && v !== 'tournaments') {
+        return 'TVGuide.html?sport=pga';
+      }
+      return 'TVGuide.html?sport=pga&view=' + v;
+    }
+
+    function updatePgaSubmenu() {
+      var bar = document.getElementById('pgaSubmenuBar');
+      var leaderboard = document.getElementById('pgaSubmenuLeaderboard');
+      var tournaments = document.getElementById('pgaSubmenuTournaments');
+      if (!bar || !leaderboard || !tournaments) {
+        return;
+      }
+
+      if (sportFilterFromUrl !== 'pga') {
+        bar.style.display = 'none';
+        return;
+      }
+
+      bar.style.display = 'flex';
+      leaderboard.setAttribute('href', getPgaUrlForView('leaderboard'));
+      tournaments.setAttribute('href', getPgaUrlForView('tournaments'));
+      leaderboard.classList.toggle('is-active', pgaViewFromUrl === 'leaderboard');
+      tournaments.classList.toggle('is-active', pgaViewFromUrl === 'tournaments');
     }
 
     function applyQuerySportSelection() {
@@ -605,7 +754,12 @@
 
     window.onload = function () {
       sportFilterFromUrl = getSportFromQuery();
+      pgaViewFromUrl = getPgaViewFromQuery();
+      if (sportFilterFromUrl === 'pga' && !pgaViewFromUrl) {
+        pgaViewFromUrl = 'leaderboard';
+      }
       MLBClient.renderSiteNav(sportFilterFromUrl || 'tv', 'siteNav');
+      updatePgaSubmenu();
 
       if (sportFilterFromUrl === 'pga') {
         var filterBar = document.getElementById('filterBar');
@@ -634,6 +788,54 @@
     function renderPgaView() {
       var grid = document.getElementById('guideGrid');
       if (!grid) {
+        return;
+      }
+
+      if (!pgaViewFromUrl) {
+        grid.innerHTML = '' +
+          '<div class="pga-picker-card">' +
+          '<h3>PGA Menu</h3>' +
+          '<p>Select <strong>Leaderboard</strong> or <strong>Tournaments</strong> above to continue.</p>' +
+          '</div>';
+        return;
+      }
+
+      if (pgaViewFromUrl === 'tournaments') {
+        grid.innerHTML = '<div class="loader"><h2 style="color: #0b5d2a;">Loading upcoming PGA tournaments...</h2><p>Scanning the PGA schedule</p></div>';
+
+        MLBClient.getPgaUpcomingTournaments(16)
+          .then(function (upcoming) {
+            var rows = Array.isArray(upcoming) ? upcoming : [];
+            var html = '';
+            html += '<div class="pga-wrap">';
+            html += '  <div class="pga-header">';
+            html += '    <div class="pga-kicker">PGA Schedule</div>';
+            html += '    <h2 class="pga-title">Upcoming Tournaments</h2>';
+            html += '    <div class="pga-meta">Scheduled PGA events</div>';
+            html += '  </div>';
+            html += '  <div class="pga-upcoming-card">';
+            html += '    <div class="pga-upcoming-head">Tournaments</div>';
+            if (!rows.length) {
+              html += '    <div class="pga-upcoming-item"><div class="pga-upcoming-meta">No upcoming PGA tournaments found.</div></div>';
+            } else {
+              html += '    <ul class="pga-upcoming-list">';
+              for (var i = 0; i < rows.length; i++) {
+                var t = rows[i] || {};
+                html += '      <li class="pga-upcoming-item">';
+                html += '        <div class="pga-upcoming-name">' + escapeHtml(t.name || 'PGA Tournament') + '</div>';
+                html += '        <div class="pga-upcoming-meta">' + escapeHtml(t.date || 'TBD') + ' | ' + escapeHtml(t.status || 'Scheduled') + '</div>';
+                html += '        <div class="pga-upcoming-meta">' + escapeHtml(t.venue || 'TBD Venue') + (t.location ? (' - ' + escapeHtml(t.location)) : '') + '</div>';
+                html += '      </li>';
+              }
+              html += '    </ul>';
+            }
+            html += '  </div>';
+            html += '</div>';
+            grid.innerHTML = html;
+          })
+          .catch(function (err) {
+            grid.innerHTML = '<div class="no-results"><h3>Failed to load upcoming PGA tournaments.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
+          });
         return;
       }
 

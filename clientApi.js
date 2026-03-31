@@ -2045,6 +2045,50 @@
     };
   }
 
+  async function getPgaUpcomingTournaments(limitCount) {
+    const limit = Number(limitCount) > 0 ? Number(limitCount) : 8;
+    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard";
+    const payload = await fetchJsonCached(url, 600000);
+    const events = Array.isArray(payload && payload.events) ? payload.events : [];
+    const now = Date.now();
+
+    const upcoming = events
+      .filter(function (event) {
+        const state = event && event.status && event.status.type ? String(event.status.type.state || "") : "";
+        const eventTime = event && event.date ? new Date(event.date).getTime() : 0;
+        return state === "pre" && eventTime >= now - 86400000;
+      })
+      .sort(function (a, b) {
+        const ta = a && a.date ? new Date(a.date).getTime() : 0;
+        const tb = b && b.date ? new Date(b.date).getTime() : 0;
+        return ta - tb;
+      })
+      .slice(0, limit)
+      .map(function (event) {
+        const comp = event && Array.isArray(event.competitions) && event.competitions[0] ? event.competitions[0] : {};
+        const venue = comp && comp.venue && comp.venue.fullName ? comp.venue.fullName : (event && event.venue && event.venue.fullName ? event.venue.fullName : "TBD Venue");
+        const city = comp && comp.venue && comp.venue.address && comp.venue.address.city ? comp.venue.address.city : "";
+        const state = comp && comp.venue && comp.venue.address && comp.venue.address.state ? comp.venue.address.state : "";
+        const country = comp && comp.venue && comp.venue.address && comp.venue.address.country ? comp.venue.address.country : "";
+        const location = [city, state, country].filter(Boolean).join(", ");
+        const start = event && event.date ? new Date(event.date) : null;
+        const dateLabel = start && !Number.isNaN(start.getTime())
+          ? start.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+          : "TBD";
+
+        return {
+          id: event && event.id ? String(event.id) : "",
+          name: event && (event.shortName || event.name) ? String(event.shortName || event.name) : "PGA Tournament",
+          date: dateLabel,
+          status: event && event.status && event.status.type && event.status.type.description ? String(event.status.type.description) : "Scheduled",
+          venue: venue,
+          location: location
+        };
+      });
+
+    return upcoming;
+  }
+
   async function getTopNewsData(limitPerSport) {
     const limit = Number(limitPerSport) > 0 ? Number(limitPerSport) : 5;
     const leagueFeeds = [
@@ -2122,6 +2166,7 @@
     getTvGuideData: getTvGuideData,
     getPgaLastTournamentLeaderboard: getPgaLastTournamentLeaderboard,
     getPgaLastTournamentTop25: getPgaLastTournamentTop25,
+    getPgaUpcomingTournaments: getPgaUpcomingTournaments,
     getTeamId: getTeamId,
     getPageUrl: getPageUrl,
     navigateToPage: navigateToPage,
