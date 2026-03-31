@@ -2165,6 +2165,9 @@
         var nextSportInfo = buildSportInfoRowsHtml(g);
         if (sportInfoHost.innerHTML !== nextSportInfo) {
           sportInfoHost.innerHTML = nextSportInfo;
+          sportInfoHost.classList.remove('flash-updated');
+          void sportInfoHost.offsetWidth;
+          sportInfoHost.classList.add('flash-updated');
         }
       }
     }
@@ -2188,12 +2191,42 @@
       }
 
       if (currentSport === 'all') {
-        var htmlAll = '';
-        for (var ai = 0; ai < games.length; ai++) {
-          htmlAll += buildLeagueCardHtml(games[ai], favoriteContext, ai);
+        var previousMapAll = previousGamesById || {};
+
+        if (!opts.patchOnly || grid.children.length === 0 || grid.querySelector('.loader') || grid.querySelector('.empty')) {
+          var htmlAll = '';
+          for (var ai = 0; ai < games.length; ai++) {
+            htmlAll += buildLeagueCardHtml(games[ai], favoriteContext, ai);
+          }
+          grid.innerHTML = htmlAll;
+        } else {
+          var seenAll = {};
+          for (var ai = 0; ai < games.length; ai++) {
+            var gameAll = games[ai];
+            var keyAll = gameKey(gameAll);
+            seenAll[keyAll] = true;
+            var cardAll = grid.querySelector('.card[data-game-id="' + keyAll + '"]');
+            if (!cardAll) {
+              var tempAll = document.createElement('div');
+              tempAll.innerHTML = buildLeagueCardHtml(gameAll, favoriteContext, ai);
+              cardAll = tempAll.firstElementChild;
+              grid.insertBefore(cardAll, grid.children[ai] || null);
+            } else {
+              var expectedAll = grid.children[ai];
+              if (expectedAll !== cardAll) {
+                grid.insertBefore(cardAll, expectedAll || null);
+              }
+            }
+            applyLeagueGameToCard(cardAll, gameAll, favoriteContext, previousMapAll[keyAll], ai);
+          }
+          var staleAll = grid.querySelectorAll('.card[data-game-id]');
+          for (var sa = 0; sa < staleAll.length; sa++) {
+            if (!seenAll[staleAll[sa].getAttribute('data-game-id')]) {
+              staleAll[sa].remove();
+            }
+          }
         }
 
-        grid.innerHTML = htmlAll;
         previousGamesById = {};
         for (var pg = 0; pg < games.length; pg++) {
           previousGamesById[gameKey(games[pg])] = games[pg];
