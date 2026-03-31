@@ -218,7 +218,7 @@
     }
 
     .pga-wrap {
-      max-width: 960px;
+      max-width: 1100px;
       margin: 0 auto;
     }
 
@@ -227,7 +227,7 @@
       border-left: 5px solid #0b5d2a;
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      padding: 16px;
+      padding: 16px 20px;
       margin-bottom: 16px;
     }
 
@@ -256,13 +256,16 @@
       border-radius: 8px;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
       overflow: hidden;
+      overflow-x: auto;
     }
 
     .pga-table {
       width: 100%;
       border-collapse: collapse;
       font-family: 'Roboto Mono', monospace;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
+      /* Minimum width to keep all 9 columns readable on desktop before overflow-x kicks in */
+      min-width: 560px;
     }
 
     .pga-table thead {
@@ -271,9 +274,10 @@
 
     .pga-table th,
     .pga-table td {
-      padding: 10px 12px;
+      padding: 12px 14px;
       border-bottom: 1px solid #e7ece8;
       text-align: left;
+      white-space: nowrap;
     }
 
     .pga-table th {
@@ -283,11 +287,43 @@
       letter-spacing: 0.04em;
     }
 
-    .pga-table td:nth-child(1),
-    .pga-table td:nth-child(3) {
+    .pga-table td.pga-col-pos {
+      font-weight: 700;
+      color: #193f27;
+      width: 48px;
+    }
+
+    .pga-table td.pga-col-topar {
       font-weight: 700;
       color: #193f27;
       width: 72px;
+      text-align: center;
+    }
+
+    .pga-table th.pga-col-topar {
+      text-align: center;
+    }
+
+    .pga-table td.pga-col-round,
+    .pga-table th.pga-col-round {
+      text-align: center;
+      width: 52px;
+      color: #3a5242;
+    }
+
+    .pga-table td.pga-col-total,
+    .pga-table th.pga-col-total {
+      text-align: center;
+      width: 60px;
+      font-weight: 700;
+      color: #113c22;
+    }
+
+    .pga-table td.pga-col-earnings,
+    .pga-table th.pga-col-earnings {
+      text-align: right;
+      min-width: 110px;
+      color: #1a5c35;
     }
 
     .pga-row {
@@ -305,6 +341,7 @@
       font-family: 'Oswald', sans-serif;
       font-size: 0.96rem;
       color: #183b26;
+      min-width: 160px;
     }
 
     .pga-flag {
@@ -314,6 +351,49 @@
       border: 1px solid #d2dbd4;
       border-radius: 2px;
       background: #fff;
+      flex-shrink: 0;
+    }
+
+    /* Mobile: hide round columns and earnings on very small screens */
+    @media (max-width: 600px) {
+      .pga-table {
+        min-width: 0;
+      }
+
+      .pga-table th,
+      .pga-table td {
+        padding: 10px 6px;
+        font-size: 0.78rem;
+      }
+
+      .pga-table td.pga-col-pos {
+        width: 36px;
+      }
+
+      .pga-table td.pga-col-round,
+      .pga-table th.pga-col-round {
+        display: none;
+      }
+
+      .pga-table td.pga-col-topar,
+      .pga-table th.pga-col-topar {
+        width: 56px;
+      }
+
+      .pga-table td.pga-col-total,
+      .pga-table th.pga-col-total {
+        width: 44px;
+      }
+
+      .pga-table td.pga-col-earnings,
+      .pga-table th.pga-col-earnings {
+        display: none;
+      }
+
+      .pga-player {
+        min-width: 0;
+        font-size: 0.82rem;
+      }
     }
 
     .pga-modal-overlay {
@@ -577,17 +657,33 @@
           html += '  </div>';
           html += '  <div class="pga-table-card">';
           html += '    <table class="pga-table">';
-          html += '      <thead><tr><th>Pos</th><th>Golfer</th><th>To Par</th><th>Rounds</th></tr></thead>';
+          html += '      <thead><tr>';
+          html += '        <th>Pos</th>';
+          html += '        <th>Golfer</th>';
+          html += '        <th class="pga-col-topar">To Par</th>';
+          html += '        <th class="pga-col-round">R1</th>';
+          html += '        <th class="pga-col-round">R2</th>';
+          html += '        <th class="pga-col-round">R3</th>';
+          html += '        <th class="pga-col-round">R4</th>';
+          html += '        <th class="pga-col-total">Total</th>';
+          html += '        <th class="pga-col-earnings">Earnings</th>';
+          html += '      </tr></thead>';
           html += '      <tbody>';
           for (var i = 0; i < rows.length; i++) {
             var r = rows[i];
+            var rs = Array.isArray(r.roundScores) ? r.roundScores : [];
             html += '<tr class="pga-row" onclick="openPgaGolferModal(\'' + escapeHtml(r.id || String(i)) + '\')">';
-            html += '<td>' + (r.pos || '-') + '</td>';
+            html += '<td class="pga-col-pos">' + (r.pos || '-') + '</td>';
             html += '<td><div class="pga-player">' +
               (r.flag ? '<img class="pga-flag" src="' + escapeHtml(r.flag) + '" alt="">' : '') +
               '<span>' + escapeHtml(r.name || '-') + '</span></div></td>';
-            html += '<td>' + (r.toPar || '-') + '</td>';
-            html += '<td>' + (r.rounds || '-') + '</td>';
+            html += '<td class="pga-col-topar">' + (r.toPar || '-') + '</td>';
+            html += '<td class="pga-col-round">' + (rs[0] || '-') + '</td>';
+            html += '<td class="pga-col-round">' + (rs[1] || '-') + '</td>';
+            html += '<td class="pga-col-round">' + (rs[2] || '-') + '</td>';
+            html += '<td class="pga-col-round">' + (rs[3] || '-') + '</td>';
+            html += '<td class="pga-col-total">' + (r.totalStrokes !== null && r.totalStrokes !== undefined ? r.totalStrokes : '-') + '</td>';
+            html += '<td class="pga-col-earnings">' + (r.earnings || '-') + '</td>';
             html += '</tr>';
           }
           html += '      </tbody>';
