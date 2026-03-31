@@ -206,6 +206,29 @@
       border-bottom: 1px solid #f0f0f0;
     }
 
+    .lineup-table {
+      width: 100%;
+      table-layout: fixed;
+    }
+
+    .lineup-table th,
+    .lineup-table td {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lineup-table th:nth-child(1),
+    .lineup-table td:nth-child(1) {
+      width: 36px;
+    }
+
+    .lineup-table th:nth-child(3),
+    .lineup-table td:nth-child(3) {
+      width: 44px;
+      text-align: right;
+    }
+
     .my-team-row {
       background: #fffde7;
       font-weight: bold;
@@ -698,7 +721,7 @@
         <div class="side-card">
           <div style="margin-bottom: 15px;">
             <h3 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--navy);" id="awayLineupLabel">Away</h3>
-            <table style="width: 100%;">
+            <table class="lineup-table" style="width: 100%;">
               <thead>
                 <tr>
                   <th>#</th>
@@ -711,7 +734,7 @@
           </div>
           <div style="border-top: 1px solid #ddd; padding-top: 15px;">
             <h3 style="margin: 0 0 10px 0; font-size: 0.95rem; color: var(--navy);" id="homeLineupLabel">Home</h3>
-            <table style="width: 100%;">
+            <table class="lineup-table" style="width: 100%;">
               <thead>
                 <tr>
                   <th>#</th>
