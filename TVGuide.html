@@ -686,15 +686,45 @@
     let pgaViewFromUrl = null;
     let pgaLeaderboardData = null;
 
+    function readQueryParam(name) {
+      var key = String(name || '');
+      if (!key) {
+        return '';
+      }
+
+      try {
+        if (typeof URLSearchParams !== 'undefined') {
+          const params = new URLSearchParams(window.location.search || '');
+          return params.get(key) || '';
+        }
+      } catch (err) {
+        // Fallback below for older mobile browsers/webviews.
+      }
+
+      var query = String(window.location.search || '').replace(/^\?/, '');
+      if (!query) {
+        return '';
+      }
+
+      var parts = query.split('&');
+      for (var i = 0; i < parts.length; i++) {
+        var pair = parts[i].split('=');
+        var k = decodeURIComponent((pair[0] || '').replace(/\+/g, ' '));
+        if (k === key) {
+          return decodeURIComponent((pair[1] || '').replace(/\+/g, ' '));
+        }
+      }
+
+      return '';
+    }
+
     function getSportFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      const sport = (params.get('sport') || '').toLowerCase();
+      const sport = readQueryParam('sport').toLowerCase();
       return sport || null;
     }
 
     function getPgaViewFromQuery() {
-      const params = new URLSearchParams(window.location.search);
-      const view = (params.get('view') || '').toLowerCase();
+      const view = readQueryParam('view').toLowerCase();
       if (view === 'leaderboard' || view === 'tournaments') {
         return view;
       }
@@ -725,8 +755,18 @@
       bar.style.display = 'flex';
       leaderboard.setAttribute('href', getPgaUrlForView('leaderboard'));
       tournaments.setAttribute('href', getPgaUrlForView('tournaments'));
-      leaderboard.classList.toggle('is-active', pgaViewFromUrl === 'leaderboard');
-      tournaments.classList.toggle('is-active', pgaViewFromUrl === 'tournaments');
+
+      if (pgaViewFromUrl === 'leaderboard') {
+        leaderboard.classList.add('is-active');
+      } else {
+        leaderboard.classList.remove('is-active');
+      }
+
+      if (pgaViewFromUrl === 'tournaments') {
+        tournaments.classList.add('is-active');
+      } else {
+        tournaments.classList.remove('is-active');
+      }
     }
 
     function applyQuerySportSelection() {
