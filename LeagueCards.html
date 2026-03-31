@@ -412,19 +412,6 @@
       color: #a56900;
     }
 
-    .fav-pill {
-      margin-left: 8px;
-      font-size: 0.62rem;
-      background: #fff4de;
-      color: #9c5c04;
-      border: 1px solid #ffd495;
-      padding: 2px 6px;
-      border-radius: 999px;
-      font-weight: 700;
-      letter-spacing: 0.03em;
-      text-transform: uppercase;
-    }
-
     .rows {
       padding: 10px 12px;
     }
@@ -1642,9 +1629,6 @@
       if (currentSport === 'all') {
         html += '<span class="league-pill" data-field="leagueLabel">' + (g.leagueLabel || sport.toUpperCase()) + '</span>';
       }
-      if (isTeamFavoriteGame) {
-        html += '<span class="fav-pill" data-field="favPill">My Team</span>';
-      }
       html += '</div>';
       html += '<div class="card-head-right">';
       html += '<button class="game-fav-btn ' + (isFavoriteGame ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + String(g.id) + '\',\'' + sport + '\')">' + (isFavoriteGame ? '★' : '☆') + '</button>';
@@ -1690,20 +1674,6 @@
         statusEl.className = 'status-pill ' + statusClass(g.statusState);
       }
       setTextWithFlash(statusEl, previousGame && previousGame.statusShort, g.statusShort || 'Scheduled');
-
-      var favPill = card.querySelector('[data-field="favPill"]');
-      if (isTeamFavoriteGame && !favPill) {
-        var head = card.querySelector('.card-head-left');
-        if (head) {
-          var pill = document.createElement('span');
-          pill.className = 'fav-pill';
-          pill.setAttribute('data-field', 'favPill');
-          pill.textContent = 'My Team';
-          head.appendChild(pill);
-        }
-      } else if (!isTeamFavoriteGame && favPill) {
-        favPill.remove();
-      }
 
       var gameFavBtn = card.querySelector('[data-field="gameFavBtn"]');
       if (gameFavBtn) {
