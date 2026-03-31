@@ -379,6 +379,48 @@
       min-width: 0;
     }
 
+    .league-icon-badge {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.58rem;
+      font-weight: 800;
+      line-height: 1;
+      border: 1px solid #d3dde8;
+      background: #edf2f8;
+      color: #2a4563;
+      flex: 0 0 auto;
+      overflow: hidden;
+    }
+
+    .league-icon-badge img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .league-icon-badge.nfl {
+      background: #ebf2ff;
+      border-color: #c7d9f7;
+      color: #1f4f9b;
+    }
+
+    .league-icon-badge.mlb {
+      background: #eef6ef;
+      border-color: #cfe2cf;
+      color: #1e6b3b;
+    }
+
+    .league-icon-badge.nba {
+      background: #fff1e9;
+      border-color: #f2d2c1;
+      color: #ba4f1b;
+    }
+
     .situation-host {
       display: inline-flex;
       align-items: center;
@@ -1326,7 +1368,45 @@
       };
     }
 
+    function normalizeTeamNameForMatch(teamName, sportKey) {
+      var sport = String(sportKey || '').toLowerCase();
+      var text = String(teamName || '')
+        .toLowerCase()
+        .replace(/\./g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!text) {
+        return '';
+      }
+
+      if (sport === 'mlb') {
+        var mlbAliases = {
+          'oakland athletics': 'athletics',
+          'athletics': 'athletics',
+          'cleveland indians': 'cleveland guardians',
+          'cleveland guardians': 'cleveland guardians',
+          'tampa bay devil rays': 'tampa bay rays',
+          'tampa bay rays': 'tampa bay rays',
+          'florida marlins': 'miami marlins',
+          'miami marlins': 'miami marlins',
+          'anaheim angels': 'los angeles angels',
+          'los angeles angels': 'los angeles angels'
+        };
+        return mlbAliases[text] || text;
+      }
+
+      return text;
+    }
+
+    function teamMatchesFavorite(teamName, favoriteName, sportKey) {
+      var team = normalizeTeamNameForMatch(teamName, sportKey);
+      var favorite = normalizeTeamNameForMatch(favoriteName, sportKey);
+      return !!team && !!favorite && team === favorite;
+    }
+
     function isFavoriteTeamGame(g, favoriteContext) {
+      var sport = String(g && g.leagueKey ? g.leagueKey : '').toLowerCase();
       var awayName = g && g.away && g.away.name ? String(g.away.name) : '';
       var homeName = g && g.home && g.home.name ? String(g.home.name) : '';
 
@@ -1335,13 +1415,42 @@
       }
 
       if (favoriteContext.mode === 'all') {
-        var sport = String(g && g.leagueKey ? g.leagueKey : '').toLowerCase();
+        var candidates = [];
         var team = favoriteContext.teams && favoriteContext.teams[sport] ? String(favoriteContext.teams[sport]) : '';
-        return !!team && (awayName === team || homeName === team);
+        if (team) {
+          candidates.push(team);
+        }
+        if (sport === 'mlb') {
+          var legacyMlb = localStorage.getItem('MY_FAV_TEAM') || '';
+          var scopedMlb = localStorage.getItem('MY_FAV_MLB_TEAM') || '';
+          if (legacyMlb) {
+            candidates.push(legacyMlb);
+          }
+          if (scopedMlb) {
+            candidates.push(scopedMlb);
+          }
+        }
+
+        var seen = {};
+        candidates = candidates.filter(function (name) {
+          var key = normalizeTeamNameForMatch(name, sport);
+          if (!key || seen[key]) {
+            return false;
+          }
+          seen[key] = true;
+          return true;
+        });
+
+        return candidates.some(function (favoriteName) {
+          return teamMatchesFavorite(awayName, favoriteName, sport) || teamMatchesFavorite(homeName, favoriteName, sport);
+        });
       }
 
       var favoriteTeam = favoriteContext.team ? String(favoriteContext.team) : '';
-      return !!favoriteTeam && (awayName === favoriteTeam || homeName === favoriteTeam);
+      return !!favoriteTeam && (
+        teamMatchesFavorite(awayName, favoriteTeam, sport) ||
+        teamMatchesFavorite(homeName, favoriteTeam, sport)
+      );
     }
 
     function gamePriorityBucket(g, favoriteContext) {
@@ -1502,6 +1611,37 @@
       if (state === 'in') return 'live';
       if (state === 'post') return 'final';
       return '';
+    }
+
+    function getLeagueIconBadgeHtml(g) {
+      if (currentSport !== 'all') {
+        return '';
+      }
+
+      var sport = String(g && g.leagueKey ? g.leagueKey : '').toLowerCase();
+      var shortLabel = '';
+      var title = '';
+      var iconPath = '';
+
+      if (sport === 'nfl') {
+        shortLabel = 'NFL';
+        title = 'NFL';
+        iconPath = 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png';
+      } else if (sport === 'mlb') {
+        shortLabel = 'MLB';
+        title = 'MLB';
+        iconPath = 'https://a.espncdn.com/i/teamlogos/leagues/500/mlb.png';
+      } else if (sport === 'nba') {
+        shortLabel = 'NBA';
+        title = 'NBA';
+        iconPath = 'https://a.espncdn.com/i/teamlogos/leagues/500/nba.png';
+      }
+
+      if (!shortLabel) {
+        return '';
+      }
+
+      return '<span class="league-icon-badge ' + sport + '" title="' + title + '" aria-label="' + title + '"><img src="' + iconPath + '" alt="' + title + '" onerror="this.remove();this.parentNode.textContent=\'' + shortLabel + '\';"></span>';
     }
 
     function isMlbActiveGame(g) {
@@ -1688,23 +1828,6 @@
         return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
       });
       return sorted;
-    }
-
-    function sortLeagueSectionGames(games, favoriteContext) {
-      return (games || []).slice().sort(function (a, b) {
-        var aBucket = gamePriorityBucket(a, favoriteContext);
-        var bBucket = gamePriorityBucket(b, favoriteContext);
-        if (aBucket !== bBucket) {
-          return aBucket - bBucket;
-        }
-
-        var at = new Date(a.startTime).getTime();
-        var bt = new Date(b.startTime).getTime();
-        if (at !== bt) {
-          return at - bt;
-        }
-        return String(a.id || '').localeCompare(String(b.id || ''));
-      });
     }
 
     function gameKey(g) {
@@ -1985,6 +2108,7 @@
       var html = '<article class="' + cardClasses + '" data-game-id="' + gameKey(g) + '" data-game-index="' + index + '"' + clickAttr + '>';
       html += '<div class="status-line">';
       html += '<div class="status-main">';
+      html += getLeagueIconBadgeHtml(g);
       html += '<span class="status-pill ' + statusClass(g.statusState) + '" data-field="statusShort">' + (g.statusShort || 'Scheduled') + '</span>';
       html += '<span class="situation-host">' + (isMlbActiveGame(g) ? renderMlbSituation(g) : '') + '</span>';
       html += '</div>';
@@ -2080,40 +2204,9 @@
       }
 
       if (currentSport === 'all') {
-        var leagueOrder = ['mlb', 'nfl', 'nba'];
-        var grouped = {
-          mlb: [],
-          nfl: [],
-          nba: []
-        };
-
-        for (var gi = 0; gi < games.length; gi++) {
-          var gItem = games[gi];
-          var gLeague = String(gItem && gItem.leagueKey ? gItem.leagueKey : '').toLowerCase();
-          if (grouped[gLeague]) {
-            grouped[gLeague].push(gItem);
-          }
-        }
-
         var htmlAll = '';
-        var allIndex = 0;
-        for (var lo = 0; lo < leagueOrder.length; lo++) {
-          var leagueKey = leagueOrder[lo];
-          var leagueGames = sortLeagueSectionGames(grouped[leagueKey], favoriteContext);
-          if (!leagueGames.length) {
-            continue;
-          }
-
-          var leagueLabel = String((leagueGames[0] && leagueGames[0].leagueLabel) || leagueKey.toUpperCase());
-          htmlAll += '<section class="league-section" data-league="' + leagueKey + '">';
-          htmlAll += '<div class="league-section-head">' + leagueLabel + '</div>';
-          htmlAll += '<div class="league-section-grid">';
-          for (var ai = 0; ai < leagueGames.length; ai++) {
-            htmlAll += buildLeagueCardHtml(leagueGames[ai], favoriteContext, allIndex);
-            allIndex += 1;
-          }
-          htmlAll += '</div>';
-          htmlAll += '</section>';
+        for (var ai = 0; ai < games.length; ai++) {
+          htmlAll += buildLeagueCardHtml(games[ai], favoriteContext, ai);
         }
 
         grid.innerHTML = htmlAll;
