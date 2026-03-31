@@ -309,12 +309,23 @@
       border: 2px solid rgba(255, 255, 255, 0.65);
       font-family: 'Oswald', sans-serif;
       background: rgba(255, 255, 255, 0.92);
+      background-image: none;
       color: #1f2d3c;
       font-weight: 700;
       min-width: 190px;
       font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
+      text-align: center;
+      text-align-last: center;
+      -moz-text-align-last: center;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+
+    #teamPicker::-ms-expand {
+      display: none;
     }
 
     .header-row {
@@ -641,6 +652,38 @@
     }
 
     @media (max-width: 760px) {
+      .picker-container {
+        position: relative;
+      }
+
+      #teamPicker {
+        min-width: 190px;
+        text-align: center;
+        text-align-last: center;
+        -moz-text-align-last: center;
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        -moz-appearance: none !important;
+        background-image: none !important;
+        padding-right: 10px;
+      }
+
+      .picker-container::after {
+        content: "";
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        bottom: 2px;
+        width: 24px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 0 3px 3px 0;
+        pointer-events: none;
+      }
+
+      #teamPicker option {
+        text-align: center;
+      }
+
       .roster-grid {
         grid-template-columns: 1fr;
       }
