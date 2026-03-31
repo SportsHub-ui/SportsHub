@@ -277,6 +277,19 @@
       ".site-nav__sep{font-size:0.58rem;}" +
       "}";
 
+      style.textContent +=
+        ".wakelock-btn{" +
+        "display:inline-flex;align-items:center;gap:3px;margin-left:auto;flex-shrink:0;" +
+        "background:transparent;border:1px solid rgba(0,70,173,0.3);border-radius:5px;" +
+        "color:var(--navy,#0046ad);font-family:'Oswald',sans-serif;font-size:0.62rem;" +
+        "font-weight:700;letter-spacing:0.015em;text-transform:uppercase;" +
+        "padding:2px 6px;cursor:pointer;white-space:nowrap;" +
+        "transition:background 0.2s,color 0.2s,border-color 0.2s;" +
+        "}" +
+        ".wakelock-btn:hover{background:rgba(0,70,173,0.1);}" +
+        ".wakelock-btn.is-on{background:#0b6e2a;border-color:#0b6e2a;color:#fff;}" +
+        "@media(max-width:600px){.wakelock-btn{font-size:0.58rem;padding:2px 4px;}}";
+
     document.head.appendChild(style);
   }
 
@@ -351,10 +364,117 @@
 
     if (mountNode) {
       mountNode.innerHTML = navHtml;
+      _mountWakeLockButton(mountNode);
+      _initWakeLock();
       return;
     }
 
     document.body.insertAdjacentHTML("afterbegin", navHtml);
+    _mountWakeLockButton(document.querySelector(".site-nav__rail"));
+    _initWakeLock();
+  }
+
+  function _mountWakeLockButton(mountNode) {
+    if (!navigator || !navigator.wakeLock) {
+      return;
+    }
+    var rail = mountNode && mountNode.querySelector
+      ? mountNode.querySelector(".site-nav__rail")
+      : null;
+    if (!rail) {
+      return;
+    }
+    var existing = rail.querySelector(".wakelock-btn");
+    if (existing) {
+      return;
+    }
+    var isOn = !!window._wakeLockWanted;
+    var btn = document.createElement("button");
+    btn.className = "wakelock-btn" + (isOn ? " is-on" : "");
+    btn.id = "wakeLockBtn";
+    btn.type = "button";
+    btn.title = "Keep screen awake";
+    btn.setAttribute("aria-pressed", isOn ? "true" : "false");
+    btn.textContent = isOn ? "\u25CF ON" : "\u2600 KEEP ON";
+    btn.onclick = window.toggleWakeLock;
+    rail.appendChild(btn);
+  }
+
+  function _initWakeLock() {
+    if (window._wakeLockInited) {
+      return;
+    }
+    window._wakeLockInited = true;
+    window._wakeLockSentinel = null;
+    window._wakeLockWanted = false;
+
+    function _updateBtn(isOn) {
+      var btn = document.getElementById("wakeLockBtn");
+      if (!btn) {
+        return;
+      }
+      if (isOn) {
+        btn.classList.add("is-on");
+        btn.textContent = "\u25CF ON";
+        btn.setAttribute("aria-pressed", "true");
+      } else {
+        btn.classList.remove("is-on");
+        btn.textContent = "\u2600 KEEP ON";
+        btn.setAttribute("aria-pressed", "false");
+      }
+    }
+
+    async function _acquireWakeLock() {
+      if (!navigator || !navigator.wakeLock) {
+        return;
+      }
+      try {
+        window._wakeLockSentinel = await navigator.wakeLock.request("screen");
+        window._wakeLockSentinel.addEventListener("release", function () {
+          window._wakeLockSentinel = null;
+          if (!window._wakeLockWanted) {
+            _updateBtn(false);
+          }
+        });
+      } catch (err) {
+        console.warn("Wake Lock request failed:", err);
+        window._wakeLockWanted = false;
+        _updateBtn(false);
+      }
+    }
+
+    window.toggleWakeLock = async function () {
+      if (!navigator || !navigator.wakeLock) {
+        alert("Your browser does not support the Screen Wake Lock feature.");
+        return;
+      }
+      if (window._wakeLockWanted) {
+        window._wakeLockWanted = false;
+        if (window._wakeLockSentinel) {
+          try {
+            await window._wakeLockSentinel.release();
+          } catch (err) {
+            // Ignore release errors
+          }
+          window._wakeLockSentinel = null;
+        }
+        _updateBtn(false);
+      } else {
+        window._wakeLockWanted = true;
+        _updateBtn(true);
+        await _acquireWakeLock();
+      }
+    };
+
+    document.addEventListener("visibilitychange", async function () {
+      if (
+        document.visibilityState === "visible" &&
+        window._wakeLockWanted &&
+        !window._wakeLockSentinel
+      ) {
+        await _acquireWakeLock();
+      }
+    });
   }
 
   async function fetchJson(url) {
