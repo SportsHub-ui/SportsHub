@@ -274,17 +274,17 @@
     /* Add/Update these in your <style> tag */
     .settings-bar {
       background: var(--navy);
-      padding: 8px;
+      padding: 3px 6px;
       color: white;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 12px;
+      gap: 6px;
       position: sticky;
       top: 0;
       z-index: 1000;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-      margin-bottom: 20px;
+      margin-bottom: 8px;
       border-radius: 0 0 8px 8px;
     }
 
@@ -292,12 +292,12 @@
       background: #173f77;
       color: #fff;
       border: 1px solid #102d56;
-      width: 42px;
-      height: 34px;
+      width: 36px;
+      height: 26px;
       border-radius: 4px;
       cursor: pointer;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.82rem;
       line-height: 1;
       display: inline-flex;
       align-items: center;
@@ -315,11 +315,11 @@
       color: var(--navy);
       border: 1px solid #cbd7e4;
       border-radius: 4px;
-      width: 42px;
-      height: 34px;
+      width: 36px;
+      height: 26px;
       padding: 0;
       font-family: 'Oswald', sans-serif;
-      font-size: 1rem;
+      font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
       display: inline-flex;
@@ -341,8 +341,8 @@
     }
 
     .refresh-progress {
-      width: 34px;
-      height: 10px;
+      width: 24px;
+      height: 6px;
       border: 1px solid #cbd7e4;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.45);
@@ -379,7 +379,7 @@
       text-align: center;
       color: #1f2d3c;
       font-weight: 700;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       white-space: nowrap;
@@ -413,7 +413,7 @@
     }
 
     #teamPicker {
-      height: 34px;
+      height: 26px;
       padding: 0 24px;
       border-radius: 4px;
       border: 2px solid rgba(255, 255, 255, 0.65);
@@ -423,7 +423,7 @@
       color: #1f2d3c;
       font-weight: 700;
       min-width: 190px;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       text-align: center;
@@ -445,10 +445,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       border-bottom: 3px solid var(--navy);
-      margin-bottom: 20px;
-      padding-bottom: 8px;
+      margin-bottom: 8px;
+      padding-bottom: 3px;
     }
 
     .date-wrapper {
@@ -456,15 +456,15 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: white;
-      padding: 4px 12px;
+      padding: 1px 8px;
       border-radius: 4px;
       border: 1px solid #ccc;
     }
 
     #dateDisplay {
-      font-size: 1rem;
+      font-size: 0.8rem;
       color: var(--navy);
       font-weight: bold;
       text-transform: uppercase;
@@ -766,7 +766,35 @@
     }
 
     @media (max-width: 760px) {
+      .settings-bar {
+        gap: 4px;
+      }
+
+      .nav-btn,
+      .refresh-btn {
+        width: 32px;
+        height: 24px;
+        font-size: 0.76rem;
+      }
+
+      .refresh-progress {
+        width: 20px;
+        height: 5px;
+      }
+
+      .header-row {
+        gap: 5px;
+        margin-bottom: 7px;
+        padding-bottom: 2px;
+      }
+
+      .date-wrapper {
+        gap: 5px;
+        padding: 1px 7px;
+      }
+
       #teamPicker {
+        height: 24px;
         min-width: 190px;
         text-align: center;
         text-align-last: center;
@@ -781,6 +809,14 @@
       #teamPicker option {
         text-align: center;
         color: #1f2d3c;
+      }
+
+      .picker-label {
+        font-size: 0.68rem;
+      }
+
+      #dateDisplay {
+        font-size: 0.74rem;
       }
 
       .roster-grid {

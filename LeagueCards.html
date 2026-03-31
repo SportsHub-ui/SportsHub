@@ -29,12 +29,12 @@
 
     .settings-bar {
       background: var(--navy);
-      padding: 8px;
+      padding: 3px 6px;
       color: white;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: 6px;
       position: sticky;
       top: 0;
       z-index: 1000;
@@ -45,12 +45,12 @@
       background: #173f77;
       color: #fff;
       border: 1px solid #102d56;
-      width: 42px;
-      height: 34px;
+      width: 36px;
+      height: 26px;
       border-radius: 4px;
       cursor: pointer;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.82rem;
       line-height: 1;
       display: inline-flex;
       align-items: center;
@@ -68,11 +68,11 @@
       color: var(--navy);
       border: 1px solid #cbd7e4;
       border-radius: 4px;
-      width: 42px;
-      height: 34px;
+      width: 36px;
+      height: 26px;
       padding: 0;
       font-family: 'Oswald', sans-serif;
-      font-size: 1rem;
+      font-size: 0.82rem;
       font-weight: 700;
       cursor: pointer;
       display: inline-flex;
@@ -94,8 +94,8 @@
     }
 
     .refresh-progress {
-      width: 34px;
-      height: 10px;
+      width: 24px;
+      height: 6px;
       border: 1px solid #cbd7e4;
       border-radius: 999px;
       background: rgba(255, 255, 255, 0.45);
@@ -151,7 +151,7 @@
       text-align: center;
       font-family: 'Oswald', sans-serif;
       font-weight: 700;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       color: #333;
@@ -175,7 +175,7 @@
     }
 
     #teamPicker {
-      height: 34px;
+      height: 26px;
       padding: 0 12px;
       border-radius: 4px;
       border: 2px solid var(--accent);
@@ -185,7 +185,7 @@
       color: #333;
       font-weight: bold;
       min-width: 170px;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       letter-spacing: 0.02em;
       appearance: none !important;
@@ -210,13 +210,13 @@
       align-items: center;
       justify-content: center;
       min-width: 170px;
-      height: 34px;
+      height: 26px;
       padding: 0 12px;
       border-radius: 4px;
       border: 2px solid var(--accent);
       background: #fff;
       color: #333;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       font-weight: 700;
       letter-spacing: 0.02em;
       text-transform: uppercase;
@@ -234,10 +234,10 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
-      margin: 12px 0 16px;
-      border-bottom: 3px solid var(--navy);
-      padding-bottom: 8px;
+      gap: 6px;
+      margin: 5px 0 7px;
+      border-bottom: 2px solid var(--navy);
+      padding-bottom: 3px;
     }
 
     .date-wrapper {
@@ -245,11 +245,11 @@
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: #fff;
       border-radius: 4px;
       border: 1px solid #ccd6e2;
-      padding: 4px 12px;
+      padding: 1px 8px;
       transition: border-color 0.2s;
     }
 
@@ -258,7 +258,7 @@
     }
 
     #dateDisplay {
-      font-size: 0.92rem;
+      font-size: 0.8rem;
       color: var(--navy);
       font-weight: 700;
       text-transform: uppercase;
@@ -1103,7 +1103,30 @@
 
     @media (max-width: 700px) {
       .settings-bar {
-        gap: 6px;
+        gap: 4px;
+      }
+
+      .nav-btn,
+      .refresh-btn {
+        width: 32px;
+        height: 24px;
+        font-size: 0.76rem;
+      }
+
+      .refresh-progress {
+        width: 20px;
+        height: 5px;
+      }
+
+      .header-row {
+        gap: 5px;
+        margin: 4px 0 6px;
+        padding-bottom: 2px;
+      }
+
+      .date-wrapper {
+        gap: 5px;
+        padding: 1px 7px;
       }
 
       .league-team-line {
@@ -1130,21 +1153,23 @@
       }
 
       #teamPicker {
+        height: 24px;
         min-width: 130px;
-        font-size: 0.72rem;
+        font-size: 0.68rem;
       }
 
       .picker-label {
-        font-size: 0.72rem;
+        font-size: 0.68rem;
       }
 
       .favorites-legend {
+        height: 24px;
         min-width: 130px;
-        font-size: 0.72rem;
+        font-size: 0.68rem;
       }
 
       #dateDisplay {
-        font-size: 0.82rem;
+        font-size: 0.74rem;
       }
 
       .nba-summary-top,
