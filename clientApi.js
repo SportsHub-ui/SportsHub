@@ -877,12 +877,43 @@
       }
 
       if (battingTeam && Array.isArray(battingTeam.batters) && battingTeam.batters.length > 0) {
+        const batterEntries = battingTeam.batters
+          .map(function (batterId) {
+            return battingTeam.players ? battingTeam.players["ID" + batterId] : null;
+          })
+          .filter(Boolean);
+
         let currentBatter = null;
-        for (let i = 0; i < battingTeam.batters.length; i += 1) {
-          const batter = battingTeam.players ? battingTeam.players["ID" + battingTeam.batters[i]] : null;
-          if (batter && batter.gameStatus && batter.gameStatus.isCurrentBatter) {
+        let onDeckBatter = null;
+        let nextBatter = null;
+        let currentBatterIndex = -1;
+
+        for (let i = 0; i < batterEntries.length; i += 1) {
+          const batter = batterEntries[i];
+          const status = batter && batter.gameStatus ? batter.gameStatus : {};
+          if (!currentBatter && status.isCurrentBatter) {
             currentBatter = batter;
-            break;
+            currentBatterIndex = i;
+          }
+          if (!onDeckBatter && (status.isOnDeck || status.isOnDeckBatter)) {
+            onDeckBatter = batter;
+          }
+          if (!nextBatter && (status.isNextBatter || status.isNextUpBatter)) {
+            nextBatter = batter;
+          }
+        }
+
+        if (currentBatter) {
+          if (!onDeckBatter && batterEntries.length > 1) {
+            onDeckBatter = batterEntries[(currentBatterIndex + 1) % batterEntries.length];
+          }
+        } else {
+          if (!nextBatter && batterEntries.length) {
+            nextBatter = batterEntries[0];
+          }
+          if (!onDeckBatter && batterEntries.length > 1) {
+            const nextIndex = Math.max(0, batterEntries.indexOf(nextBatter));
+            onDeckBatter = batterEntries[(nextIndex + 1) % batterEntries.length];
           }
         }
 
@@ -900,6 +931,14 @@
             seasonAvg = gameBatting.avg;
           }
           gameObj.batterAvg = seasonAvg ? String(seasonAvg).replace("0.", ".") : ".000";
+        }
+
+        if (nextBatter && nextBatter.person && nextBatter.person.fullName) {
+          gameObj.nextBatter = toCompactPlayerName(nextBatter.person.fullName);
+        }
+
+        if (onDeckBatter && onDeckBatter.person && onDeckBatter.person.fullName) {
+          gameObj.onDeckBatter = toCompactPlayerName(onDeckBatter.person.fullName);
         }
       }
     } catch (error) {

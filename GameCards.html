@@ -1528,6 +1528,16 @@
           if (g.batterLine) { html += '<span class="stat-tag">' + '(' + g.batterAvg + ') ' + g.batterLine + '</span>'; }
           if (g.ballStrikeCount) { html += '<span class="stat-tag">' + g.ballStrikeCount + '</span>'; }
           html += '</div>';
+          if (g.onDeckBatter) {
+            html += '<div><span class="pitch-label">OD:</span> ' + g.onDeckBatter + '</div>';
+          }
+        } else {
+          if (g.nextBatter) {
+            html += '<div><span class="pitch-label">N:</span> ' + g.nextBatter + '</div>';
+          }
+          if (g.onDeckBatter) {
+            html += '<div><span class="pitch-label">OD:</span> ' + g.onDeckBatter + '</div>';
+          }
         }
         return html;
       } else {
