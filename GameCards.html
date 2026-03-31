@@ -144,20 +144,17 @@
       border-color: #173f77;
     }
 
-    .refresh-btn,
-    .auto-refresh-btn {
+    .refresh-btn {
       background: #fff;
       color: var(--navy);
       border: 1px solid #cbd7e4;
       border-radius: 4px;
-      min-width: 96px;
+      width: 42px;
       height: 34px;
-      padding: 0 12px;
+      padding: 0;
       font-family: 'Oswald', sans-serif;
-      font-size: 0.78rem;
+      font-size: 1rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
@@ -166,16 +163,43 @@
       transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
     }
 
-    .refresh-btn:hover,
-    .auto-refresh-btn:hover {
+    .refresh-btn:hover {
       background: #f3f8ff;
       border-color: var(--navy);
     }
 
-    .auto-refresh-btn.is-off {
+    .refresh-btn.is-off {
       background: #fff1f1;
       color: #7a1e1e;
       border-color: #e6b8b8;
+    }
+
+    .refresh-progress {
+      width: 34px;
+      height: 10px;
+      border: 1px solid #cbd7e4;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.45);
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    .refresh-progress-fill {
+      display: block;
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #6bcf84 0%, #2e7d32 100%);
+      transition: width 0.25s linear;
+    }
+
+    .refresh-progress.is-off .refresh-progress-fill {
+      width: 0 !important;
+      background: #c8ced8;
+    }
+
+    .refresh-progress.is-idle .refresh-progress-fill {
+      width: 18% !important;
+      background: #d4dbe5;
     }
 
     .flash-updated {
@@ -1128,7 +1152,7 @@
   </div>
 
   <div class="settings-bar" id="settingsBar">
-    <button id="manualRefreshBtn" class="refresh-btn" onclick="manualRefresh()" title="Refresh now">Refresh</button>
+    <button id="manualRefreshBtn" class="refresh-btn" title="Tap to refresh. Press and hold to toggle auto refresh" aria-label="Refresh">↻</button>
     <div class="picker-container">
       <select id="teamPicker" onchange="updateFavTeam()">
         <option value="" disabled selected>-- Select Your Team --</option>
@@ -1178,7 +1202,7 @@
       <span id="teamPickerLabel" class="picker-label">-- Select Your Team --</span>
       <span id="saveStatus">SAVING...</span>
     </div>
-    <button id="autoRefreshBtn" class="auto-refresh-btn" onclick="toggleAutoRefresh()" title="Toggle auto refresh">Auto: On</button>
+    <div id="autoRefreshIndicator" class="refresh-progress" title="Auto refresh progress" aria-hidden="true"><span id="autoRefreshIndicatorFill" class="refresh-progress-fill"></span></div>
   </div>
 
   <div class="container">
@@ -1209,6 +1233,8 @@
     let autoRefreshCountdownTimer = null;
     let nextAutoRefreshAt = 0;
     let refreshInFlight = false;
+    let refreshHoldTimer = null;
+    let suppressRefreshClick = false;
     const LIVE_REFRESH_MS = 30000;
     const FAVORITE_GAMES_KEY = 'MY_FAV_GAMES_MLB';
 
@@ -1354,9 +1380,54 @@
       loadDashboard(initial.date).then(function () {
         tryOpenRequestedGameModal();
       });
+      setupRefreshControl();
       startAutoRefresh();
       updateAutoRefreshButton();
     };
+
+    function setupRefreshControl() {
+      var btn = document.getElementById('manualRefreshBtn');
+      if (!btn || btn.getAttribute('data-hold-bound') === '1') {
+        return;
+      }
+      btn.setAttribute('data-hold-bound', '1');
+
+      btn.addEventListener('pointerdown', function (event) {
+        if (event.button !== undefined && event.button !== 0) {
+          return;
+        }
+        if (refreshHoldTimer) {
+          clearTimeout(refreshHoldTimer);
+          refreshHoldTimer = null;
+        }
+        refreshHoldTimer = setTimeout(function () {
+          refreshHoldTimer = null;
+          suppressRefreshClick = true;
+          toggleAutoRefresh();
+        }, 600);
+      });
+
+      function clearHoldTimer() {
+        if (refreshHoldTimer) {
+          clearTimeout(refreshHoldTimer);
+          refreshHoldTimer = null;
+        }
+      }
+
+      btn.addEventListener('pointerup', clearHoldTimer);
+      btn.addEventListener('pointercancel', clearHoldTimer);
+      btn.addEventListener('pointerleave', clearHoldTimer);
+
+      btn.addEventListener('click', function (event) {
+        if (suppressRefreshClick) {
+          suppressRefreshClick = false;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        manualRefresh();
+      });
+    }
 
     function syncTeamPickerLabel() {
       var picker = document.getElementById('teamPicker');
@@ -1390,13 +1461,49 @@
     }
 
     function updateAutoRefreshButton() {
-      var btn = document.getElementById('autoRefreshBtn');
+      var btn = document.getElementById('manualRefreshBtn');
       if (!btn) {
         return;
       }
       btn.classList.toggle('is-off', !autoRefreshEnabled);
-      btn.innerText = autoRefreshEnabled ? 'Auto: On' : 'Auto: Off';
+      btn.setAttribute('aria-label', autoRefreshEnabled ? 'Refresh. Auto refresh is on. Long press to turn auto refresh off.' : 'Refresh. Auto refresh is off. Long press to turn auto refresh on.');
+      btn.setAttribute('title', autoRefreshEnabled ? 'Tap to refresh. Press and hold to turn auto refresh off.' : 'Tap to refresh. Press and hold to turn auto refresh on.');
+      btn.textContent = '↻';
+      if (window.setWakeLockWanted) {
+        window.setWakeLockWanted(autoRefreshEnabled);
+      }
+      updateRefreshProgressIndicator();
       updateRefreshHint();
+    }
+
+    function updateRefreshProgressIndicator() {
+      var indicator = document.getElementById('autoRefreshIndicator');
+      var fill = document.getElementById('autoRefreshIndicatorFill');
+      if (!indicator || !fill) {
+        return;
+      }
+
+      if (!autoRefreshEnabled) {
+        indicator.classList.add('is-off');
+        indicator.classList.remove('is-idle');
+        fill.style.width = '0%';
+        return;
+      }
+
+      indicator.classList.remove('is-off');
+
+      var delay = getAutoRefreshDelay();
+      if (!delay || !nextAutoRefreshAt) {
+        indicator.classList.add('is-idle');
+        fill.style.width = '18%';
+        return;
+      }
+
+      indicator.classList.remove('is-idle');
+      var remaining = Math.max(0, nextAutoRefreshAt - Date.now());
+      var progress = 1 - (remaining / delay);
+      progress = Math.max(0, Math.min(1, progress));
+      fill.style.width = (progress * 100).toFixed(1) + '%';
     }
 
     function toggleAutoRefresh() {
@@ -1477,6 +1584,7 @@
 
       hint.classList.toggle('is-attention', needsAttention);
       hint.innerText = message;
+      updateRefreshProgressIndicator();
     }
 
     function scheduleNextAutoRefresh() {
