@@ -113,7 +113,16 @@
 
     .refresh-progress.is-off .refresh-progress-fill {
       width: 0 !important;
-      background: #c8ced8;
+      background: transparent;
+    }
+
+    .refresh-progress.is-off {
+      background: #c0392b;
+      cursor: pointer;
+    }
+
+    .refresh-progress {
+      cursor: pointer;
     }
 
     .refresh-progress.is-idle .refresh-progress-fill {
@@ -1219,8 +1228,6 @@
       </div>
       <button class="nav-btn" onclick="changeDate(1)">►</button>
     </div>
-    <div id="refreshHint" class="refresh-hint"></div>
-
     <div class="grid" id="gameGrid">
       <div class="loader">Loading games...</div>
     </div>
@@ -1347,8 +1354,7 @@
     var autoRefreshCountdownTimer = null;
     var nextAutoRefreshAt = 0;
     var refreshInFlight = false;
-    var refreshHoldTimer = null;
-    var suppressRefreshClick = false;
+
     var LIVE_REFRESH_MS = 30000;
 
     function supportsTeamPickerSport() {
@@ -1872,41 +1878,16 @@
       }
       btn.setAttribute('data-hold-bound', '1');
 
-      btn.addEventListener('pointerdown', function (event) {
-        if (event.button !== undefined && event.button !== 0) {
-          return;
-        }
-        if (refreshHoldTimer) {
-          clearTimeout(refreshHoldTimer);
-          refreshHoldTimer = null;
-        }
-        refreshHoldTimer = setTimeout(function () {
-          refreshHoldTimer = null;
-          suppressRefreshClick = true;
-          toggleAutoRefresh();
-        }, 600);
-      });
-
-      function clearHoldTimer() {
-        if (refreshHoldTimer) {
-          clearTimeout(refreshHoldTimer);
-          refreshHoldTimer = null;
-        }
-      }
-
-      btn.addEventListener('pointerup', clearHoldTimer);
-      btn.addEventListener('pointercancel', clearHoldTimer);
-      btn.addEventListener('pointerleave', clearHoldTimer);
-
-      btn.addEventListener('click', function (event) {
-        if (suppressRefreshClick) {
-          suppressRefreshClick = false;
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
+      btn.addEventListener('click', function () {
         manualRefresh();
       });
+
+      var indicator = document.getElementById('autoRefreshIndicator');
+      if (indicator) {
+        indicator.addEventListener('click', function () {
+          toggleAutoRefresh();
+        });
+      }
     }
 
     function updateAutoRefreshButton() {
@@ -1915,14 +1896,13 @@
         return;
       }
       btn.classList.toggle('is-off', !autoRefreshEnabled);
-      btn.setAttribute('aria-label', autoRefreshEnabled ? 'Refresh. Auto refresh is on. Long press to turn auto refresh off.' : 'Refresh. Auto refresh is off. Long press to turn auto refresh on.');
-      btn.setAttribute('title', autoRefreshEnabled ? 'Tap to refresh. Press and hold to turn auto refresh off.' : 'Tap to refresh. Press and hold to turn auto refresh on.');
+      btn.setAttribute('aria-label', 'Refresh');
+      btn.setAttribute('title', 'Tap to refresh');
       btn.textContent = '↻';
       if (window.setWakeLockWanted) {
         window.setWakeLockWanted(autoRefreshEnabled);
       }
       updateRefreshProgressIndicator();
-      updateRefreshHint();
     }
 
     function updateRefreshProgressIndicator() {
@@ -2018,27 +1998,6 @@
     }
 
     function updateRefreshHint() {
-      var hint = document.getElementById('refreshHint');
-      if (!hint) {
-        return;
-      }
-
-      var message = '';
-      var needsAttention = false;
-
-      if (!autoRefreshEnabled) {
-        message = 'Auto refresh is off.';
-      } else if (!isViewingToday()) {
-        message = 'Auto refresh only runs for today.';
-      } else if (!hasLiveLeagueGames()) {
-        message = 'Manual refresh is required after games begin to start auto refresh.';
-        needsAttention = true;
-      } else {
-        message = 'Auto refresh is active for live games every 30 seconds.';
-      }
-
-      hint.classList.toggle('is-attention', needsAttention);
-      hint.innerText = message;
       updateRefreshProgressIndicator();
     }
 

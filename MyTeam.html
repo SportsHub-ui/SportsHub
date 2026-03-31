@@ -360,7 +360,16 @@
 
     .refresh-progress.is-off .refresh-progress-fill {
       width: 0 !important;
-      background: #c8ced8;
+      background: transparent;
+    }
+
+    .refresh-progress.is-off {
+      background: #c0392b;
+      cursor: pointer;
+    }
+
+    .refresh-progress {
+      cursor: pointer;
     }
 
     .picker-container {
@@ -1114,8 +1123,7 @@
       var autoRefreshTimer = null;
       var autoRefreshCountdownTimer = null;
       var nextAutoRefreshAt = 0;
-      var refreshHoldTimer = null;
-      var suppressRefreshClick = false;
+
       var AUTO_REFRESH_MS = 60000;
 
       window.onload = function () {
@@ -1139,41 +1147,16 @@
         }
         btn.setAttribute('data-hold-bound', '1');
 
-        btn.addEventListener('pointerdown', function (event) {
-          if (event.button !== undefined && event.button !== 0) {
-            return;
-          }
-          if (refreshHoldTimer) {
-            clearTimeout(refreshHoldTimer);
-            refreshHoldTimer = null;
-          }
-          refreshHoldTimer = setTimeout(function () {
-            refreshHoldTimer = null;
-            suppressRefreshClick = true;
-            toggleAutoRefresh();
-          }, 600);
-        });
-
-        function clearHoldTimer() {
-          if (refreshHoldTimer) {
-            clearTimeout(refreshHoldTimer);
-            refreshHoldTimer = null;
-          }
-        }
-
-        btn.addEventListener('pointerup', clearHoldTimer);
-        btn.addEventListener('pointercancel', clearHoldTimer);
-        btn.addEventListener('pointerleave', clearHoldTimer);
-
-        btn.addEventListener('click', function (event) {
-          if (suppressRefreshClick) {
-            suppressRefreshClick = false;
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-          }
+        btn.addEventListener('click', function () {
           manualRefresh();
         });
+
+        var indicator = document.getElementById('autoRefreshIndicator');
+        if (indicator) {
+          indicator.addEventListener('click', function () {
+            toggleAutoRefresh();
+          });
+        }
       }
 
       function updateAutoRefreshButton() {
@@ -1182,8 +1165,8 @@
           return;
         }
         btn.classList.toggle('is-off', !autoRefreshEnabled);
-        btn.setAttribute('aria-label', autoRefreshEnabled ? 'Refresh. Auto refresh is on. Long press to turn auto refresh off.' : 'Refresh. Auto refresh is off. Long press to turn auto refresh on.');
-        btn.setAttribute('title', autoRefreshEnabled ? 'Tap to refresh. Press and hold to turn auto refresh off.' : 'Tap to refresh. Press and hold to turn auto refresh on.');
+        btn.setAttribute('aria-label', 'Refresh');
+        btn.setAttribute('title', 'Tap to refresh');
         btn.textContent = '↻';
         if (window.setWakeLockWanted) {
           window.setWakeLockWanted(autoRefreshEnabled);
