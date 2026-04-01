@@ -2641,15 +2641,13 @@
               (payload && payload.games ? payload.games : []).forEach(function (game) {
                 game.leagueKey = sport;
                 game.leagueLabel = payload.leagueLabel || sport.toUpperCase();
-                if (isFavoriteGameById(sport, game.id)) {
-                  combined.push(game);
-                }
+                combined.push(game);
               });
             });
 
             lastPayload = {
               leagueKey: 'all',
-              leagueLabel: 'All Favorites',
+              leagueLabel: 'All',
               currentDateIso: targetDate,
               games: combined
             };
