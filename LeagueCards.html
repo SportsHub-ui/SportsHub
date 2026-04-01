@@ -1436,10 +1436,48 @@
       return !!team && !!favorite && team === favorite;
     }
 
+    function normalizeSimpleToken(value) {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/\./g, '')
+        .replace(/[^a-z0-9]+/g, '')
+        .trim();
+    }
+
+    function teamObjectMatchesFavorite(teamObj, favoriteName, sportKey) {
+      if (!teamObj || !favoriteName) {
+        return false;
+      }
+
+      var favoriteRaw = String(favoriteName || '').trim();
+      if (!favoriteRaw) {
+        return false;
+      }
+
+      var teamId = String(teamObj.id || '').trim();
+      if (teamId && favoriteRaw === teamId) {
+        return true;
+      }
+
+      var teamName = teamObj.name ? String(teamObj.name) : '';
+      if (teamMatchesFavorite(teamName, favoriteRaw, sportKey)) {
+        return true;
+      }
+
+      var teamAbbrToken = normalizeSimpleToken(teamObj.abbr || '');
+      if (!teamAbbrToken) {
+        return false;
+      }
+
+      var favoriteToken = normalizeSimpleToken(favoriteRaw);
+      var favoriteNameToken = normalizeSimpleToken(normalizeTeamNameForMatch(favoriteRaw, sportKey));
+      return !!favoriteToken && (teamAbbrToken === favoriteToken || teamAbbrToken === favoriteNameToken);
+    }
+
     function isFavoriteTeamGame(g, favoriteContext) {
       var sport = String(g && g.leagueKey ? g.leagueKey : '').toLowerCase();
-      var awayName = g && g.away && g.away.name ? String(g.away.name) : '';
-      var homeName = g && g.home && g.home.name ? String(g.home.name) : '';
+      var awayTeam = g && g.away ? g.away : {};
+      var homeTeam = g && g.home ? g.home : {};
 
       if (!favoriteContext) {
         return false;
@@ -1473,14 +1511,14 @@
         });
 
         return candidates.some(function (favoriteName) {
-          return teamMatchesFavorite(awayName, favoriteName, sport) || teamMatchesFavorite(homeName, favoriteName, sport);
+          return teamObjectMatchesFavorite(awayTeam, favoriteName, sport) || teamObjectMatchesFavorite(homeTeam, favoriteName, sport);
         });
       }
 
       var favoriteTeam = favoriteContext.team ? String(favoriteContext.team) : '';
       return !!favoriteTeam && (
-        teamMatchesFavorite(awayName, favoriteTeam, sport) ||
-        teamMatchesFavorite(homeName, favoriteTeam, sport)
+        teamObjectMatchesFavorite(awayTeam, favoriteTeam, sport) ||
+        teamObjectMatchesFavorite(homeTeam, favoriteTeam, sport)
       );
     }
 
@@ -2639,6 +2677,9 @@
             payloads.forEach(function (payload) {
               var sport = String(payload && payload.leagueKey ? payload.leagueKey : '').toLowerCase();
               (payload && payload.games ? payload.games : []).forEach(function (game) {
+                if (!isFavoriteGameById(sport, game && game.id)) {
+                  return;
+                }
                 game.leagueKey = sport;
                 game.leagueLabel = payload.leagueLabel || sport.toUpperCase();
                 combined.push(game);
