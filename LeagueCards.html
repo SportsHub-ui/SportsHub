@@ -72,7 +72,7 @@
       height: 26px;
       padding: 0;
       font-family: 'Oswald', sans-serif;
-      font-size: 1.45rem;
+      font-size: 0;
       font-weight: 700;
       line-height: 1;
       cursor: pointer;
@@ -80,7 +80,25 @@
       align-items: center;
       justify-content: center;
       box-sizing: border-box;
+      position: relative;
       transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+
+    .refresh-btn::before {
+      content: "";
+      width: 20px;
+      height: 20px;
+      background-color: currentColor;
+      -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M17.65 6.35C16.2 4.9 14.21 4 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5 0 1.64-.8 3.09-2.02 4l1.46 1.46C18.1 16.18 19 14.21 19 12c0-2.21-.9-4.21-2.35-5.65zM6 12c0-1.64.8-3.09 2.02-4L6.56 6.54C4.9 7.82 4 9.79 4 12c0 2.21.9 4.18 2.35 5.65C7.8 19.1 9.79 20 12 20v3l5-5-5-5v4c-2.76 0-5-2.24-5-5z'/%3E%3C/svg%3E");
+      mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='black' d='M17.65 6.35C16.2 4.9 14.21 4 12 4V1L7 6l5 5V7c2.76 0 5 2.24 5 5 0 1.64-.8 3.09-2.02 4l1.46 1.46C18.1 16.18 19 14.21 19 12c0-2.21-.9-4.21-2.35-5.65zM6 12c0-1.64.8-3.09 2.02-4L6.56 6.54C4.9 7.82 4 9.79 4 12c0 2.21.9 4.18 2.35 5.65C7.8 19.1 9.79 20 12 20v3l5-5-5-5v4c-2.76 0-5-2.24-5-5z'/%3E%3C/svg%3E");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      transform: rotate(180deg);
+      flex: 0 0 auto;
     }
 
     .refresh-btn:hover {
@@ -1120,7 +1138,12 @@
       .refresh-btn {
         width: 32px;
         height: 24px;
-        font-size: 1.25rem;
+        font-size: 0;
+      }
+
+      .refresh-btn::before {
+        width: 18px;
+        height: 18px;
       }
 
       .refresh-progress {
@@ -1208,7 +1231,7 @@
 <body>
   <div id="siteNav"></div>
   <div class="settings-bar" id="headerBar">
-    <button id="manualRefreshBtn" class="refresh-btn" title="Tap to refresh. Press and hold to toggle auto refresh" aria-label="Refresh">↻</button>
+    <button id="manualRefreshBtn" class="refresh-btn" title="Tap to refresh" aria-label="Refresh"></button>
     <div class="picker-container" id="teamPickerHost">
       <select id="teamPicker" onchange="applyFavoriteTeamChange()">
         <option value="">My Team (Optional)</option>
@@ -1937,7 +1960,6 @@
       btn.classList.toggle('is-off', !autoRefreshEnabled);
       btn.setAttribute('aria-label', 'Refresh');
       btn.setAttribute('title', 'Tap to refresh');
-      btn.textContent = '↻';
       if (window.setWakeLockWanted) {
         window.setWakeLockWanted(autoRefreshEnabled);
       }
