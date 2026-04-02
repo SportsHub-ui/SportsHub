@@ -452,7 +452,8 @@
     .situation-host {
       display: inline-flex;
       align-items: center;
-      margin-left: 4px;
+      margin-left: auto;
+      min-width: 0;
     }
 
     .situation-container {
@@ -2159,8 +2160,8 @@
       html += '<div class="status-main">';
       html += getLeagueIconBadgeHtml(g);
       html += '<span class="status-pill ' + statusClass(g.statusState) + '" data-field="statusShort">' + (g.statusShort || 'Scheduled') + '</span>';
-      html += '<span class="situation-host">' + (isMlbActiveGame(g) ? renderMlbSituation(g) : '') + '</span>';
       html += '</div>';
+      html += '<span class="situation-host">' + (isMlbActiveGame(g) ? renderMlbSituation(g) : '') + '</span>';
       html += '<button class="game-fav-btn ' + (isFavoriteGame ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + String(g.id) + '\',\'' + sport + '\')">' + (isFavoriteGame ? '★' : '☆') + '</button>';
       html += '</div>';
 
