@@ -908,6 +908,29 @@
           })
           .filter(Boolean);
 
+        function getLiveBatterAvg(batter) {
+          if (!batter) {
+            return ".000";
+          }
+          const gameBatting = batter.stats && batter.stats.batting ? batter.stats.batting : {};
+          const seasonBatting = batter.seasonStats && batter.seasonStats.batting ? batter.seasonStats.batting : {};
+          const rawAvg = seasonBatting.avg || gameBatting.avg || ".000";
+          return String(rawAvg).replace("0.", ".");
+        }
+
+        function getLiveBatterAtBats(batter) {
+          if (!batter) {
+            return 0;
+          }
+          const gameBatting = batter.stats && batter.stats.batting ? batter.stats.batting : {};
+          const rawAtBats = gameBatting.atBats;
+          if (rawAtBats === undefined || rawAtBats === null || rawAtBats === "") {
+            return 0;
+          }
+          const atBats = Number(rawAtBats);
+          return Number.isNaN(atBats) ? 0 : atBats;
+        }
+
         let currentBatter = null;
         let onDeckBatter = null;
         let nextBatter = null;
@@ -960,10 +983,14 @@
 
         if (nextBatter && nextBatter.person && nextBatter.person.fullName) {
           gameObj.nextBatter = toCompactPlayerName(nextBatter.person.fullName);
+          gameObj.nextBatterAvg = getLiveBatterAvg(nextBatter);
+          gameObj.nextBatterAtBats = getLiveBatterAtBats(nextBatter);
         }
 
         if (onDeckBatter && onDeckBatter.person && onDeckBatter.person.fullName) {
           gameObj.onDeckBatter = toCompactPlayerName(onDeckBatter.person.fullName);
+          gameObj.onDeckBatterAvg = getLiveBatterAvg(onDeckBatter);
+          gameObj.onDeckBatterAtBats = getLiveBatterAtBats(onDeckBatter);
         }
       }
     } catch (error) {

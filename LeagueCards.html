@@ -1791,14 +1791,14 @@
           }
           html += '</span></div>';
           if (g.onDeckBatter) {
-            html += '<div class="sport-info-row"><span class="pitch-label">OD:</span><span class="sport-info-text">' + g.onDeckBatter + '</span></div>';
+            html += '<div class="sport-info-row"><span class="pitch-label">OD:</span><span class="sport-info-text">' + g.onDeckBatter + '<span class="stat-tag">(' + (g.onDeckBatterAvg || '.000') + ') AB ' + (g.onDeckBatterAtBats !== undefined ? g.onDeckBatterAtBats : 0) + '</span></span></div>';
           }
         } else {
           if (g.nextBatter) {
-            html += '<div class="sport-info-row"><span class="pitch-label">N:</span><span class="sport-info-text">' + g.nextBatter + '</span></div>';
+            html += '<div class="sport-info-row"><span class="pitch-label">N:</span><span class="sport-info-text">' + g.nextBatter + '<span class="stat-tag">(' + (g.nextBatterAvg || '.000') + ') AB ' + (g.nextBatterAtBats !== undefined ? g.nextBatterAtBats : 0) + '</span></span></div>';
           }
           if (g.onDeckBatter) {
-            html += '<div class="sport-info-row"><span class="pitch-label">OD:</span><span class="sport-info-text">' + g.onDeckBatter + '</span></div>';
+            html += '<div class="sport-info-row"><span class="pitch-label">OD:</span><span class="sport-info-text">' + g.onDeckBatter + '<span class="stat-tag">(' + (g.onDeckBatterAvg || '.000') + ') AB ' + (g.onDeckBatterAtBats !== undefined ? g.onDeckBatterAtBats : 0) + '</span></span></div>';
           }
         }
 

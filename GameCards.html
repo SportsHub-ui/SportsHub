@@ -1887,14 +1887,20 @@
           if (g.ballStrikeCount) { html += '<span class="stat-tag">' + g.ballStrikeCount + '</span>'; }
           html += '</div>';
           if (g.onDeckBatter) {
-            html += '<div><span class="pitch-label">OD:</span> ' + g.onDeckBatter + '</div>';
+            html += '<div><span class="pitch-label">OD:</span> ' + g.onDeckBatter;
+            html += '<span class="stat-tag">(' + (g.onDeckBatterAvg || '.000') + ') AB ' + (g.onDeckBatterAtBats !== undefined ? g.onDeckBatterAtBats : 0) + '</span>';
+            html += '</div>';
           }
         } else {
           if (g.nextBatter) {
-            html += '<div><span class="pitch-label">N:</span> ' + g.nextBatter + '</div>';
+            html += '<div><span class="pitch-label">N:</span> ' + g.nextBatter;
+            html += '<span class="stat-tag">(' + (g.nextBatterAvg || '.000') + ') AB ' + (g.nextBatterAtBats !== undefined ? g.nextBatterAtBats : 0) + '</span>';
+            html += '</div>';
           }
           if (g.onDeckBatter) {
-            html += '<div><span class="pitch-label">OD:</span> ' + g.onDeckBatter + '</div>';
+            html += '<div><span class="pitch-label">OD:</span> ' + g.onDeckBatter;
+            html += '<span class="stat-tag">(' + (g.onDeckBatterAvg || '.000') + ') AB ' + (g.onDeckBatterAtBats !== undefined ? g.onDeckBatterAtBats : 0) + '</span>';
+            html += '</div>';
           }
         }
         return html;
