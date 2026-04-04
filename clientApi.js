@@ -2348,9 +2348,9 @@
     const leagues = [
       { sport: "baseball", league: "mlb", label: "MLB" },
       { sport: "basketball", league: "nba", label: "NBA" },
-      { sport: "hockey", league: "nhl", label: "NHL" },
       { sport: "football", league: "nfl", label: "NFL" },
-      { sport: "basketball", league: "mens-college-basketball", label: "NCAA" }
+      { sport: "basketball", league: "mens-college-basketball", label: "NCAAB" },
+      { sport: "football", league: "college-football", label: "NCAAF" }
     ];
 
     const today = toIsoDate(new Date()).replace(/-/g, "");
@@ -2378,7 +2378,8 @@
               name: ev.shortName || "Matchup",
               time: ev.date,
               network: network,
-              status: ev.status && ev.status.type ? ev.status.type.shortDetail : "Scheduled"
+              status: ev.status && ev.status.type ? ev.status.type.shortDetail : "Scheduled",
+              statusState: ev.status && ev.status.type ? String(ev.status.type.state || "") : ""
             });
           });
         } catch (error) {

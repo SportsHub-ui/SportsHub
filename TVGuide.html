@@ -20,8 +20,9 @@
       --bg: #f4f7f9;
       --mlb: #0046ad;
       --nba: #ef420a;
-      --nhl: #000000;
       --nfl: #013369;
+      --ncaab: #6d28d9;
+      --ncaaf: #7c2d12;
     }
 
     body {
@@ -64,7 +65,8 @@
       cursor: pointer;
       padding: 4px 11px;
       border-radius: 20px;
-      background: #eee;
+      background: #eef2f7;
+      color: #334155;
       font-weight: bold;
       font-size: 0.74rem;
       transition: 0.3s;
@@ -77,9 +79,36 @@
     }
 
     .pill:has(input:checked) {
-      background: var(--navy);
       color: white;
-      border-color: var(--gold);
+      border-color: transparent;
+    }
+
+    .pill:has(input[value="MLB"]:checked) {
+      background: var(--mlb);
+    }
+
+    .pill:has(input[value="NBA"]:checked) {
+      background: var(--nba);
+    }
+
+    .pill:has(input[value="NFL"]:checked) {
+      background: var(--nfl);
+    }
+
+    .pill:has(input[value="NCAAB"]:checked) {
+      background: var(--ncaab);
+    }
+
+    .pill:has(input[value="NCAAF"]:checked) {
+      background: var(--ncaaf);
+    }
+
+    .pill:has(input:disabled) {
+      background: #e2e8f0;
+      color: #94a3b8;
+      border-color: #cbd5e1;
+      cursor: not-allowed;
+      opacity: 0.7;
     }
 
     .time-filter {
@@ -97,30 +126,30 @@
 
     /* Grid Layout */
     .container {
-      padding: 20px;
+      padding: 12px;
       max-width: 1200px;
       margin: auto;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
     }
 
     /* Professional Card */
     .card {
       background: white;
-      border-radius: 8px;
+      border-radius: 6px;
       overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      border-left: 5px solid #ccc;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid #ccc;
       transition: transform 0.2s;
     }
 
     .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
     }
 
     /* Sport Color Coding */
@@ -128,60 +157,94 @@
       border-left-color: var(--mlb);
     }
 
+    .card.MLB .league-pill {
+      background: var(--mlb);
+    }
+
     .card.NBA {
       border-left-color: var(--nba);
     }
 
-    .card.NHL {
-      border-left-color: var(--nhl);
+    .card.NBA .league-pill {
+      background: var(--nba);
     }
 
     .card.NFL {
       border-left-color: var(--nfl);
     }
 
+    .card.NFL .league-pill {
+      background: var(--nfl);
+    }
+
+    .card.NCAAB {
+      border-left-color: var(--ncaab);
+    }
+
+    .card.NCAAB .league-pill {
+      background: var(--ncaab);
+    }
+
+    .card.NCAAF {
+      border-left-color: var(--ncaaf);
+    }
+
+    .card.NCAAF .league-pill {
+      background: var(--ncaaf);
+    }
+
     .card-body {
-      padding: 15px;
+      padding: 8px 10px;
     }
 
-    .league-badge {
-      font-size: 0.65rem;
-      background: #f0f0f0;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 900;
-      color: #666;
-    }
-
-    .matchup {
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin: 10px 0;
-      color: #222;
-    }
-
-    .info-row {
+    .title-line {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-top: 15px;
+      gap: 6px;
+      min-width: 0;
     }
 
-    .network-tag {
-      background: #fff8e1;
-      color: #856404;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      border: 1px solid #ffeeba;
+    .league-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 6px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      flex: 0 0 auto;
     }
 
-    .time-tag {
+    .matchup-line {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #1f2937;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+
+    .meta-line {
+      display: block;
+      margin-top: 3px;
       font-family: 'Roboto Mono', monospace;
-      font-weight: bold;
-      font-size: 0.9rem;
-      color: var(--navy);
+      font-size: 0.74rem;
+      color: #5b6574;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meta-line.is-live {
+      color: #b91c1c;
+      font-weight: 700;
     }
 
     .loader {
@@ -655,9 +718,11 @@
         <label class="pill">
           <input type="checkbox" class="sport-check" value="NBA" checked onchange="applyFilters()">NBA</label>
         <label class="pill">
-          <input type="checkbox" class="sport-check" value="NHL" checked onchange="applyFilters()">NHL</label>
-        <label class="pill">
           <input type="checkbox" class="sport-check" value="NFL" checked onchange="applyFilters()">NFL</label>
+        <label class="pill">
+          <input type="checkbox" class="sport-check" value="NCAAB" checked onchange="applyFilters()">NCAAB</label>
+        <label class="pill">
+          <input type="checkbox" class="sport-check" value="NCAAF" checked onchange="applyFilters()">NCAAF</label>
       </div>
       <div class="time-filter">
         <span style="font-size: 0.8rem; font-weight: bold; color: #888;">AFTER</span>
@@ -781,11 +846,13 @@
         mlb: ['MLB'],
         nba: ['NBA'],
         nfl: ['NFL'],
-        nhl: ['NHL'],
+        ncaab: ['NCAAB'],
+        ncaaf: ['NCAAF'],
+        nhl: [],
         pga: [],
         atp: [],
         wta: [],
-        tv: ['MLB', 'NBA', 'NHL', 'NFL']
+        tv: ['MLB', 'NBA', 'NFL', 'NCAAB', 'NCAAF']
       };
 
       const allowed = sportMap[sportFilterFromUrl || 'tv'];
@@ -796,6 +863,27 @@
       const checks = Array.from(document.querySelectorAll('.sport-check'));
       checks.forEach(function (el) {
         el.checked = allowed.indexOf(el.value) > -1;
+      });
+    }
+
+    function updateLeagueAvailability() {
+      var available = {};
+      (rawData || []).forEach(function (game) {
+        var league = String(game && game.league ? game.league : '').trim();
+        if (league) {
+          available[league] = true;
+        }
+      });
+
+      Array.from(document.querySelectorAll('.sport-check')).forEach(function (el) {
+        var hasGames = !!available[el.value];
+        el.disabled = !hasGames;
+        if (!hasGames) {
+          el.checked = false;
+        }
+        if (el.parentElement) {
+          el.parentElement.title = hasGames ? '' : 'No games scheduled today';
+        }
       });
     }
 
@@ -823,6 +911,7 @@
         .then(function (data) {
           console.log('DEBUG: getTvGuideData success', data);
           rawData = data;
+          updateLeagueAvailability();
           setNow();
         })
         .catch(function (err) {
@@ -1132,6 +1221,16 @@
       hidePgaModal();
     }
 
+    function isLiveGame(game) {
+      var state = String(game && game.statusState ? game.statusState : '').toLowerCase();
+      if (state === 'in') {
+        return true;
+      }
+
+      var statusText = String(game && game.status ? game.status : '').toLowerCase();
+      return /\blive\b|top\s+\d|bot\s+\d|q\d\b|halftime|half|period|ot\b|inning/.test(statusText);
+    }
+
     function applyFilters() {
       console.log('DEBUG: applyFilters called');
       // 1. Get Filter Values
@@ -1142,15 +1241,23 @@
       const filtered = rawData.filter(game => {
         const gameDate = new Date(game.time);
         const gameHour = gameDate.getHours();
+        const liveNow = isLiveGame(game);
 
         const matchesLeague = selectedLeagues.includes(game.league);
-        const matchesTime = gameHour >= minHour;
+        const matchesTime = gameHour >= minHour || liveNow;
 
         return matchesLeague && matchesTime;
       });
 
-      // 3. Sort by time
-      filtered.sort((a, b) => new Date(a.time) - new Date(b.time));
+      // 3. Sort live games to the top, then by time
+      filtered.sort((a, b) => {
+        const aLive = isLiveGame(a) ? 0 : 1;
+        const bLive = isLiveGame(b) ? 0 : 1;
+        if (aLive !== bLive) {
+          return aLive - bLive;
+        }
+        return new Date(a.time) - new Date(b.time);
+      });
 
       render(filtered);
     }
@@ -1174,14 +1281,11 @@
       for (let i = 0; i < games.length; i++) {
         const g = games[i];
         const localTime = new Date(g.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const liveNow = isLiveGame(g);
         html += '<div class="card ' + g.league + '">';
         html += '  <div class="card-body">';
-        html += '    <span class="league-badge">' + g.league + '</span>';
-        html += '    <div class="matchup">' + g.name + '</div>';
-        html += '    <div class="info-row">';
-        html += '      <div class="network-tag">📺 ' + g.network + '</div>';
-        html += '      <div class="time-tag">⏰ ' + localTime + '</div>';
-        html += '    </div>';
+        html += '    <div class="title-line"><span class="league-pill">' + g.league + '</span><span class="matchup-line">' + g.name + '</span></div>';
+        html += '    <span class="meta-line' + (liveNow ? ' is-live' : '') + '">📺 ' + g.network + ' • ' + (liveNow ? '🔴 LIVE' : '⏰ ' + localTime) + '</span>';
         html += '  </div>';
         html += '</div>';
       }
