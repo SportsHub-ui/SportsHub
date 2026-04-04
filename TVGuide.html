@@ -118,6 +118,64 @@
       min-width: 250px;
     }
 
+    .date-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+    }
+
+    .date-nav-btn {
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 999px;
+      background: var(--navy);
+      color: #fff;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.8rem;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .date-nav-btn:hover {
+      background: #003787;
+      transform: translateY(-1px);
+    }
+
+    .date-wrapper {
+      position: relative;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      color: var(--navy);
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .date-wrapper:hover {
+      border-color: var(--navy);
+    }
+
+    #dateDisplay {
+      line-height: 1.2;
+    }
+
+    #dateInput {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
     #timeSlider {
       flex-grow: 1;
       cursor: pointer;
@@ -724,6 +782,15 @@
         <label class="pill">
           <input type="checkbox" class="sport-check" value="NCAAF" checked onchange="applyFilters()">NCAAF</label>
       </div>
+      <div class="date-controls">
+        <button type="button" class="date-nav-btn" onclick="changeDate(-1)" aria-label="Previous day">◄</button>
+        <div class="date-wrapper" onclick="openDatePicker()">
+          <span id="dateDisplay">Today</span>
+          <input type="date" id="dateInput" onchange="goToDate()">
+          <span aria-hidden="true">📅</span>
+        </div>
+        <button type="button" class="date-nav-btn" onclick="changeDate(1)" aria-label="Next day">►</button>
+      </div>
       <div class="time-filter">
         <span style="font-size: 0.8rem; font-weight: bold; color: #888;">AFTER</span>
         <input type="range" id="timeSlider" min="0" max="23" value="0" oninput="updateTimeLabel(); applyFilters()">
@@ -757,6 +824,22 @@
     let sportFilterFromUrl = null;
     let pgaViewFromUrl = null;
     let pgaLeaderboardData = null;
+    let currentScheduleDate = new Date();
+    let activeScheduleDateIso = '';
+
+    function toLocalIso(date) {
+      return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+    }
+
+    function parseIsoDate(value) {
+      var parts = String(value || '').split('-');
+      if (parts.length !== 3) {
+        return new Date();
+      }
+
+      var parsed = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+    }
 
     function readQueryParam(name) {
       var key = String(name || '');
@@ -801,6 +884,112 @@
         return view;
       }
       return null;
+    }
+
+    function getRequestedScheduleDateIso() {
+      var raw = readQueryParam('date');
+      return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : toLocalIso(new Date());
+    }
+
+    function getSelectedDateLabel() {
+      return currentScheduleDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    function updateDateDisplay() {
+      var display = document.getElementById('dateDisplay');
+      var input = document.getElementById('dateInput');
+      if (!display || !input) {
+        return;
+      }
+
+      input.value = activeScheduleDateIso;
+      var todayIso = toLocalIso(new Date());
+      var prefix = activeScheduleDateIso === todayIso ? 'Today • ' : '';
+      display.innerText = prefix + currentScheduleDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+
+    function updateDateQuery() {
+      try {
+        var url = new URL(window.location.href);
+        url.searchParams.set('date', activeScheduleDateIso);
+        window.history.replaceState({}, '', url.toString());
+      } catch (err) {
+        // Ignore URL update issues in older webviews.
+      }
+    }
+
+    function openDatePicker() {
+      var input = document.getElementById('dateInput');
+      if (!input) {
+        return;
+      }
+      if (typeof input.showPicker === 'function') {
+        input.showPicker();
+        return;
+      }
+      input.focus();
+      input.click();
+    }
+
+    function setDefaultTimeFilter() {
+      var slider = document.getElementById('timeSlider');
+      if (!slider) {
+        return;
+      }
+
+      slider.value = activeScheduleDateIso === toLocalIso(new Date()) ? new Date().getHours() : 0;
+      updateTimeLabel();
+    }
+
+    function loadTvGuideForDate(dateIso) {
+      var requestedIso = /^\d{4}-\d{2}-\d{2}$/.test(String(dateIso || ''))
+        ? String(dateIso)
+        : toLocalIso(new Date());
+
+      activeScheduleDateIso = requestedIso;
+      currentScheduleDate = parseIsoDate(requestedIso);
+      updateDateDisplay();
+      updateDateQuery();
+
+      var grid = document.getElementById('guideGrid');
+      if (grid) {
+        grid.innerHTML = '<div class="loader"><h2 style="color: var(--navy)">Building TV Guide...</h2><p>Scanning broadcasts for ' + escapeHtml(getSelectedDateLabel()) + '</p></div>';
+      }
+
+      MLBClient.getTvGuideData(activeScheduleDateIso)
+        .then(function (data) {
+          rawData = Array.isArray(data) ? data : [];
+          updateLeagueAvailability();
+          setDefaultTimeFilter();
+          applyFilters();
+        })
+        .catch(function (err) {
+          console.error('DEBUG: getTvGuideData failed', err);
+          if (grid) {
+            grid.innerHTML = '<div class="no-results"><h3>Failed to load TV Guide data.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
+          }
+        });
+    }
+
+    function changeDate(offset) {
+      currentScheduleDate.setDate(currentScheduleDate.getDate() + offset);
+      loadTvGuideForDate(toLocalIso(currentScheduleDate));
+    }
+
+    function goToDate() {
+      var input = document.getElementById('dateInput');
+      if (!input || !input.value) {
+        return;
+      }
+      loadTvGuideForDate(input.value);
     }
 
     function getPgaUrlForView(view) {
@@ -882,7 +1071,7 @@
           el.checked = false;
         }
         if (el.parentElement) {
-          el.parentElement.title = hasGames ? '' : 'No games scheduled today';
+          el.parentElement.title = hasGames ? '' : 'No games scheduled for ' + getSelectedDateLabel();
         }
       });
     }
@@ -905,20 +1094,13 @@
         return;
       }
 
+      currentScheduleDate = parseIsoDate(getRequestedScheduleDateIso());
+      activeScheduleDateIso = toLocalIso(currentScheduleDate);
+      updateDateDisplay();
+
       applyQuerySportSelection();
       console.log('DEBUG: window.onload fired');
-      MLBClient.getTvGuideData()
-        .then(function (data) {
-          console.log('DEBUG: getTvGuideData success', data);
-          rawData = data;
-          updateLeagueAvailability();
-          setNow();
-        })
-        .catch(function (err) {
-          console.error('DEBUG: getTvGuideData failed', err);
-          const grid = document.getElementById('guideGrid');
-          if (grid) grid.innerHTML = '<div class="no-results"><h3>Failed to load TV Guide data.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
-        });
+      loadTvGuideForDate(activeScheduleDateIso);
     };
 
     function renderPgaView() {
@@ -1274,7 +1456,7 @@
       const grid = document.getElementById('guideGrid');
 
       if (games.length === 0) {
-        grid.innerHTML = '<div class="no-results"><h3>No games match your filters for today.</h3></div>';
+        grid.innerHTML = '<div class="no-results"><h3>No games match your filters for ' + escapeHtml(getSelectedDateLabel()) + '.</h3></div>';
         return;
       }
       let html = '';
@@ -1294,6 +1476,13 @@
 
     function setNow() {
       console.log('DEBUG: setNow called');
+      const todayIso = toLocalIso(new Date());
+
+      if (activeScheduleDateIso !== todayIso) {
+        loadTvGuideForDate(todayIso);
+        return;
+      }
+
       // 1. Get current hour (0 - 23)
       const now = new Date();
       const currentHour = now.getHours();

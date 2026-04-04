@@ -2344,7 +2344,7 @@
     };
   }
 
-  async function getTvGuideData() {
+  async function getTvGuideData(dateIso) {
     const leagues = [
       { sport: "baseball", league: "mlb", label: "MLB" },
       { sport: "basketball", league: "nba", label: "NBA" },
@@ -2353,7 +2353,11 @@
       { sport: "football", league: "college-football", label: "NCAAF" }
     ];
 
-    const today = toIsoDate(new Date()).replace(/-/g, "");
+    const selectedDate = typeof dateIso === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateIso)
+      ? dateIso
+      : toIsoDate(new Date());
+    const scoreboardDate = selectedDate.replace(/-/g, "");
+    const cacheMs = selectedDate === toIsoDate(new Date()) ? 60000 : 300000;
     const allGames = [];
 
     await Promise.all(
@@ -2365,8 +2369,8 @@
             "/" +
             l.league +
             "/scoreboard?dates=" +
-            today;
-          const data = await fetchJsonCached(url, 60000);
+            scoreboardDate;
+          const data = await fetchJsonCached(url, cacheMs);
 
           (data.events || []).forEach(function (ev) {
             const competition = ev.competitions && ev.competitions[0] ? ev.competitions[0] : null;
