@@ -68,7 +68,7 @@
   const FAVORITE_KEY = "MY_FAV_TEAM";
   const DEFAULT_TEAM = "Milwaukee Brewers";
   const PAGE_ROUTES = {
-    all: { label: "All", staticPath: "LeagueCards.html?sport=all", dynamicPage: "tv", sport: "all" },
+    all: { label: "FAV", staticPath: "LeagueCards.html?sport=all", dynamicPage: "tv", sport: "all" },
     mlb: { label: "MLB", icon: "⚾", staticPath: "GameCards.html", dynamicPage: "games" },
     nfl: { label: "NFL", icon: "🏈", staticPath: "LeagueCards.html?sport=nfl", dynamicPage: "tv", sport: "nfl" },
     nba: { label: "NBA", icon: "🏀", staticPath: "LeagueCards.html?sport=nba", dynamicPage: "tv", sport: "nba" },
@@ -99,12 +99,24 @@
   }
 
   function getFavoriteTeam() {
-    return localStorage.getItem(FAVORITE_KEY) || DEFAULT_TEAM;
+    const legacyFavorite = localStorage.getItem(FAVORITE_KEY) || "";
+    const scopedFavorite = localStorage.getItem("MY_FAV_MLB_TEAM") || "";
+    const favorite = legacyFavorite || scopedFavorite || DEFAULT_TEAM;
+
+    if (favorite && favorite !== legacyFavorite) {
+      localStorage.setItem(FAVORITE_KEY, favorite);
+    }
+    if (favorite && favorite !== scopedFavorite) {
+      localStorage.setItem("MY_FAV_MLB_TEAM", favorite);
+    }
+
+    return favorite;
   }
 
   function setFavoriteTeam(teamName) {
     if (teamName && TEAM_IDS[teamName]) {
       localStorage.setItem(FAVORITE_KEY, teamName);
+      localStorage.setItem("MY_FAV_MLB_TEAM", teamName);
     }
     return getFavoriteTeam();
   }

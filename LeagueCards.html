@@ -1397,20 +1397,35 @@
       return 'MY_FAV_' + String(currentSport || '').toUpperCase() + '_TEAM';
     }
 
+    function getStoredFavoriteTeamForSport(sportKey) {
+      var sport = String(sportKey || '').toLowerCase();
+      if (!sport) {
+        return '';
+      }
+
+      if (sport === 'mlb') {
+        if (window.MLBClient && typeof MLBClient.getFavoriteTeam === 'function') {
+          return MLBClient.getFavoriteTeam() || '';
+        }
+        return localStorage.getItem('MY_FAV_TEAM') || localStorage.getItem('MY_FAV_MLB_TEAM') || '';
+      }
+
+      return localStorage.getItem('MY_FAV_' + sport.toUpperCase() + '_TEAM') || '';
+    }
+
     function getFavoriteLeagueTeam() {
       var key = favoriteStorageKey();
       if (!key) {
         return '';
       }
-      return localStorage.getItem(key) || '';
+      return getStoredFavoriteTeamForSport(currentSport);
     }
 
     function getFavoriteTeamMapForAll() {
-      var mlbTeam = localStorage.getItem('MY_FAV_MLB_TEAM') || localStorage.getItem('MY_FAV_TEAM') || '';
       return {
-        mlb: mlbTeam,
-        nfl: localStorage.getItem('MY_FAV_NFL_TEAM') || '',
-        nba: localStorage.getItem('MY_FAV_NBA_TEAM') || ''
+        mlb: getStoredFavoriteTeamForSport('mlb'),
+        nfl: getStoredFavoriteTeamForSport('nfl'),
+        nba: getStoredFavoriteTeamForSport('nba')
       };
     }
 
@@ -1551,6 +1566,11 @@
       );
     }
 
+    function isLeagueGameFavorite(g, favoriteContext) {
+      var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
+      return isFavoriteGameById(sport, g && g.id) || isFavoriteTeamGame(g, favoriteContext);
+    }
+
     function gamePriorityBucket(g, favoriteContext) {
       if (isFavoriteTeamGame(g, favoriteContext)) {
         return 0;
@@ -1568,14 +1588,24 @@
 
     function setFavoriteLeagueTeam(teamName) {
       var key = favoriteStorageKey();
+      var sport = String(currentSport || '').toLowerCase();
       if (!key) {
         return '';
       }
       if (!teamName) {
         localStorage.removeItem(key);
+        if (sport === 'mlb') {
+          localStorage.removeItem('MY_FAV_TEAM');
+        }
         return '';
       }
       localStorage.setItem(key, teamName);
+      if (sport === 'mlb') {
+        localStorage.setItem('MY_FAV_TEAM', teamName);
+        if (window.MLBClient && typeof MLBClient.setFavoriteTeam === 'function') {
+          MLBClient.setFavoriteTeam(teamName);
+        }
+      }
       return teamName;
     }
 
@@ -2142,12 +2172,13 @@
       var isTeamFavoriteGame = isFavoriteTeamGame(g, favoriteContext);
       var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
       var isFavoriteGame = isFavoriteGameById(sport, g.id);
+      var isMarkedFavorite = isFavoriteGame || isTeamFavoriteGame;
       var canOpenDetail = canOpenDetailsForGame(g);
       var clickableClass = canOpenDetail ? ' is-clickable' : '';
       var clickAttr = canOpenDetail ? ' onclick="openGameDetailModal(\'' + g.id + '\',\'' + sport + '\')"' : '';
 
       var cardClasses = 'card';
-      if (isFavoriteGame || isTeamFavoriteGame) {
+      if (isMarkedFavorite) {
         cardClasses += ' fav-card';
       }
       if (isTeamFavoriteGame) {
@@ -2162,7 +2193,7 @@
       html += '<span class="status-pill ' + statusClass(g.statusState) + '" data-field="statusShort">' + (g.statusShort || 'Scheduled') + '</span>';
       html += '</div>';
       html += '<span class="situation-host">' + (isMlbActiveGame(g) ? renderMlbSituation(g) : '') + '</span>';
-      html += '<button class="game-fav-btn ' + (isFavoriteGame ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + String(g.id) + '\',\'' + sport + '\')">' + (isFavoriteGame ? '★' : '☆') + '</button>';
+      html += '<button class="game-fav-btn ' + (isMarkedFavorite ? 'is-on' : '') + '" data-field="gameFavBtn" type="button" aria-label="Toggle favorite" onclick="event.stopPropagation();toggleGameFavorite(\'' + String(g.id) + '\',\'' + sport + '\')">' + (isMarkedFavorite ? '★' : '☆') + '</button>';
       html += '</div>';
 
       html += '<div class="league-team-line">';
@@ -2186,8 +2217,9 @@
       var isTeamFavoriteGame = isFavoriteTeamGame(g, favoriteContext);
       var sport = String(g && g.leagueKey ? g.leagueKey : currentSport || '').toLowerCase();
       var isFavoriteGame = isFavoriteGameById(sport, g.id);
+      var isMarkedFavorite = isFavoriteGame || isTeamFavoriteGame;
       var canOpenDetail = canOpenDetailsForGame(g);
-      card.classList.toggle('fav-card', !!(isFavoriteGame || isTeamFavoriteGame));
+      card.classList.toggle('fav-card', !!isMarkedFavorite);
       card.classList.toggle('my-team-card', !!isTeamFavoriteGame);
       card.classList.toggle('is-clickable', !!canOpenDetail);
       card.setAttribute('data-game-index', String(index));
@@ -2206,8 +2238,8 @@
 
       var gameFavBtn = card.querySelector('[data-field="gameFavBtn"]');
       if (gameFavBtn) {
-        gameFavBtn.classList.toggle('is-on', !!isFavoriteGame);
-        gameFavBtn.textContent = isFavoriteGame ? '★' : '☆';
+        gameFavBtn.classList.toggle('is-on', !!isMarkedFavorite);
+        gameFavBtn.textContent = isMarkedFavorite ? '★' : '☆';
       }
 
       setTextWithFlash(card.querySelector('[data-field="network"]'), previousGame ? ('TV: ' + (previousGame.network || 'N/A')) : '', 'TV: ' + (g.network || 'N/A'));
@@ -2249,7 +2281,7 @@
 
       if (!games.length) {
         grid.innerHTML = currentSport === 'all'
-          ? '<div class="empty">No favorite games found for this date. Star games in MLB, NFL, or NBA to see them here.</div>'
+          ? '<div class="empty">No favorite games found for this date. Your favorite teams and any starred games will show up here automatically.</div>'
           : '<div class="empty">No games found for this date.</div>';
         previousGamesById = {};
         updateRefreshHint();
@@ -2702,14 +2734,15 @@
         ])
           .then(function (payloads) {
             var combined = [];
+            var favoriteContext = getFavoriteContext();
             payloads.forEach(function (payload) {
               var sport = String(payload && payload.leagueKey ? payload.leagueKey : '').toLowerCase();
               (payload && payload.games ? payload.games : []).forEach(function (game) {
-                if (!isFavoriteGameById(sport, game && game.id)) {
-                  return;
-                }
                 game.leagueKey = sport;
                 game.leagueLabel = payload.leagueLabel || sport.toUpperCase();
+                if (!isLeagueGameFavorite(game, favoriteContext)) {
+                  return;
+                }
                 combined.push(game);
               });
             });
