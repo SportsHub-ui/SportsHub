@@ -27,6 +27,23 @@
       font-family: 'Oswald', sans-serif;
     }
 
+    body.is-embed {
+      background: transparent;
+    }
+
+    body.is-embed #siteNav,
+    body.is-embed .settings-bar,
+    body.is-embed .header-row,
+    body.is-embed .refresh-hint {
+      display: none !important;
+    }
+
+    body.is-embed .container {
+      max-width: none;
+      margin: 0;
+      padding: 8px 8px 40px;
+    }
+
     .settings-bar {
       background: var(--navy);
       padding: 3px 6px;
@@ -1376,6 +1393,7 @@
     var currentSport = 'nfl';
     var currentDate = new Date();
     var lastPayload = null;
+    var embedMode = false;
     var detailRequestId = 0;
     var previousGamesById = {};
     var autoRefreshEnabled = true;
@@ -1385,6 +1403,12 @@
     var refreshInFlight = false;
 
     var LIVE_REFRESH_MS = 30000;
+
+    function isEmbedView() {
+      var params = new URLSearchParams(window.location.search || '');
+      var value = String(params.get('embed') || '').toLowerCase();
+      return value === '1' || value === 'true' || value === 'yes';
+    }
 
     function supportsTeamPickerSport() {
       return currentSport === 'mlb' || currentSport === 'nfl' || currentSport === 'nba';
@@ -2807,6 +2831,10 @@
     }
 
     window.onload = function () {
+      embedMode = isEmbedView();
+      if (embedMode) {
+        document.body.classList.add('is-embed');
+      }
       currentSport = parseSportFromQuery();
       setPageTheme();
       syncTeamPickerLabel();

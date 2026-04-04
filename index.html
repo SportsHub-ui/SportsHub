@@ -27,32 +27,48 @@
       color: var(--ink);
       background: radial-gradient(circle at 20% 10%, white 0%, var(--bg1) 45%, var(--bg2) 100%);
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px 24px 24px;
+      box-sizing: border-box;
+      overflow-y: auto;
     }
 
     .shell {
       width: min(920px, 100%);
+      min-height: calc(100vh - 40px);
       background: white;
       border-radius: 18px;
       box-shadow: 0 18px 40px rgba(0, 30, 60, 0.15);
       overflow: hidden;
       border: 1px solid #d7e3ef;
+      display: flex;
+      flex-direction: column;
     }
 
     .hero {
+      min-height: clamp(120px, 20vh, 220px);
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #ffffff 0%, #eef4fb 100%);
     }
 
     .hero-banner {
       width: 100%;
+      height: 100%;
       line-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .hero-banner img {
       width: 100%;
-      height: auto;
+      height: 100%;
+      object-fit: contain;
       display: block;
     }
 
@@ -81,20 +97,25 @@
       text-align: center;
     }
 
-    .landing-note {
-      padding: 28px;
-      text-align: center;
-      font-family: sans-serif;
-      color: #41556d;
-      font-size: 0.98rem;
+    #siteNav {
+      padding: 6px 12px 0;
+      display: flex;
+      justify-content: center;
     }
 
-    .landing-note p {
-      margin: 0;
+    .landing-cards {
+      padding: 8px 14px 18px;
+      flex: 1;
+      min-height: 0;
     }
 
-    .landing-note p + p {
-      margin-top: 10px;
+    .landing-cards-frame {
+      width: 100%;
+      height: clamp(480px, calc(67vh - 56px), 920px);
+      border: 1px solid #d7e3ef;
+      border-radius: 14px;
+      background: #f2f5f9;
+      display: block;
     }
 
     @media (max-width: 600px) {
@@ -104,17 +125,32 @@
 
       body {
         padding: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
+        display: block;
       }
 
       .shell {
         border-radius: 0;
         box-shadow: none;
         border: none;
-        flex: 1;
         width: 100%;
+        min-height: 100dvh;
+      }
+
+      .hero {
+        min-height: 20dvh;
+      }
+
+      #siteNav {
+        padding: 6px 8px 0;
+      }
+
+      .landing-cards {
+        padding: 8px 8px 16px;
+      }
+
+      .landing-cards-frame {
+        height: calc(100dvh - 20dvh - 54px);
+        min-height: 460px;
       }
     }
   </style>
@@ -129,16 +165,23 @@
     </section>
 
     <div id="siteNav"></div>
-    <section class="landing-note">
-      <p>Use the menu above to move between league views.</p>
-      <p>Your favorite teams and any starred games will appear on the FAV page by date.</p>
-      <p>Starting auto-refresh will keep your phone awake while you watch scores update live .</p>
+    <section class="landing-cards">
+      <iframe id="favCardsFrame" class="landing-cards-frame" title="Favorite games" loading="lazy"></iframe>
     </section>
   </main>
 
   <script src="clientApi.js"></script>
   <script>
-    MLBClient.renderSiteNav('mlb', 'siteNav');
+    MLBClient.renderSiteNav('all', 'siteNav');
+
+    (function renderLandingFavorites() {
+      var frame = document.getElementById('favCardsFrame');
+      if (!frame || !window.MLBClient || typeof MLBClient.getPageUrl !== 'function') {
+        return;
+      }
+      var favUrl = MLBClient.getPageUrl('all');
+      frame.src = favUrl + (favUrl.indexOf('?') === -1 ? '?' : '&') + 'embed=1';
+    })();
   </script>
 </body>
 </html>
