@@ -1,6 +1,6 @@
-# MLB Project
+# SportsHub
 
-This project now runs as a static site on GitHub Pages.
+SportsHub runs as a static multi-sport site on GitHub Pages.
 
 ## GitHub Pages Deployment
 
@@ -22,13 +22,12 @@ This project now runs as a static site on GitHub Pages.
 - `TopNews.html` - cross-sport top headlines
 - `TVGuide.html` - TV schedule view
 
-## What Changed From Apps Script
+## Current Architecture
 
-- `google.script.run` calls were replaced by browser-side fetch calls.
-- Favorite team storage now uses `localStorage` (key: `MY_FAV_TEAM`).
-- Shared browser data logic is in `clientApi.js`.
+- Favorite team storage uses `localStorage` (key: `MY_FAV_TEAM`).
+- Shared browser data logic lives in `clientApi.js`.
 - Pages call public APIs directly:
-	- MLB Stats API for games, standings, roster, lineups
+	- MLB Stats API for games, standings, roster, and lineups
 	- ESPN API for TV guide data, league scoreboards, and news headlines
 
 ## Notes

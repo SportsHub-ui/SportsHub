@@ -179,55 +179,17 @@
       : "Live";
   }
 
-  function isAppsScriptWebApp() {
-    const host = window.location.hostname.toLowerCase();
-    if (
-      host === "script.google.com" ||
-      host.endsWith(".script.google.com") ||
-      host === "script.googleusercontent.com" ||
-      host.endsWith(".script.googleusercontent.com")
-    ) {
-      return true;
-    }
-
-    return !!(window.google && window.google.script && window.google.script.run);
-  }
-
   function getScoresPageUrl(sport) {
     const sportKey = sport === "nfl" || sport === "nba" ? sport : "games";
     const resolvedKey = resolveRouteKey(sportKey);
     const route = PAGE_ROUTES[resolvedKey] || PAGE_ROUTES.mlb;
-
-    if (!isAppsScriptWebApp()) {
-      return route.staticPath;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.set("page", route.dynamicPage);
-    if (route.sport) {
-      url.searchParams.set("sport", route.sport);
-    } else {
-      url.searchParams.delete("sport");
-    }
-    return url.toString();
+    return route.staticPath;
   }
 
   function getPageUrl(pageKey) {
     const resolvedKey = resolveRouteKey(pageKey);
     const route = PAGE_ROUTES[resolvedKey] || PAGE_ROUTES.mlb;
-
-    if (!isAppsScriptWebApp()) {
-      return route.staticPath;
-    }
-
-    const url = new URL(window.location.href);
-    url.searchParams.set("page", route.dynamicPage);
-    if (route.sport) {
-      url.searchParams.set("sport", route.sport);
-    } else {
-      url.searchParams.delete("sport");
-    }
-    return url.toString();
+    return route.staticPath;
   }
 
   function navigateToPage(pageKey) {
