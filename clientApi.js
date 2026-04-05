@@ -2401,37 +2401,78 @@
 
   async function getPgaLastTournamentLeaderboard() {
     const today = new Date();
-    const maxLookbackDays = 60;
+    const start = new Date(today.getTime());
+    const end = new Date(today.getTime());
+    start.setDate(today.getDate() - 7);
+    end.setDate(today.getDate() + 14);
 
-    for (let i = 0; i <= maxLookbackDays; i += 1) {
-      const probeDate = new Date(today.getTime());
-      probeDate.setDate(today.getDate() - i);
-      const dateKey = toIsoDate(probeDate).replace(/-/g, "");
-      const url =
-        "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=" +
-        dateKey;
+    const startKey = toIsoDate(start).replace(/-/g, "");
+    const endKey = toIsoDate(end).replace(/-/g, "");
+    const url = "https://site.api.espn.com/apis/site/v2/sports/golf/pga/scoreboard?dates=" + startKey + "-" + endKey;
 
-      let payload;
-      try {
-        payload = await fetchJsonCached(url, 3600000);
-      } catch (error) {
-        continue;
-      }
+    let payload;
+    try {
+      payload = await fetchJsonCached(url, 300000);
+    } catch (error) {
+      payload = null;
+    }
 
-      const events = Array.isArray(payload && payload.events) ? payload.events : [];
-      if (!events.length) {
-        continue;
-      }
-
-      const completed = events.find(function (event) {
-        return event && event.status && event.status.type && event.status.type.state === "post";
+    const events = Array.isArray(payload && payload.events) ? payload.events : [];
+    const now = Date.now();
+    const uniqueById = {};
+    const candidates = events
+      .filter(function (event) {
+        const id = event && event.id ? String(event.id) : "";
+        if (!id || uniqueById[id]) {
+          return false;
+        }
+        uniqueById[id] = true;
+        return Array.isArray(event && event.competitions) && event.competitions.length > 0;
+      })
+      .sort(function (a, b) {
+        const ta = a && a.date ? new Date(a.date).getTime() : 0;
+        const tb = b && b.date ? new Date(b.date).getTime() : 0;
+        return ta - tb;
       });
 
-      if (!completed || !Array.isArray(completed.competitions) || !completed.competitions.length) {
-        continue;
+    const selectedEvent = (function () {
+      const live = candidates.find(function (event) {
+        return event && event.status && event.status.type && String(event.status.type.state || "") === "in";
+      });
+      if (live) {
+        return live;
       }
 
-      const comp = completed.competitions[0] || {};
+      const upcoming = candidates
+        .filter(function (event) {
+          const state = event && event.status && event.status.type ? String(event.status.type.state || "") : "";
+          const eventTime = event && event.date ? new Date(event.date).getTime() : 0;
+          return (state === "pre" || state === "created") && eventTime >= now - 86400000;
+        })
+        .sort(function (a, b) {
+          const ta = a && a.date ? Math.abs(new Date(a.date).getTime() - now) : Number.MAX_SAFE_INTEGER;
+          const tb = b && b.date ? Math.abs(new Date(b.date).getTime() - now) : Number.MAX_SAFE_INTEGER;
+          return ta - tb;
+        });
+      if (upcoming.length) {
+        return upcoming[0];
+      }
+
+      const recentCompleted = candidates
+        .filter(function (event) {
+          return event && event.status && event.status.type && String(event.status.type.state || "") === "post";
+        })
+        .sort(function (a, b) {
+          const ta = a && a.date ? new Date(a.date).getTime() : 0;
+          const tb = b && b.date ? new Date(b.date).getTime() : 0;
+          return tb - ta;
+        });
+
+      return recentCompleted[0] || candidates[0] || null;
+    }());
+
+    if (selectedEvent && Array.isArray(selectedEvent.competitions) && selectedEvent.competitions.length) {
+      const comp = selectedEvent.competitions[0] || {};
       const broadcastCandidates = [];
       const normalizedBroadcasts = normalizeBroadcasts(comp.broadcasts);
       for (let bi = 0; bi < normalizedBroadcasts.length; bi += 1) {
@@ -2468,9 +2509,6 @@
         })
         .join(", ");
       const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
-      if (!competitors.length) {
-        continue;
-      }
 
       const leaderboard = competitors
         .slice()
@@ -2578,24 +2616,24 @@
           };
         });
 
-      const eventDate = completed.date ? new Date(completed.date) : null;
+      const eventDate = selectedEvent.date ? new Date(selectedEvent.date) : null;
       const eventDateLabel = eventDate && !Number.isNaN(eventDate.getTime())
         ? eventDate.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric", year: "numeric" })
         : "";
 
       return {
-        eventName: completed.shortName || completed.name || "Latest PGA Tournament",
+        eventName: selectedEvent.shortName || selectedEvent.name || "Current PGA Tournament",
         eventDate: eventDateLabel,
-        status: completed.status && completed.status.type && completed.status.type.description
-          ? completed.status.type.description
-          : "Final",
+        status: selectedEvent.status && selectedEvent.status.type && selectedEvent.status.type.description
+          ? selectedEvent.status.type.description
+          : "Scheduled",
         broadcast: broadcastNetwork || "TBD",
         leaderboard: leaderboard
       };
     }
 
     return {
-      eventName: "Latest PGA Tournament",
+      eventName: "Current PGA Tournament",
       eventDate: "",
       status: "Unavailable",
       broadcast: "TBD",

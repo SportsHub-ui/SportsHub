@@ -1157,21 +1157,21 @@
         return;
       }
 
-      grid.innerHTML = '<div class="loader"><h2 style="color: #0b5d2a;">Loading PGA leaderboard...</h2><p>Finding most recent completed tournament</p></div>';
+      grid.innerHTML = '<div class="loader"><h2 style="color: #0b5d2a;">Loading PGA leaderboard...</h2><p>Finding the current tournament</p></div>';
 
       MLBClient.getPgaLastTournamentLeaderboard()
         .then(function (data) {
           pgaLeaderboardData = data;
           var rows = data && Array.isArray(data.leaderboard) ? data.leaderboard : [];
           if (!rows.length) {
-            grid.innerHTML = '<div class="no-results"><h3>No recent completed PGA tournament results were found.</h3></div>';
+            grid.innerHTML = '<div class="no-results"><h3>' + escapeHtml(data.eventName || 'Current PGA tournament') + '</h3><p>' + escapeHtml(data.status || 'Leaderboard not available yet') + '</p></div>';
             return;
           }
 
           var html = '';
           html += '<div class="pga-wrap">';
           html += '  <div class="pga-header">';
-          html += '    <div class="pga-kicker">PGA Results</div>';
+          html += '    <div class="pga-kicker">PGA Leaderboard</div>';
           html += '    <h2 class="pga-title">Leaderboard - ' + (data.eventName || 'Latest Tournament') + '</h2>';
           html += '    <div class="pga-meta">' + (data.eventDate || '') + (data.status ? (' | ' + data.status) : '') + (data.broadcast ? (' | Network: ' + escapeHtml(data.broadcast)) : '') + '</div>';
           html += '  </div>';
@@ -1214,7 +1214,7 @@
           grid.innerHTML = html;
         })
         .catch(function (err) {
-          grid.innerHTML = '<div class="no-results"><h3>Failed to load PGA tournament results.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
+          grid.innerHTML = '<div class="no-results"><h3>Failed to load the current PGA tournament.</h3><pre>' + (err && err.message ? err.message : err) + '</pre></div>';
         });
     }
 
