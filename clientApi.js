@@ -2349,6 +2349,7 @@
       { sport: "baseball", league: "mlb", label: "MLB" },
       { sport: "basketball", league: "nba", label: "NBA" },
       { sport: "football", league: "nfl", label: "NFL" },
+      { sport: "golf", league: "pga", label: "PGA" },
       { sport: "basketball", league: "mens-college-basketball", label: "NCAAB" },
       { sport: "football", league: "college-football", label: "NCAAF" }
     ];

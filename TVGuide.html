@@ -21,6 +21,7 @@
       --mlb: #0046ad;
       --nba: #ef420a;
       --nfl: #013369;
+      --pga: #0b5d2a;
       --ncaab: #6d28d9;
       --ncaaf: #7c2d12;
     }
@@ -93,6 +94,10 @@
 
     .pill:has(input[value="NFL"]:checked) {
       background: var(--nfl);
+    }
+
+    .pill:has(input[value="PGA"]:checked) {
+      background: var(--pga);
     }
 
     .pill:has(input[value="NCAAB"]:checked) {
@@ -233,6 +238,14 @@
 
     .card.NFL .league-pill {
       background: var(--nfl);
+    }
+
+    .card.PGA {
+      border-left-color: var(--pga);
+    }
+
+    .card.PGA .league-pill {
+      background: var(--pga);
     }
 
     .card.NCAAB {
@@ -778,6 +791,8 @@
         <label class="pill">
           <input type="checkbox" class="sport-check" value="NFL" checked onchange="applyFilters()">NFL</label>
         <label class="pill">
+          <input type="checkbox" class="sport-check" value="PGA" checked onchange="applyFilters()">PGA</label>
+        <label class="pill">
           <input type="checkbox" class="sport-check" value="NCAAB" checked onchange="applyFilters()">NCAAB</label>
         <label class="pill">
           <input type="checkbox" class="sport-check" value="NCAAF" checked onchange="applyFilters()">NCAAF</label>
@@ -1038,10 +1053,10 @@
         ncaab: ['NCAAB'],
         ncaaf: ['NCAAF'],
         nhl: [],
-        pga: [],
+        pga: ['PGA'],
         atp: [],
         wta: [],
-        tv: ['MLB', 'NBA', 'NFL', 'NCAAB', 'NCAAF']
+        tv: ['MLB', 'NBA', 'NFL', 'PGA', 'NCAAB', 'NCAAF']
       };
 
       const allowed = sportMap[sportFilterFromUrl || 'tv'];
