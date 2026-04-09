@@ -465,8 +465,8 @@
       border-collapse: collapse;
       font-family: 'Roboto Mono', monospace;
       font-size: 0.88rem;
-      /* Minimum width to keep all 9 columns readable on desktop before overflow-x kicks in */
-      min-width: 560px;
+      /* Minimum width to keep the leaderboard columns readable on desktop before overflow-x kicks in */
+      min-width: 620px;
     }
 
     .pga-table thead {
@@ -503,6 +503,13 @@
 
     .pga-table th.pga-col-topar {
       text-align: center;
+    }
+
+    .pga-table td.pga-col-thru,
+    .pga-table th.pga-col-thru {
+      text-align: center;
+      width: 68px;
+      color: #3a5242;
     }
 
     .pga-table td.pga-col-round,
@@ -638,6 +645,11 @@
       .pga-table td.pga-col-topar,
       .pga-table th.pga-col-topar {
         width: 56px;
+      }
+
+      .pga-table td.pga-col-thru,
+      .pga-table th.pga-col-thru {
+        width: 52px;
       }
 
       .pga-table td.pga-col-total,
@@ -1208,6 +1220,7 @@
           html += '        <th>Pos</th>';
           html += '        <th>Golfer</th>';
           html += '        <th class="pga-col-topar">To Par</th>';
+          html += '        <th class="pga-col-thru">Thru</th>';
           html += '        <th class="pga-col-round">R1</th>';
           html += '        <th class="pga-col-round">R2</th>';
           html += '        <th class="pga-col-round">R3</th>';
@@ -1228,6 +1241,7 @@
               (r.flag ? '<img class="pga-flag" src="' + escapeHtml(r.flag) + '" alt="">' : '') +
               '<span class="pga-player-name">' + escapeHtml(r.name || '-') + '</span>' + teeTimeLabel + '</div></td>';
             html += '<td class="pga-col-topar">' + (r.toPar || '-') + '</td>';
+            html += '<td class="pga-col-thru">' + escapeHtml(r.thru || '-') + '</td>';
             html += '<td class="pga-col-round">' + (rs[0] || '-') + '</td>';
             html += '<td class="pga-col-round">' + (rs[1] || '-') + '</td>';
             html += '<td class="pga-col-round">' + (rs[2] || '-') + '</td>';

@@ -179,40 +179,61 @@
       : "Live";
   }
 
-  function hasPgaRoundStarted(rounds) {
+  function getPgaRoundEntry(rounds, targetPeriod) {
     const entries = Array.isArray(rounds) ? rounds : [];
+    const normalizedTarget = Number(targetPeriod);
 
-    for (let i = 0; i < entries.length; i += 1) {
-      const round = entries[i] || {};
-      const holeScores = Array.isArray(round.linescores) ? round.linescores : [];
-      if (holeScores.length) {
-        return true;
-      }
-
-      const value = round && round.value != null ? Number(round.value) : NaN;
-      const displayValue = round && round.displayValue !== undefined && round.displayValue !== null
-        ? String(round.displayValue).trim()
-        : "";
-
-      if (!Number.isNaN(value) && value > 0) {
-        return true;
-      }
-
-      if (displayValue && displayValue !== "-" && displayValue !== "E") {
-        return true;
+    if (!Number.isNaN(normalizedTarget) && normalizedTarget > 0) {
+      for (let i = 0; i < entries.length; i += 1) {
+        const round = entries[i] || {};
+        if (Number(round && round.period !== undefined ? round.period : 0) === normalizedTarget) {
+          return round;
+        }
       }
     }
 
-    return false;
+    for (let i = entries.length - 1; i >= 0; i -= 1) {
+      const round = entries[i] || {};
+      const holeScores = Array.isArray(round.linescores) ? round.linescores : [];
+      if (holeScores.length) {
+        return round;
+      }
+    }
+
+    return entries.length ? entries[entries.length - 1] || null : null;
   }
 
-  function extractPgaTeeTime(rounds) {
-    const entries = Array.isArray(rounds) ? rounds : [];
+  function hasPgaRoundStarted(rounds, targetPeriod) {
+    const round = getPgaRoundEntry(rounds, targetPeriod);
+    if (!round) {
+      return false;
+    }
+
+    const holeScores = Array.isArray(round.linescores) ? round.linescores : [];
+    if (holeScores.length) {
+      return true;
+    }
+
+    const value = round && round.value != null ? Number(round.value) : NaN;
+    const displayValue = round && round.displayValue !== undefined && round.displayValue !== null
+      ? String(round.displayValue).trim()
+      : "";
+
+    if (!Number.isNaN(value) && value > 0) {
+      return true;
+    }
+
+    return Boolean(displayValue && displayValue !== "-" && displayValue !== "E");
+  }
+
+  function extractPgaTeeTime(rounds, targetPeriod) {
+    const round = getPgaRoundEntry(rounds, targetPeriod);
+    const entries = round ? [round] : (Array.isArray(rounds) ? rounds : []);
 
     for (let i = 0; i < entries.length; i += 1) {
-      const round = entries[i] || {};
-      const categories = Array.isArray(round && round.statistics && round.statistics.categories)
-        ? round.statistics.categories
+      const currentRound = entries[i] || {};
+      const categories = Array.isArray(currentRound && currentRound.statistics && currentRound.statistics.categories)
+        ? currentRound.statistics.categories
         : [];
 
       for (let j = 0; j < categories.length; j += 1) {
@@ -229,6 +250,26 @@
     }
 
     return "";
+  }
+
+  function extractPgaThru(rounds, targetPeriod, eventState) {
+    const round = getPgaRoundEntry(rounds, targetPeriod);
+    const normalizedState = String(eventState || "").toLowerCase();
+
+    if (!round) {
+      return normalizedState === "post" ? "Final" : "";
+    }
+
+    const holeScores = Array.isArray(round.linescores) ? round.linescores : [];
+    if (holeScores.length) {
+      const holesCompleted = Math.min(holeScores.length, 18);
+      if (normalizedState === "post" && holesCompleted >= 18) {
+        return "Final";
+      }
+      return String(holesCompleted);
+    }
+
+    return normalizedState === "post" ? "Final" : "";
   }
 
   function getScoresPageUrl(sport) {
@@ -2524,6 +2565,12 @@
         })
         .join(", ");
       const competitors = Array.isArray(comp.competitors) ? comp.competitors : [];
+      const eventState = selectedEvent && selectedEvent.status && selectedEvent.status.type
+        ? String(selectedEvent.status.type.state || "")
+        : "";
+      const currentRoundPeriod = comp && comp.status && comp.status.period !== undefined
+        ? Number(comp.status.period)
+        : 0;
 
       const leaderboard = competitors
         .slice()
@@ -2535,8 +2582,9 @@
         .map(function (c, idx) {
           const athlete = c && c.athlete ? c.athlete : {};
           const rounds = Array.isArray(c && c.linescores) ? c.linescores : [];
-          const hasStarted = hasPgaRoundStarted(rounds);
-          const teeTime = hasStarted ? "" : extractPgaTeeTime(rounds);
+          const hasStarted = hasPgaRoundStarted(rounds, currentRoundPeriod);
+          const teeTime = hasStarted ? "" : extractPgaTeeTime(rounds, currentRoundPeriod);
+          const thru = hasStarted ? extractPgaThru(rounds, currentRoundPeriod, eventState) : "-";
           const roundText = rounds
             .map(function (r) {
               return r && r.displayValue !== undefined ? String(r.displayValue) : "-";
@@ -2610,6 +2658,7 @@
             teeTime: teeTime,
             hasStarted: hasStarted,
             toPar: scoreText,
+            thru: thru || "-",
             rounds: roundText || "-",
             roundScores: roundScores,
             totalStrokes: totalStrokes,
