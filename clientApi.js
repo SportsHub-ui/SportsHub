@@ -179,6 +179,58 @@
       : "Live";
   }
 
+  function hasPgaRoundStarted(rounds) {
+    const entries = Array.isArray(rounds) ? rounds : [];
+
+    for (let i = 0; i < entries.length; i += 1) {
+      const round = entries[i] || {};
+      const holeScores = Array.isArray(round.linescores) ? round.linescores : [];
+      if (holeScores.length) {
+        return true;
+      }
+
+      const value = round && round.value != null ? Number(round.value) : NaN;
+      const displayValue = round && round.displayValue !== undefined && round.displayValue !== null
+        ? String(round.displayValue).trim()
+        : "";
+
+      if (!Number.isNaN(value) && value > 0) {
+        return true;
+      }
+
+      if (displayValue && displayValue !== "-" && displayValue !== "E") {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function extractPgaTeeTime(rounds) {
+    const entries = Array.isArray(rounds) ? rounds : [];
+
+    for (let i = 0; i < entries.length; i += 1) {
+      const round = entries[i] || {};
+      const categories = Array.isArray(round && round.statistics && round.statistics.categories)
+        ? round.statistics.categories
+        : [];
+
+      for (let j = 0; j < categories.length; j += 1) {
+        const stats = Array.isArray(categories[j] && categories[j].stats) ? categories[j].stats : [];
+
+        for (let k = stats.length - 1; k >= 0; k -= 1) {
+          const displayValue = stats[k] && stats[k].displayValue ? String(stats[k].displayValue).trim() : "";
+          const parsed = displayValue ? new Date(displayValue) : null;
+          if (parsed && !Number.isNaN(parsed.getTime())) {
+            return formatLocalTime(parsed);
+          }
+        }
+      }
+    }
+
+    return "";
+  }
+
   function getScoresPageUrl(sport) {
     const sportKey = sport === "nfl" || sport === "nba" ? sport : "games";
     const resolvedKey = resolveRouteKey(sportKey);
@@ -2483,6 +2535,8 @@
         .map(function (c, idx) {
           const athlete = c && c.athlete ? c.athlete : {};
           const rounds = Array.isArray(c && c.linescores) ? c.linescores : [];
+          const hasStarted = hasPgaRoundStarted(rounds);
+          const teeTime = hasStarted ? "" : extractPgaTeeTime(rounds);
           const roundText = rounds
             .map(function (r) {
               return r && r.displayValue !== undefined ? String(r.displayValue) : "-";
@@ -2553,6 +2607,8 @@
             name: toCompactPlayerName(athlete.displayName || athlete.shortName || "Unknown"),
             fullName: toCompactPlayerName(athlete.fullName || athlete.displayName || athlete.shortName || "Unknown"),
             flag: athlete && athlete.flag && athlete.flag.href ? athlete.flag.href : "",
+            teeTime: teeTime,
+            hasStarted: hasStarted,
             toPar: scoreText,
             rounds: roundText || "-",
             roundScores: roundScores,
